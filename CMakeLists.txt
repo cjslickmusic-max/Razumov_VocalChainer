@@ -1,0 +1,60 @@
+cmake_minimum_required(VERSION 3.22)
+
+project(RazumovVocalChain VERSION 0.1.0 LANGUAGES C CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+if(APPLE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum macOS version")
+endif()
+
+include(FetchContent)
+FetchContent_Declare(
+    juce
+    GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
+    GIT_TAG 8.0.12
+)
+FetchContent_MakeAvailable(juce)
+
+juce_add_plugin(
+    RazumovVocalChain
+    COMPANY_NAME "Razumov"
+    BUNDLE_ID com.razumov.vocalchain
+    IS_SYNTH FALSE
+    NEEDS_MIDI_INPUT FALSE
+    NEEDS_MIDI_OUTPUT FALSE
+    IS_MIDI_EFFECT FALSE
+    EDITOR_WANTS_KEYBOARD_FOCUS FALSE
+    COPY_PLUGIN_AFTER_BUILD TRUE
+    PLUGIN_MANUFACTURER_CODE Razu
+    PLUGIN_CODE Rvch
+    FORMATS AU VST3 Standalone
+    PRODUCT_NAME "Razumov Vocal Chain"
+    VERSION ${PROJECT_VERSION}
+)
+
+target_sources(
+    RazumovVocalChain
+    PRIVATE
+        Source/PluginProcessor.cpp
+        Source/PluginEditor.cpp
+)
+
+target_compile_definitions(
+    RazumovVocalChain
+    PUBLIC
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+        JUCE_VST3_CAN_REPLACE_VST2=0
+)
+
+target_link_libraries(
+    RazumovVocalChain
+    PRIVATE
+        juce::juce_audio_utils
+        juce::juce_audio_processors
+        juce::juce_dsp
+        juce::juce_gui_extra
+)

@@ -1,0 +1,11 @@
+---
+description: Mac и Windows — без платформенно-специфичных API в общем коде
+alwaysApply: true
+---
+
+# Кроссплатформенность (macOS + Windows)
+
+- **Общий код** должен собираться на **macOS и Windows** без веток «только одна ОС» в горячих путях.
+- **Не использовать в shared-коде:** прямые вызовы Win32 (`Windows.h`, `CreateFile`, …), Carbon/AppKit без обёртки, жёсткие пути одной ОС.
+- **Предпочтительно:** JUCE (`juce::File`, `juce::Thread`, `juce::Process`), C++17 `std::filesystem` там, где уместно, стандартная библиотека.
+- Если нужна платформенная ветка — изолировать в `juce_*.cpp` / thin wrappers и документировать в `docs/`.

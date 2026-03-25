@@ -1,0 +1,15 @@
+build/
+cmake-build*/
+out/
+.DS_Store
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+.idea/
+.vscode/
+*.user
+*.suo
+*.VC.db
+*.VC.opendb
+CMakeUserPresets.json
+compile_commands.json
+_deps/

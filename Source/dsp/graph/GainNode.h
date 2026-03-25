@@ -14,6 +14,8 @@ public:
 
     explicit GainNode(float linearGain) { setLinearGain(linearGain); }
 
+    GainNode* asGain() noexcept override { return this; }
+
     void setLinearGain(float g) noexcept
     {
         targetGain_ = juce::jlimit(0.0f, 4.0f, g);

@@ -1,12 +1,15 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "dsp/graph/GraphPlanFactory.h"
+#include "params/ParamIDs.h"
+#include "params/ParameterLayout.h"
 
 RazumovVocalChainAudioProcessor::RazumovVocalChainAudioProcessor()
     : AudioProcessor(
         BusesProperties()
             .withInput("Input", juce::AudioChannelSet::stereo(), true)
             .withOutput("Output", juce::AudioChannelSet::stereo(), true))
+    , apvts(*this, nullptr, "PARAMS", razumov::params::createParameterLayout())
 {
     graphEngine_.setLatencyCallback([this](int latency) { setLatencySamples(latency); });
 }
@@ -51,6 +54,9 @@ void RazumovVocalChainAudioProcessor::processBlock(juce::AudioBuffer<float>& buf
 
     juce::ScopedNoDenormals noDenormals;
 
+    const float gainDb = apvts.getRawParameterValue(razumov::params::gainDb)->load();
+    const float lowpassHz = apvts.getRawParameterValue(razumov::params::lowpassHz)->load();
+    graphEngine_.applyLiveParameters(juce::Decibels::decibelsToGain(gainDb), lowpassHz);
     graphEngine_.process(buffer);
 }
 
@@ -87,12 +93,15 @@ void RazumovVocalChainAudioProcessor::changeProgramName(int index, const juce::S
 
 void RazumovVocalChainAudioProcessor::getStateInformation(juce::MemoryBlock& destData)
 {
-    juce::ignoreUnused(destData);
+    if (auto xml = apvts.copyState().createXml())
+        copyXmlToBinary(*xml, destData);
 }
 
 void RazumovVocalChainAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
 {
-    juce::ignoreUnused(data, sizeInBytes);
+    if (auto xml = getXmlFromBinary(data, sizeInBytes))
+        if (xml->hasTagName(apvts.state.getType()))
+            apvts.replaceState(juce::ValueTree::fromXml(*xml));
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()

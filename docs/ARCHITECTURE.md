@@ -28,3 +28,9 @@
 ## Тесты
 
 Консольная цель `RazumovVocalChainTests` (см. `CMakeLists.txt`): проверка отчётной задержки и параллели 0.5+0.5.
+
+## Параметры (фаза 2)
+
+- `AudioProcessorValueTreeState` в `PluginProcessor`: идентификаторы в `Source/params/ParamIDs.h`, раскладка в `Source/params/ParameterLayout.cpp`.
+- В `processBlock` значения читаются из APVTS и передаются в `GraphEngine::applyLiveParameters` (линейный gain, Hz для LP).
+- Узлы в активном плане находятся через `AudioNode::asGain()` / `asFilter()` и кэш `gainBinding_` / `filterBinding_` после смены/подготовки плана.

@@ -35,7 +35,11 @@ public:
     void getStateInformation(juce::MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
 
+    juce::AudioProcessorValueTreeState& getAPVTS() noexcept { return apvts; }
+    const juce::AudioProcessorValueTreeState& getAPVTS() const noexcept { return apvts; }
+
 private:
+    juce::AudioProcessorValueTreeState apvts;
     razumov::graph::GraphEngine graphEngine_;
     bool graphSeeded_ { false };
 

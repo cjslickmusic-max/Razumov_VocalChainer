@@ -9,6 +9,9 @@
 namespace razumov::graph
 {
 
+class GainNode;
+class FilterNode;
+
 /** Выполнение плана: смена графа через submitPlan (message thread), process — audio thread. */
 class GraphEngine
 {
@@ -26,10 +29,14 @@ public:
     /** Message / UI thread: новый план подменится в начале ближайшего process (без аллокаций в audio). */
     void submitPlan(std::shared_ptr<GraphPlan> plan);
 
+    /** Вызывать из audio thread перед process: линейный gain и частота LP (как в APVTS). */
+    void applyLiveParameters(float gainLinear, float lowpassHz);
+
     int getReportedLatencySamples() const noexcept { return reportedLatency_; }
 
 private:
     void swapAndPreparePendingPlan();
+    void refreshParameterBindings();
     void runSteps(juce::AudioBuffer<float>& buffer);
     void processParallel(ParallelStep& par, juce::AudioBuffer<float>& buffer);
 
@@ -52,6 +59,9 @@ private:
     std::unique_ptr<MergeDelayPad> padR_;
 
     int maxDelayStorage_ { 0 };
+
+    GainNode* gainBinding_ { nullptr };
+    FilterNode* filterBinding_ { nullptr };
 };
 
 } // namespace razumov::graph

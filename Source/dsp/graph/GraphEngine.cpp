@@ -1,5 +1,8 @@
 #include "GraphEngine.h"
 
+#include "FilterNode.h"
+#include "GainNode.h"
+
 #include <juce_core/juce_core.h>
 
 namespace razumov::graph
@@ -38,10 +41,13 @@ void GraphEngine::prepare(double sampleRate, int maxBlockSize, int numChannels)
         activated->prepare(sampleRate_, maxBlockSize_, numChannels_);
         activated->reset();
         reportedLatency_ = activated->computePluginLatencySamples();
+        refreshParameterBindings();
     }
     else
     {
         reportedLatency_ = 0;
+        gainBinding_ = nullptr;
+        filterBinding_ = nullptr;
     }
 
     if (onLatency_)
@@ -78,6 +84,8 @@ void GraphEngine::swapAndPreparePendingPlan()
     if (local == nullptr)
     {
         reportedLatency_ = 0;
+        gainBinding_ = nullptr;
+        filterBinding_ = nullptr;
         if (onLatency_)
             onLatency_(0);
         return;
@@ -86,6 +94,7 @@ void GraphEngine::swapAndPreparePendingPlan()
     local->prepare(sampleRate_, maxBlockSize_, numChannels_);
     local->reset();
     reportedLatency_ = local->computePluginLatencySamples();
+    refreshParameterBindings();
 
     if (onLatency_)
         onLatency_(reportedLatency_);
@@ -102,6 +111,68 @@ void GraphEngine::process(juce::AudioBuffer<float>& buffer)
         return;
 
     runSteps(buffer);
+}
+
+void GraphEngine::refreshParameterBindings()
+{
+    gainBinding_ = nullptr;
+    filterBinding_ = nullptr;
+
+    if (activePlan_ == nullptr)
+        return;
+
+    auto scanSerial = [this](SerialStep& serial) {
+        for (auto& node : serial.nodes)
+        {
+            if (node == nullptr)
+                continue;
+
+            if (gainBinding_ == nullptr)
+                gainBinding_ = node->asGain();
+
+            if (filterBinding_ == nullptr)
+                filterBinding_ = node->asFilter();
+        }
+    };
+
+    for (auto& step : activePlan_->getSteps())
+    {
+        if (auto* serial = std::get_if<SerialStep>(&step))
+        {
+            scanSerial(*serial);
+        }
+        else if (auto* par = std::get_if<ParallelStep>(&step))
+        {
+            for (auto& node : par->left)
+            {
+                if (node == nullptr)
+                    continue;
+                if (gainBinding_ == nullptr)
+                    gainBinding_ = node->asGain();
+                if (filterBinding_ == nullptr)
+                    filterBinding_ = node->asFilter();
+            }
+
+            for (auto& node : par->right)
+            {
+                if (node == nullptr)
+                    continue;
+                if (gainBinding_ == nullptr)
+                    gainBinding_ = node->asGain();
+                if (filterBinding_ == nullptr)
+                    filterBinding_ = node->asFilter();
+            }
+        }
+    }
+}
+
+void GraphEngine::applyLiveParameters(float gainLinear, float lowpassHz)
+{
+    if (gainBinding_ != nullptr)
+        gainBinding_->setLinearGain(gainLinear);
+
+    if (filterBinding_ != nullptr)
+        filterBinding_->setCutoffHz(lowpassHz);
 }
 
 void GraphEngine::runSteps(juce::AudioBuffer<float>& buffer)

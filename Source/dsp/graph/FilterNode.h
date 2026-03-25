@@ -12,18 +12,21 @@ class FilterNode final : public AudioNode
 public:
     FilterNode() = default;
 
-    void setCutoffHz(float hz) noexcept { cutoffHz_ = juce::jmax(20.0f, hz); }
-    float getCutoffHz() const noexcept { return cutoffHz_; }
+    FilterNode* asFilter() noexcept override { return this; }
+
+    void setCutoffHz(float hz) noexcept { targetCutoffHz_ = juce::jmax(20.0f, hz); }
+    float getCutoffHz() const noexcept { return targetCutoffHz_; }
 
     void prepare(double sampleRate, int maxBlockSize, int numChannels) override;
     void reset() override;
     void process(juce::AudioBuffer<float>& buffer) override;
 
 private:
-    void updateCoeffs();
+    void updateCoeffs(float cutoffHz);
 
     double sampleRate_ { 44100.0 };
-    float cutoffHz_ { 20000.0f };
+    float targetCutoffHz_ { 20000.0f };
+    float smoothedCutoffHz_ { 20000.0f };
 
     using IIRFilter = juce::dsp::IIR::Filter<float>;
     using Coefficients = juce::dsp::IIR::Coefficients<float>;

@@ -5,11 +5,17 @@
 namespace razumov::graph
 {
 
+class GainNode;
+class FilterNode;
+
 /** Базовый узел графа: стерео in-place, отчёт задержки в целых сэмплах. */
 class AudioNode
 {
 public:
     virtual ~AudioNode() = default;
+
+    virtual GainNode* asGain() noexcept { return nullptr; }
+    virtual FilterNode* asFilter() noexcept { return nullptr; }
 
     virtual void prepare(double sampleRate, int maxBlockSize, int numChannels) = 0;
     virtual void reset() = 0;

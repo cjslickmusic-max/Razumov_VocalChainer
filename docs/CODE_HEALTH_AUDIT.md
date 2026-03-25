@@ -4,6 +4,13 @@
 
 ---
 
+## Quick check — v0.3.0 (2026-03-25) — APVTS + Phase 2
+
+- Параметры: `params/ParamIDs`, `ParameterLayout`, APVTS, state XML; UI роторы; `GraphEngine::applyLiveParameters`.
+- Сборка + ctest: OK.
+
+---
+
 ## Quick check — v0.2.0 (2026-03-25) — Graph engine + tests
 
 - Фаза 1: `dsp/graph/*`, `GraphEngine`, `MergeDelayPad`, интеграция в `PluginProcessor`.

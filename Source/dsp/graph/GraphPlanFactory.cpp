@@ -15,7 +15,8 @@ std::unique_ptr<GraphPlan> GraphPlanFactory::makeSerialGainAndWideFilter(double 
 {
     auto gain = std::make_unique<GainNode>(1.0f);
     auto filt = std::make_unique<FilterNode>();
-    filt->setCutoffHz((float) (sampleRate * 0.49));
+    (void) sampleRate;
+    filt->setCutoffHz(20000.0f);
 
     SerialStep serial;
     serial.nodes.push_back(std::move(gain));

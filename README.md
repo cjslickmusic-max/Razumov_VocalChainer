@@ -15,6 +15,13 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel
 ```
 
+### Тесты (консоль)
+
+```bash
+cmake --build build --target RazumovVocalChainTests
+./build/RazumovVocalChainTests
+```
+
 Артефакты JUCE обычно копируются после сборки в системные папки плагинов (см. вывод CMake `Installing:`).
 
 - **VST3:** `~/Library/Audio/Plug-Ins/VST3/Razumov Vocal Chain.vst3`

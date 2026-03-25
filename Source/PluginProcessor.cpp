@@ -1,5 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "dsp/graph/GraphPlanFactory.h"
 
 RazumovVocalChainAudioProcessor::RazumovVocalChainAudioProcessor()
     : AudioProcessor(
@@ -7,16 +8,27 @@ RazumovVocalChainAudioProcessor::RazumovVocalChainAudioProcessor()
             .withInput("Input", juce::AudioChannelSet::stereo(), true)
             .withOutput("Output", juce::AudioChannelSet::stereo(), true))
 {
+    graphEngine_.setLatencyCallback([this](int latency) { setLatencySamples(latency); });
 }
 
 RazumovVocalChainAudioProcessor::~RazumovVocalChainAudioProcessor() = default;
 
 void RazumovVocalChainAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
-    juce::ignoreUnused(sampleRate, samplesPerBlock);
+    if (!graphSeeded_)
+    {
+        graphEngine_.submitPlan(razumov::graph::GraphPlanFactory::makeSerialGainAndWideFilter(sampleRate));
+        graphSeeded_ = true;
+    }
+
+    graphEngine_.prepare(sampleRate, samplesPerBlock, 2);
 }
 
-void RazumovVocalChainAudioProcessor::releaseResources() {}
+void RazumovVocalChainAudioProcessor::releaseResources()
+{
+    graphEngine_.releaseResources();
+    graphSeeded_ = false;
+}
 
 bool RazumovVocalChainAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
 {
@@ -39,7 +51,7 @@ void RazumovVocalChainAudioProcessor::processBlock(juce::AudioBuffer<float>& buf
 
     juce::ScopedNoDenormals noDenormals;
 
-    juce::ignoreUnused(buffer);
+    graphEngine_.process(buffer);
 }
 
 juce::AudioProcessorEditor* RazumovVocalChainAudioProcessor::createEditor()

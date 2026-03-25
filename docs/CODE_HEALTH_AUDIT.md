@@ -4,6 +4,14 @@
 
 ---
 
+## Quick check — v0.2.0 (2026-03-25) — Graph engine + tests
+
+- Фаза 1: `dsp/graph/*`, `GraphEngine`, `MergeDelayPad`, интеграция в `PluginProcessor`.
+- Сборка + `ctest` (GraphEngine): OK.
+- `ReadLints` на изменённых файлах: без замечаний.
+
+---
+
 ## Quick check — v0.1.0 (2026-03-25) — Initial CMake + JUCE
 
 - Сборка Release на macOS: OK (`cmake --build build`).

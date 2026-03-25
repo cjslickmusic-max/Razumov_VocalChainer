@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(RazumovVocalChain VERSION 0.1.0 LANGUAGES C CXX)
+project(RazumovVocalChain VERSION 0.2.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -40,6 +40,18 @@ target_sources(
     PRIVATE
         Source/PluginProcessor.cpp
         Source/PluginEditor.cpp
+        Source/dsp/graph/FilterNode.cpp
+        Source/dsp/graph/LatencyNode.cpp
+        Source/dsp/graph/GraphPlan.cpp
+        Source/dsp/graph/GraphPlanFactory.cpp
+        Source/dsp/graph/GraphEngine.cpp
+        Source/dsp/graph/MergeDelayPad.cpp
+)
+
+target_include_directories(
+    RazumovVocalChain
+    PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/Source"
 )
 
 target_compile_definitions(
@@ -58,3 +70,30 @@ target_link_libraries(
         juce::juce_dsp
         juce::juce_gui_extra
 )
+
+add_executable(
+    RazumovVocalChainTests
+    Tests/GraphTests.cpp
+    Source/dsp/graph/FilterNode.cpp
+    Source/dsp/graph/LatencyNode.cpp
+    Source/dsp/graph/GraphPlan.cpp
+    Source/dsp/graph/GraphPlanFactory.cpp
+    Source/dsp/graph/GraphEngine.cpp
+    Source/dsp/graph/MergeDelayPad.cpp
+)
+
+target_include_directories(
+    RazumovVocalChainTests
+    PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/Source"
+)
+
+target_link_libraries(
+    RazumovVocalChainTests
+    PRIVATE
+        juce::juce_dsp
+        juce::juce_audio_basics
+)
+
+enable_testing()
+add_test(NAME GraphEngine COMMAND $<TARGET_FILE:RazumovVocalChainTests>)

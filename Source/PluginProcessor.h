@@ -1,5 +1,6 @@
 #pragma once
 
+#include "dsp/graph/GraphEngine.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 
 class RazumovVocalChainAudioProcessor : public juce::AudioProcessor
@@ -35,5 +36,8 @@ public:
     void setStateInformation(const void* data, int sizeInBytes) override;
 
 private:
+    razumov::graph::GraphEngine graphEngine_;
+    bool graphSeeded_ { false };
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RazumovVocalChainAudioProcessor)
 };

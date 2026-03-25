@@ -19,7 +19,7 @@ void RazumovVocalChainAudioProcessorEditor::paint(juce::Graphics& g)
     g.drawText("Razumov Vocal Chain", getLocalBounds().reduced(16), juce::Justification::topLeft);
     g.setFont(juce::FontOptions(14.0f));
     g.setColour(juce::Colour(0xffaab4c0));
-    g.drawText("v0.1.0 placeholder UI - graph engine next", getLocalBounds().reduced(16),
+    g.drawText("v0.2.0 graph: serial + parallel merge (DSP path active)", getLocalBounds().reduced(16),
                juce::Justification::centred);
 }
 

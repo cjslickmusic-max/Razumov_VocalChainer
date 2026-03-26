@@ -3,7 +3,8 @@
 #include "dsp/graph/GraphEngine.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 
-class RazumovVocalChainAudioProcessor : public juce::AudioProcessor
+class RazumovVocalChainAudioProcessor : public juce::AudioProcessor,
+                                          public juce::AudioProcessorValueTreeState::Listener
 {
 public:
     RazumovVocalChainAudioProcessor();
@@ -38,10 +39,18 @@ public:
     juce::AudioProcessorValueTreeState& getAPVTS() noexcept { return apvts; }
     const juce::AudioProcessorValueTreeState& getAPVTS() const noexcept { return apvts; }
 
+    /** Фабричный пресет (фаза 4); синхронизирует program index и APVTS. */
+    void applyFactoryPreset(int index);
+
+    void parameterChanged(const juce::String& parameterID, float newValue) override;
+
 private:
+    void submitGraphPlanForCurrentParameter();
+
     juce::AudioProcessorValueTreeState apvts;
     razumov::graph::GraphEngine graphEngine_;
-    bool graphSeeded_ { false };
+    double lastSampleRate_ { 44100.0 };
+    int currentProgram_ { 0 };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RazumovVocalChainAudioProcessor)
 };

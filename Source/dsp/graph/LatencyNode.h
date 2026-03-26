@@ -13,6 +13,8 @@ public:
 
     int getLatencySamples() const noexcept override { return latency_; }
 
+    AudioNodeKind getKind() const noexcept override { return AudioNodeKind::Latency; }
+
     void prepare(double sampleRate, int maxBlockSize, int numChannels) override;
     void reset() override;
     void process(juce::AudioBuffer<float>& buffer) override;

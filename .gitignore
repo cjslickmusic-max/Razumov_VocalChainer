@@ -1,4 +1,6 @@
 build/
+# Локальные копии VST3 для проверки (README в Artifacts/ можно коммитить)
+Artifacts/*.vst3
 cmake-build*/
 out/
 .DS_Store

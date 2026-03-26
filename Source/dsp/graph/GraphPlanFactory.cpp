@@ -1,7 +1,12 @@
 #include "GraphPlanFactory.h"
+#include "CompressorArchetypeNode.h"
+#include "DeesserNode.h"
+#include "ExciterNode.h"
 #include "FilterNode.h"
 #include "GainNode.h"
 #include "LatencyNode.h"
+#include "MicCorrectionNode.h"
+#include "SpectralCompressorNode.h"
 
 namespace razumov::graph
 {
@@ -25,6 +30,105 @@ std::unique_ptr<GraphPlan> GraphPlanFactory::makeSerialGainAndWideFilter(double 
     std::vector<GraphStep> steps;
     steps.emplace_back(std::move(serial));
     return std::make_unique<GraphPlan>(std::move(steps));
+}
+
+std::unique_ptr<GraphPlan> GraphPlanFactory::makeDefaultVocalChainPhase3(double sampleRate)
+{
+    (void) sampleRate;
+
+    SerialStep serial;
+
+    serial.nodes.push_back(std::make_unique<MicCorrectionNode>());
+
+    serial.nodes.push_back(std::make_unique<GainNode>(1.0f));
+
+    auto filt = std::make_unique<FilterNode>();
+    filt->setCutoffHz(20000.0f);
+    serial.nodes.push_back(std::move(filt));
+
+    serial.nodes.push_back(std::make_unique<DeesserNode>());
+
+    serial.nodes.push_back(
+        std::make_unique<CompressorArchetypeNode>(CompressorArchetypeNode::Archetype::Opto));
+    serial.nodes.push_back(
+        std::make_unique<CompressorArchetypeNode>(CompressorArchetypeNode::Archetype::Fet));
+    serial.nodes.push_back(
+        std::make_unique<CompressorArchetypeNode>(CompressorArchetypeNode::Archetype::Vca));
+
+    serial.nodes.push_back(std::make_unique<ExciterNode>());
+    serial.nodes.push_back(std::make_unique<SpectralCompressorNode>());
+
+    std::vector<GraphStep> steps;
+    steps.emplace_back(std::move(serial));
+    return std::make_unique<GraphPlan>(std::move(steps));
+}
+
+std::unique_ptr<GraphPlan> GraphPlanFactory::makeCompactVocalChainPhase3(double sampleRate)
+{
+    (void) sampleRate;
+
+    SerialStep serial;
+
+    serial.nodes.push_back(std::make_unique<MicCorrectionNode>());
+    serial.nodes.push_back(std::make_unique<GainNode>(1.0f));
+
+    auto filt = std::make_unique<FilterNode>();
+    filt->setCutoffHz(20000.0f);
+    serial.nodes.push_back(std::move(filt));
+
+    serial.nodes.push_back(
+        std::make_unique<CompressorArchetypeNode>(CompressorArchetypeNode::Archetype::Opto));
+
+    serial.nodes.push_back(std::make_unique<ExciterNode>());
+    serial.nodes.push_back(std::make_unique<SpectralCompressorNode>());
+
+    std::vector<GraphStep> steps;
+    steps.emplace_back(std::move(serial));
+    return std::make_unique<GraphPlan>(std::move(steps));
+}
+
+std::unique_ptr<GraphPlan> GraphPlanFactory::makeFetForwardVocalChainPhase3(double sampleRate)
+{
+    (void) sampleRate;
+
+    SerialStep serial;
+
+    serial.nodes.push_back(std::make_unique<MicCorrectionNode>());
+    serial.nodes.push_back(std::make_unique<GainNode>(1.0f));
+
+    auto filt = std::make_unique<FilterNode>();
+    filt->setCutoffHz(20000.0f);
+    serial.nodes.push_back(std::move(filt));
+
+    serial.nodes.push_back(std::make_unique<DeesserNode>());
+
+    serial.nodes.push_back(
+        std::make_unique<CompressorArchetypeNode>(CompressorArchetypeNode::Archetype::Fet));
+    serial.nodes.push_back(
+        std::make_unique<CompressorArchetypeNode>(CompressorArchetypeNode::Archetype::Opto));
+    serial.nodes.push_back(
+        std::make_unique<CompressorArchetypeNode>(CompressorArchetypeNode::Archetype::Vca));
+
+    serial.nodes.push_back(std::make_unique<ExciterNode>());
+    serial.nodes.push_back(std::make_unique<SpectralCompressorNode>());
+
+    std::vector<GraphStep> steps;
+    steps.emplace_back(std::move(serial));
+    return std::make_unique<GraphPlan>(std::move(steps));
+}
+
+std::unique_ptr<GraphPlan> GraphPlanFactory::makeStartupChainForIndex(int index, double sampleRate)
+{
+    switch (index)
+    {
+        case 1:
+            return makeCompactVocalChainPhase3(sampleRate);
+        case 2:
+            return makeFetForwardVocalChainPhase3(sampleRate);
+        case 0:
+        default:
+            return makeDefaultVocalChainPhase3(sampleRate);
+    }
 }
 
 std::unique_ptr<GraphPlan> GraphPlanFactory::makeParallelHalves()

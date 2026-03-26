@@ -35,7 +35,7 @@ cmake -S . -B build
 cmake --build build --config Release
 ```
 
-Используйте **x64** Native Tools / Visual Studio 2022.
+Используйте **x64** Native Tools / Visual Studio 2022. Подробности и генераторы: `docs/BUILD_WINDOWS.md`.
 
 ## JUCE
 

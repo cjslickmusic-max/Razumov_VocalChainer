@@ -16,6 +16,8 @@ public:
 
     GainNode* asGain() noexcept override { return this; }
 
+    AudioNodeKind getKind() const noexcept override { return AudioNodeKind::Gain; }
+
     void setLinearGain(float g) noexcept
     {
         targetGain_ = juce::jlimit(0.0f, 4.0f, g);

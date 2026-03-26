@@ -6,11 +6,36 @@
 #include <memory>
 #include <mutex>
 
+namespace razumov::params
+{
+struct Phase3RealtimeParams;
+}
+
 namespace razumov::graph
 {
 
 class GainNode;
 class FilterNode;
+class MicCorrectionNode;
+class DeesserNode;
+class CompressorArchetypeNode;
+class ExciterNode;
+class SpectralCompressorNode;
+
+struct GraphNodeBindings
+{
+    MicCorrectionNode* mic { nullptr };
+    GainNode* gain { nullptr };
+    FilterNode* filter { nullptr };
+    DeesserNode* deesser { nullptr };
+    CompressorArchetypeNode* opto { nullptr };
+    CompressorArchetypeNode* fet { nullptr };
+    CompressorArchetypeNode* vca { nullptr };
+    ExciterNode* exciter { nullptr };
+    SpectralCompressorNode* spectral { nullptr };
+
+    void clear() noexcept;
+};
 
 /** Выполнение плана: смена графа через submitPlan (message thread), process — audio thread. */
 class GraphEngine
@@ -29,14 +54,15 @@ public:
     /** Message / UI thread: новый план подменится в начале ближайшего process (без аллокаций в audio). */
     void submitPlan(std::shared_ptr<GraphPlan> plan);
 
-    /** Вызывать из audio thread перед process: линейный gain и частота LP (как в APVTS). */
-    void applyLiveParameters(float gainLinear, float lowpassHz);
+    /** Вызывать из audio thread перед process (после чтения APVTS). */
+    void applyPhase3Parameters(const razumov::params::Phase3RealtimeParams& params);
 
     int getReportedLatencySamples() const noexcept { return reportedLatency_; }
 
 private:
     void swapAndPreparePendingPlan();
     void refreshParameterBindings();
+    void bindFromNode(AudioNode& node);
     void runSteps(juce::AudioBuffer<float>& buffer);
     void processParallel(ParallelStep& par, juce::AudioBuffer<float>& buffer);
 
@@ -60,8 +86,7 @@ private:
 
     int maxDelayStorage_ { 0 };
 
-    GainNode* gainBinding_ { nullptr };
-    FilterNode* filterBinding_ { nullptr };
+    GraphNodeBindings bindings_;
 };
 
 } // namespace razumov::graph

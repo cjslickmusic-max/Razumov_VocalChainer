@@ -24,13 +24,26 @@
 | Движок | `Source/dsp/graph/GraphEngine.*`, `MergeDelayPad.*` |
 | Фабрики планов | `Source/dsp/graph/GraphPlanFactory.*` |
 | Процессор | `Source/PluginProcessor.*` |
+| UI: полоса цепочки | `Source/ui/ChainStripComponent.*` |
+
+## UI (редактор)
+
+- Полоса **Signal path** (`ChainStripComponent`): read-only карточки и стрелки по текущему `chainProfile`, визуально в духе **normal** chain view из Razumov ShaperX (без drag/add/remove и без отдельного движка графа в UI).
+- Редактируемый граф по-прежнему задаётся кодом (`GraphPlanFactory`) + параметр `chainProfile`; свободная расстановка узлов (как Advanced canvas в ShaperX) в планах — отдельно, без привязки к текущему DSP.
 
 ## Тесты
 
 Консольная цель `RazumovVocalChainTests` (см. `CMakeLists.txt`): проверка отчётной задержки и параллели 0.5+0.5.
 
-## Параметры (фаза 2)
+## Параметры (фаза 2–3)
 
 - `AudioProcessorValueTreeState` в `PluginProcessor`: идентификаторы в `Source/params/ParamIDs.h`, раскладка в `Source/params/ParameterLayout.cpp`.
-- В `processBlock` значения читаются из APVTS и передаются в `GraphEngine::applyLiveParameters` (линейный gain, Hz для LP).
-- Узлы в активном плане находятся через `AudioNode::asGain()` / `asFilter()` и кэш `gainBinding_` / `filterBinding_` после смены/подготовки плана.
+- В `processBlock` значения читаются из APVTS, собираются в `razumov::params::Phase3RealtimeParams` и передаются в `GraphEngine::applyPhase3Parameters`.
+- Узлы в активном плане сопоставляются по `AudioNode::getKind()` и `GraphNodeBindings` после `refreshParameterBindings` при подготовке плана.
+
+## Пресеты (фаза 4)
+
+- Фабричный банк: `Source/presets/FactoryPresets.*`; `applyFactoryPreset` задаёт APVTS; индекс программы хоста (`getNumPrograms` / `setCurrentProgram`) совпадает с выбором в UI.
+- Стартовая цепочка: `chainProfile` в APVTS → `GraphPlanFactory::makeStartupChainForIndex` → `GraphEngine::submitPlan` (смена при автоматизации/загрузке проекта; `prepareToPlay` подаёт план по текущему индексу).
+- Макросы (`macroGlue` … `macroPresence`, 0…1, нейтраль 0.5): смещение групп параметров в `buildPhase3RealtimeParams` поверх значений ручек APVTS.
+- `MicCorrectionNode`: pass-through, `getLatencySamples() == 0` (профиль mic — по `docs/ROADMAP.md`). `SpectralCompressorNode`: STFT 1024 / hop 512, динамика по модулю с сохранением фазы; при активном spectral — `getLatencySamples() == 1024`, dry задержан и смешивается с wet; bypass — 0.

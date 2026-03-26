@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(RazumovVocalChain VERSION 0.3.0 LANGUAGES C CXX)
+project(RazumovVocalChain VERSION 0.8.1 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -40,6 +40,8 @@ target_sources(
     PRIVATE
         Source/PluginProcessor.cpp
         Source/PluginEditor.cpp
+        Source/ui/ChainStripComponent.cpp
+        Source/presets/FactoryPresets.cpp
         Source/params/ParameterLayout.cpp
         Source/dsp/graph/FilterNode.cpp
         Source/dsp/graph/LatencyNode.cpp
@@ -47,6 +49,11 @@ target_sources(
         Source/dsp/graph/GraphPlanFactory.cpp
         Source/dsp/graph/GraphEngine.cpp
         Source/dsp/graph/MergeDelayPad.cpp
+        Source/dsp/graph/MicCorrectionNode.cpp
+        Source/dsp/graph/CompressorArchetypeNode.cpp
+        Source/dsp/graph/DeesserNode.cpp
+        Source/dsp/graph/ExciterNode.cpp
+        Source/dsp/graph/SpectralCompressorNode.cpp
 )
 
 target_include_directories(
@@ -81,6 +88,11 @@ add_executable(
     Source/dsp/graph/GraphPlanFactory.cpp
     Source/dsp/graph/GraphEngine.cpp
     Source/dsp/graph/MergeDelayPad.cpp
+    Source/dsp/graph/MicCorrectionNode.cpp
+    Source/dsp/graph/CompressorArchetypeNode.cpp
+    Source/dsp/graph/DeesserNode.cpp
+    Source/dsp/graph/ExciterNode.cpp
+    Source/dsp/graph/SpectralCompressorNode.cpp
 )
 
 target_include_directories(

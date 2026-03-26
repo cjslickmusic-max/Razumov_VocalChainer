@@ -14,6 +14,8 @@ public:
 
     FilterNode* asFilter() noexcept override { return this; }
 
+    AudioNodeKind getKind() const noexcept override { return AudioNodeKind::Filter; }
+
     void setCutoffHz(float hz) noexcept { targetCutoffHz_ = juce::jmax(20.0f, hz); }
     float getCutoffHz() const noexcept { return targetCutoffHz_; }
 

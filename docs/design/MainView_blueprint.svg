@@ -1,0 +1,137 @@
+<svg width="1400" height="900" viewBox="0 0 1400 900" xmlns="http://www.w3.org/2000/svg">
+
+<!-- DEFINITIONS -->
+<defs>
+
+  <!-- Gradients -->
+  <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#0c1016"/>
+    <stop offset="100%" stop-color="#070a0f"/>
+  </linearGradient>
+
+  <linearGradient id="panelGrad" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#1a2230"/>
+    <stop offset="100%" stop-color="#121823"/>
+  </linearGradient>
+
+  <linearGradient id="nodeGrad" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#2c3a4d"/>
+    <stop offset="100%" stop-color="#1e2836"/>
+  </linearGradient>
+
+  <linearGradient id="accentBlue" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#5fa8ff"/>
+    <stop offset="100%" stop-color="#2b6cff"/>
+  </linearGradient>
+
+  <linearGradient id="accentOrange" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#ff9a4d"/>
+    <stop offset="100%" stop-color="#ff5a2b"/>
+  </linearGradient>
+
+  <!-- Glow -->
+  <filter id="glow">
+    <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+    <feMerge>
+      <feMergeNode in="coloredBlur"/>
+      <feMergeNode in="SourceGraphic"/>
+    </feMerge>
+  </filter>
+
+  <!-- Grid -->
+  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+    <path d="M40 0 L0 0 0 40" fill="none" stroke="#ffffff10" stroke-width="1"/>
+  </pattern>
+
+</defs>
+
+<!-- BACKGROUND -->
+<rect width="1400" height="900" fill="url(#bgGrad)"/>
+<rect width="1400" height="900" fill="url(#grid)" opacity="0.2"/>
+
+<!-- TOP BAR -->
+<rect x="40" y="20" width="1320" height="70" rx="14" fill="url(#panelGrad)"/>
+<text x="70" y="60" fill="#cfd8e3" font-size="18">Mic: SM7B</text>
+
+<!-- MACRO KNOBS -->
+<g>
+  <circle cx="1100" cy="55" r="18" fill="#1e2633"/>
+  <circle cx="1150" cy="55" r="18" fill="#1e2633"/>
+  <circle cx="1200" cy="55" r="18" fill="#1e2633"/>
+  <circle cx="1250" cy="55" r="18" fill="#1e2633"/>
+</g>
+
+<!-- MAIN NODES -->
+<g id="nodes">
+
+  <!-- NODE -->
+  <g>
+    <rect x="80" y="180" width="150" height="70" rx="14" fill="url(#nodeGrad)"/>
+    <text x="120" y="220" fill="#fff">Input</text>
+  </g>
+
+  <g>
+    <rect x="260" y="180" width="160" height="70" rx="14" fill="url(#nodeGrad)"/>
+    <text x="290" y="220" fill="#fff">Leveler</text>
+  </g>
+
+  <g filter="url(#glow)">
+    <rect x="460" y="180" width="170" height="70" rx="14" fill="url(#accentOrange)"/>
+    <text x="500" y="220" fill="#fff">1176</text>
+  </g>
+
+  <g filter="url(#glow)">
+    <rect x="660" y="180" width="170" height="70" rx="14" fill="url(#accentBlue)"/>
+    <text x="700" y="220" fill="#fff">Spectral</text>
+  </g>
+
+  <g>
+    <rect x="860" y="180" width="170" height="70" rx="14" fill="url(#nodeGrad)"/>
+    <text x="900" y="220" fill="#fff">LA-2A</text>
+  </g>
+
+  <g>
+    <rect x="1080" y="180" width="150" height="70" rx="14" fill="url(#nodeGrad)"/>
+    <text x="1120" y="220" fill="#fff">Output</text>
+  </g>
+
+</g>
+
+<!-- CONNECTIONS -->
+<g stroke="#6fa3ff" stroke-width="3" fill="none" opacity="0.8">
+  <path d="M230 215 C250 215,240 215,260 215"/>
+  <path d="M420 215 C440 215,440 215,460 215"/>
+  <path d="M630 215 C650 215,640 215,660 215"/>
+  <path d="M830 215 C850 215,840 215,860 215"/>
+  <path d="M1030 215 C1050 215,1040 215,1080 215"/>
+</g>
+
+<!-- PARALLEL CHAIN -->
+<g>
+
+  <rect x="300" y="320" width="180" height="70" rx="14" fill="#3b2a2a"/>
+  <text x="330" y="360" fill="#fff">Parallel Comp</text>
+
+  <rect x="520" y="320" width="150" height="70" rx="14" fill="#2f4a38"/>
+  <text x="560" y="360" fill="#fff">EQ</text>
+
+  <rect x="720" y="320" width="150" height="70" rx="14" fill="#5a4a2a"/>
+  <text x="760" y="360" fill="#fff">Exciter</text>
+
+  <rect x="920" y="320" width="150" height="70" rx="14" fill="#2a3f4f"/>
+  <text x="960" y="360" fill="#fff">Blend</text>
+
+</g>
+
+<!-- BOTTOM PANEL -->
+<rect x="40" y="450" width="1320" height="320" rx="20" fill="url(#panelGrad)"/>
+
+<!-- KNOBS -->
+<g>
+  <circle cx="200" cy="600" r="40" fill="#1c2430"/>
+  <circle cx="320" cy="600" r="40" fill="#1c2430"/>
+  <circle cx="440" cy="600" r="40" fill="#1c2430"/>
+  <circle cx="560" cy="600" r="40" fill="#1c2430"/>
+</g>
+
+</svg>

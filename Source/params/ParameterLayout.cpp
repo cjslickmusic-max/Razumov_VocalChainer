@@ -1,4 +1,5 @@
 #include "ParameterLayout.h"
+#include "MicProfileChoices.h"
 #include "ParamIDs.h"
 
 namespace razumov::params
@@ -112,6 +113,12 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
         "Spectral ratio",
         NormalisableRange<float> { 1.0f, 20.0f, 0.1f },
         3.0f));
+
+    params.push_back(std::make_unique<AudioParameterChoice>(
+        ParameterID { micProfile, 1 },
+        "Mic profile",
+        buildMicProfileChoiceStrings(),
+        0));
 
     params.push_back(std::make_unique<AudioParameterChoice>(
         ParameterID { chainProfile, 1 },

@@ -12,11 +12,17 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(
     RazumovVocalChainAudioProcessor& p)
     : AudioProcessorEditor(&p)
     , processor(p)
-    , chainStrip(processor.getAPVTS())
+    , chainStrip(processor)
 {
-    setSize(880, 700);
+    setSize(880, 732);
     setResizable(true, true);
     setResizeLimits(640, 480, 2000, 1600);
+
+    micProfileLabel.setText("Mic profile", juce::dontSendNotification);
+    micProfileLabel.setJustificationType(juce::Justification::centredRight);
+    micProfileLabel.setColour(juce::Label::textColourId, juce::Colour(0xffaab4c0));
+    addAndMakeVisible(micProfileLabel);
+    addAndMakeVisible(micProfileCombo);
 
     presetLabel.setText("Preset", juce::dontSendNotification);
     presetLabel.setJustificationType(juce::Justification::centredRight);
@@ -39,6 +45,9 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(
     viewport.setScrollBarsShown(true, false);
 
     auto& apvts = processor.getAPVTS();
+
+    micProfileAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(
+        apvts, razumov::params::micProfile, micProfileCombo);
 
     chainLabel.setText("Chain", juce::dontSendNotification);
     chainLabel.setJustificationType(juce::Justification::centredRight);
@@ -166,7 +175,7 @@ void RazumovVocalChainAudioProcessorEditor::paint(juce::Graphics& g)
     g.setColour(juce::Colour(0xffaab4c0));
     auto ver = titleRow;
     ver.removeFromRight(620);
-    g.drawText("v0.8.1", ver, juce::Justification::centredRight);
+    g.drawText("v0.8.2", ver, juce::Justification::centredRight);
 }
 
 void RazumovVocalChainAudioProcessorEditor::resized()
@@ -178,6 +187,11 @@ void RazumovVocalChainAudioProcessorEditor::resized()
     chainLabel.setBounds(bar.removeFromRight(52).reduced(4, 10));
     presetCombo.setBounds(bar.removeFromRight(220).reduced(4, 8));
     presetLabel.setBounds(bar.removeFromRight(52).reduced(4, 10));
+
+    auto micRow = bounds.removeFromTop(32);
+    micProfileCombo.setBounds(micRow.removeFromRight(320).reduced(4, 4));
+    micProfileLabel.setBounds(micRow.removeFromRight(88).reduced(4, 6));
+
     chainStrip.setBounds(bounds.removeFromTop(58));
     viewport.setBounds(bounds);
 

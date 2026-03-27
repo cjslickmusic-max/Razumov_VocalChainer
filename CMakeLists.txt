@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(RazumovVocalChain VERSION 0.8.1 LANGUAGES C CXX)
+project(RazumovVocalChain VERSION 0.8.2 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -43,9 +43,12 @@ target_sources(
         Source/ui/ChainStripComponent.cpp
         Source/presets/FactoryPresets.cpp
         Source/params/ParameterLayout.cpp
+        Source/params/MicProfileChoices.cpp
         Source/dsp/graph/FilterNode.cpp
         Source/dsp/graph/LatencyNode.cpp
-        Source/dsp/graph/GraphPlan.cpp
+        Source/dsp/graph/FlexGraphDesc.cpp
+        Source/dsp/graph/FlexGraphPlan.cpp
+        Source/dsp/graph/AudioNodeFactory.cpp
         Source/dsp/graph/GraphPlanFactory.cpp
         Source/dsp/graph/GraphEngine.cpp
         Source/dsp/graph/MergeDelayPad.cpp
@@ -84,7 +87,9 @@ add_executable(
     Tests/GraphTests.cpp
     Source/dsp/graph/FilterNode.cpp
     Source/dsp/graph/LatencyNode.cpp
-    Source/dsp/graph/GraphPlan.cpp
+    Source/dsp/graph/FlexGraphDesc.cpp
+    Source/dsp/graph/FlexGraphPlan.cpp
+    Source/dsp/graph/AudioNodeFactory.cpp
     Source/dsp/graph/GraphPlanFactory.cpp
     Source/dsp/graph/GraphEngine.cpp
     Source/dsp/graph/MergeDelayPad.cpp
@@ -106,6 +111,7 @@ target_link_libraries(
     PRIVATE
         juce::juce_dsp
         juce::juce_audio_basics
+        juce::juce_core
 )
 
 enable_testing()

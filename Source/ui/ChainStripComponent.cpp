@@ -1,24 +1,13 @@
 #include "ChainStripComponent.h"
+#include "PluginProcessor.h"
 #include "params/ParamIDs.h"
 
 namespace razumov::ui
 {
-namespace
-{
-constexpr const char* kFull[] = {
-    "Mic", "Gain", "LP", "De-ess", "Opto", "FET", "VCA", "Exc", "Spec",
-};
-constexpr const char* kCompact[] = {
-    "Mic", "Gain", "LP", "Opto", "Exc", "Spec",
-};
-constexpr const char* kFetFwd[] = {
-    "Mic", "Gain", "LP", "De-ess", "FET", "Opto", "VCA", "Exc", "Spec",
-};
 
-} // namespace
-
-ChainStripComponent::ChainStripComponent(juce::AudioProcessorValueTreeState& apvts)
-    : apvts_(apvts)
+ChainStripComponent::ChainStripComponent(RazumovVocalChainAudioProcessor& processor)
+    : processor_(processor)
+    , apvts_(processor.getAPVTS())
 {
     apvts_.addParameterListener(razumov::params::chainProfile, this);
 }
@@ -33,13 +22,6 @@ void ChainStripComponent::parameterChanged(const juce::String& parameterID, floa
     juce::ignoreUnused(newValue);
     if (parameterID == razumov::params::chainProfile)
         repaint();
-}
-
-int ChainStripComponent::getChainProfileIndex() const
-{
-    if (auto* p = dynamic_cast<juce::AudioParameterChoice*>(apvts_.getParameter(razumov::params::chainProfile)))
-        return p->getIndex();
-    return 0;
 }
 
 void ChainStripComponent::paint(juce::Graphics& g)
@@ -57,25 +39,8 @@ void ChainStripComponent::paint(juce::Graphics& g)
     g.setFont(juce::FontOptions(11.0f));
     g.drawText("Signal path", area.removeFromTop(14), juce::Justification::centredLeft);
 
-    const char* const* labels = kFull;
-    int n = (int)(sizeof(kFull) / sizeof(kFull[0]));
-    switch (getChainProfileIndex())
-    {
-        case 1:
-            labels = kCompact;
-            n = (int)(sizeof(kCompact) / sizeof(kCompact[0]));
-            break;
-        case 2:
-            labels = kFetFwd;
-            n = (int)(sizeof(kFetFwd) / sizeof(kFetFwd[0]));
-            break;
-        case 0:
-        default:
-            labels = kFull;
-            n = (int)(sizeof(kFull) / sizeof(kFull[0]));
-            break;
-    }
-
+    const juce::StringArray labels = processor_.getChainStripLabelArray();
+    const int n = labels.size();
     if (n <= 0)
         return;
 
@@ -101,13 +66,12 @@ void ChainStripComponent::paint(juce::Graphics& g)
 
         g.setColour(textPri);
         g.setFont(juce::FontOptions(juce::jmin(13.0f, cardW * 0.22f), juce::Font::bold));
-        g.drawText(juce::String(labels[i]), card.reduced(4.0f), juce::Justification::centred);
+        g.drawText(labels[i], card.reduced(4.0f), juce::Justification::centred);
 
         x = card.getRight();
 
         if (i < n - 1)
         {
-            float ax = x + arrowW * 0.5f;
             g.setColour(accent.withAlpha(0.75f));
             g.drawArrow(juce::Line<float>(x + 4.0f, midY, x + arrowW - 2.0f, midY), 2.2f, 5.0f, 5.0f);
             x += arrowW;

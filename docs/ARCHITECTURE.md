@@ -2,17 +2,24 @@
 
 ## Поток аудио
 
-1. `RazumovVocalChainAudioProcessor::processBlock` вызывает `razumov::graph::GraphEngine::process` на стерео-буфере.
-2. `GraphEngine` держит **активный план** (`std::shared_ptr<GraphPlan>`). Новый план приходит через `submitPlan` (ожидаемо с message/UI thread), подхватывается в начале `process` **без** изменения векторов узлов внутри самого DSP-цикла (указатель на план меняется целиком).
-3. План состоит из шагов `std::variant<SerialStep, ParallelStep>`:
-   - **Serial:** узлы обрабатываются по очереди in-place.
-   - **Parallel:** вход копируется в `workL_` / `workR_`, ветки обрабатываются независимо, затем к каждой ветке применяется **дополнительная задержка** (`MergeDelayPad`), чтобы суммарная задержка веток совпала с `max(latLeft, latRight)`, после чего буферы **суммируются** в выход.
+1. `RazumovVocalChainAudioProcessor::processBlock` собирает `Phase3RealtimeParams` и вызывает `razumov::graph::GraphEngine::process(buffer, params)` на стерео-буфере.
+2. `GraphEngine` держит **активный план** (`std::shared_ptr<FlexGraphPlan>`). Новый план приходит через `submitPlan` (message/UI thread), подхватывается в начале `process` **без** изменения топологии внутри DSP-цикла (меняется указатель на план целиком).
+3. В начале `process`: **swap** pending-плана → **applyPhase3Parameters** (обход всего дерева) → расчёт динамической задержки → **рекурсивный** `processSegment` по корню.
+4. План — **FlexSegment** (`std::vector<FlexSlot>`), слот:
+   - **Module:** один `AudioNode`, in-place `process`, при `bypassed` — пропуск.
+   - **Split:** `N >= 2` веток (`FlexSegment` каждая). Вход копируется в **N** предвыделенных буферов пула, ветки обрабатываются независимо; к каждой ветке — **MergeDelayPad** до `max(lat_i)`; затем ветки **суммируются** в выходной буфер.
 
 ## Задержка (PDC)
 
 - Каждый узел реализует `AudioNode::getLatencySamples()`.
-- `GraphPlan::computePluginLatencySamples()` суммирует задержки serial-шагов; для parallel-шага добавляет **max** по веткам (после выравнивания merge это отчётная задержка секции).
-- `GraphEngine` вызывает `setLatencySamples` через callback при `prepare` и при смене плана (см. `PluginProcessor`).
+- По дереву: по **serial** — сумма задержек слотов; внутри **Split** — **max** по веткам; рекурсивно. Это же значение — отчётная задержка плагина для хоста.
+- `GraphEngine` вызывает `setLatencySamples` через callback при `prepare`, при смене плана и при изменении задержки внутри блока (например spectral bypass).
+
+## Описание vs исполнение
+
+- **`FlexSegmentDesc` / `FlexSlotDesc`** (`FlexGraphDesc.*`): POD-дерево для фабрики, UI и будущей сериализации.
+- **`FlexGraphPlan::buildFromDesc`** + **`AudioNodeFactory`**: сборка владеющего дерева `FlexSlot` с узлами.
+- **`GraphPlanFactory`**: типовые `FlexSegmentDesc` (в т.ч. `makeStartupDescForIndex` под `chainProfile`).
 
 ## Файлы
 
@@ -20,30 +27,32 @@
 |---------|------|
 | Базовый узел | `Source/dsp/graph/AudioNode.h` |
 | Gain / Filter / Latency | `Source/dsp/graph/GainNode.h`, `FilterNode.*`, `LatencyNode.*` |
-| План | `Source/dsp/graph/GraphPlan.*` |
+| Описание графа | `Source/dsp/graph/FlexGraphDesc.*` |
+| План исполнения | `Source/dsp/graph/FlexGraphPlan.*` |
+| Фабрика узлов | `Source/dsp/graph/AudioNodeFactory.*` |
 | Движок | `Source/dsp/graph/GraphEngine.*`, `MergeDelayPad.*` |
-| Фабрики планов | `Source/dsp/graph/GraphPlanFactory.*` |
+| Фабрики описаний | `Source/dsp/graph/GraphPlanFactory.*` |
 | Процессор | `Source/PluginProcessor.*` |
 | UI: полоса цепочки | `Source/ui/ChainStripComponent.*` |
 
 ## UI (редактор)
 
-- Полоса **Signal path** (`ChainStripComponent`): read-only карточки и стрелки по текущему `chainProfile`, визуально в духе **normal** chain view из Razumov ShaperX (без drag/add/remove и без отдельного движка графа в UI).
-- Редактируемый граф по-прежнему задаётся кодом (`GraphPlanFactory`) + параметр `chainProfile`; свободная расстановка узлов (как Advanced canvas в ShaperX) в планах — отдельно, без привязки к текущему DSP.
+- Полоса **Signal path** (`ChainStripComponent`): read-only карточки по **`segmentDescToChainStripLabels(graphDesc_)`** (синхронно с последним собранным планом); обновление при смене `chainProfile`.
+- Параметр **`micProfile`**: выбор профиля микрофона (список из датасета), пока **без** подгрузки в DSP.
+- Редактируемый граф в UI (canvas) — отдельно; сейчас топология задаётся кодом через `FlexSegmentDesc` + `chainProfile`.
 
 ## Тесты
 
-Консольная цель `RazumovVocalChainTests` (см. `CMakeLists.txt`): проверка отчётной задержки и параллели 0.5+0.5.
+Консольная цель `RazumovVocalChainTests`: отчётная задержка при несовпадающих задержках веток и параллель 0.5+0.5.
 
 ## Параметры (фаза 2–3)
 
-- `AudioProcessorValueTreeState` в `PluginProcessor`: идентификаторы в `Source/params/ParamIDs.h`, раскладка в `Source/params/ParameterLayout.cpp`.
-- В `processBlock` значения читаются из APVTS, собираются в `razumov::params::Phase3RealtimeParams` и передаются в `GraphEngine::applyPhase3Parameters`.
-- Узлы в активном плане сопоставляются по `AudioNode::getKind()` и `GraphNodeBindings` после `refreshParameterBindings` при подготовке плана.
+- `AudioProcessorValueTreeState`: `ParamIDs.h`, `ParameterLayout.cpp`.
+- В `processBlock` значения читаются из APVTS, собираются в `Phase3RealtimeParams` и передаются в **`GraphEngine::process(..., params)`**; обход дерева применяет параметры ко **всем** узлам данного `AudioNodeKind` (одни и те же значения APVTS на каждый экземпляр).
 
 ## Пресеты (фаза 4)
 
-- Фабричный банк: `Source/presets/FactoryPresets.*`; `applyFactoryPreset` задаёт APVTS; индекс программы хоста (`getNumPrograms` / `setCurrentProgram`) совпадает с выбором в UI.
-- Стартовая цепочка: `chainProfile` в APVTS → `GraphPlanFactory::makeStartupChainForIndex` → `GraphEngine::submitPlan` (смена при автоматизации/загрузке проекта; `prepareToPlay` подаёт план по текущему индексу).
-- Макросы (`macroGlue` … `macroPresence`, 0…1, нейтраль 0.5): смещение групп параметров в `buildPhase3RealtimeParams` поверх значений ручек APVTS.
-- `MicCorrectionNode`: pass-through, `getLatencySamples() == 0` (профиль mic — по `docs/ROADMAP.md`). `SpectralCompressorNode`: STFT 1024 / hop 512, динамика по модулю с сохранением фазы; при активном spectral — `getLatencySamples() == 1024`, dry задержан и смешивается с wet; bypass — 0.
+- Фабричный банк: `Source/presets/FactoryPresets.*`; `applyFactoryPreset` задаёт APVTS.
+- Стартовая цепочка: `chainProfile` → `makeStartupDescForIndex` → `graphDesc_` + `makePlanFromDesc` → `submitPlan`; `prepareToPlay` и загрузка состояния синхронизируют описание и план.
+- Макросы: смещение в `buildPhase3RealtimeParams`.
+- `MicCorrectionNode` / `SpectralCompressorNode`: см. `docs/ROADMAP.md` и комментарии в узлах.

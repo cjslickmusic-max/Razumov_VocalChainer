@@ -1,5 +1,6 @@
 #pragma once
 
+#include "dsp/graph/FlexGraphDesc.h"
 #include "dsp/graph/GraphEngine.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 
@@ -39,6 +40,9 @@ public:
     juce::AudioProcessorValueTreeState& getAPVTS() noexcept { return apvts; }
     const juce::AudioProcessorValueTreeState& getAPVTS() const noexcept { return apvts; }
 
+    /** Подписи для полосы цепочки (из текущего FlexSegmentDesc). */
+    juce::StringArray getChainStripLabelArray() const;
+
     /** Фабричный пресет (фаза 4); синхронизирует program index и APVTS. */
     void applyFactoryPreset(int index);
 
@@ -49,6 +53,7 @@ private:
 
     juce::AudioProcessorValueTreeState apvts;
     razumov::graph::GraphEngine graphEngine_;
+    razumov::graph::FlexSegmentDesc graphDesc_;
     double lastSampleRate_ { 44100.0 };
     int currentProgram_ { 0 };
 

@@ -1,14 +1,16 @@
+#include <dsp/graph/FlexGraphPlan.h>
 #include <dsp/graph/GraphEngine.h>
 #include <dsp/graph/GraphPlanFactory.h>
-#include <dsp/graph/GraphPlan.h>
+#include <params/Phase3RealtimeParams.h>
 
 #include <cassert>
 #include <cmath>
+#include <memory>
 
 static void testChainLatencySum()
 {
     using namespace razumov::graph;
-    auto plan = GraphPlanFactory::makeParallelMismatchedLatencyForTests();
+    auto plan = GraphPlanFactory::makePlanFromDesc(GraphPlanFactory::makeParallelMismatchedLatencyDescForTests());
     assert(plan != nullptr);
     const int lat = plan->computePluginLatencySamples();
     assert(lat == 64);
@@ -19,14 +21,16 @@ static void testParallelHalvesIsUnityGain()
     using namespace razumov::graph;
     GraphEngine engine;
     engine.prepare(48000.0, 512, 2);
-    engine.submitPlan(GraphPlanFactory::makeParallelHalves());
+    auto u = GraphPlanFactory::makePlanFromDesc(GraphPlanFactory::makeParallelHalvesDesc());
+    engine.submitPlan(std::shared_ptr<FlexGraphPlan>(std::move(u)));
 
     juce::AudioBuffer<float> buf(2, 512);
     buf.clear();
     buf.setSample(0, 0, 1.0f);
     buf.setSample(1, 0, 1.0f);
 
-    engine.process(buf);
+    razumov::params::Phase3RealtimeParams p {};
+    engine.process(buf, p);
 
     const float l = buf.getSample(0, 0);
     const float r = buf.getSample(1, 0);

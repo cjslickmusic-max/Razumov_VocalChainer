@@ -37,6 +37,9 @@ inline constexpr const char* spectralRatio = "spectralRatio";
 /** Стартовая топология графа (фаза 4.2): Full / Compact / FET-forward. */
 inline constexpr const char* chainProfile = "chainProfile";
 
+/** Профиль микрофона (данные позже); сейчас только выбор в UI. */
+inline constexpr const char* micProfile = "micProfile";
+
 /** Макросы 0…1, нейтраль 0.5 (фаза 4.3) — смещение групп параметров в DSP. */
 inline constexpr const char* macroGlue = "macroGlue";
 inline constexpr const char* macroAir = "macroAir";

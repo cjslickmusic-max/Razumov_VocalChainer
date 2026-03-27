@@ -1,164 +1,163 @@
 #include "GraphPlanFactory.h"
 #include "CompressorArchetypeNode.h"
-#include "DeesserNode.h"
-#include "ExciterNode.h"
-#include "FilterNode.h"
-#include "GainNode.h"
-#include "LatencyNode.h"
-#include "MicCorrectionNode.h"
-#include "SpectralCompressorNode.h"
 
 namespace razumov::graph
 {
-
-std::unique_ptr<GraphPlan> GraphPlanFactory::makePassthrough()
+namespace
 {
-    return std::make_unique<GraphPlan>();
+
+FlexSlotDesc module(AudioNodeKind kind)
+{
+    FlexSlotDesc d;
+    d.descType = FlexSlotDescType::Module;
+    d.kind = kind;
+    return d;
 }
 
-std::unique_ptr<GraphPlan> GraphPlanFactory::makeSerialGainAndWideFilter(double sampleRate)
+FlexSlotDesc gainModule(float linear)
 {
-    auto gain = std::make_unique<GainNode>(1.0f);
-    auto filt = std::make_unique<FilterNode>();
-    (void) sampleRate;
-    filt->setCutoffHz(20000.0f);
-
-    SerialStep serial;
-    serial.nodes.push_back(std::move(gain));
-    serial.nodes.push_back(std::move(filt));
-
-    std::vector<GraphStep> steps;
-    steps.emplace_back(std::move(serial));
-    return std::make_unique<GraphPlan>(std::move(steps));
+    auto d = module(AudioNodeKind::Gain);
+    d.gainLinear = linear;
+    return d;
 }
 
-std::unique_ptr<GraphPlan> GraphPlanFactory::makeDefaultVocalChainPhase3(double sampleRate)
+FlexSlotDesc filterModule(float cutoffHz)
 {
-    (void) sampleRate;
-
-    SerialStep serial;
-
-    serial.nodes.push_back(std::make_unique<MicCorrectionNode>());
-
-    serial.nodes.push_back(std::make_unique<GainNode>(1.0f));
-
-    auto filt = std::make_unique<FilterNode>();
-    filt->setCutoffHz(20000.0f);
-    serial.nodes.push_back(std::move(filt));
-
-    serial.nodes.push_back(std::make_unique<DeesserNode>());
-
-    serial.nodes.push_back(
-        std::make_unique<CompressorArchetypeNode>(CompressorArchetypeNode::Archetype::Opto));
-    serial.nodes.push_back(
-        std::make_unique<CompressorArchetypeNode>(CompressorArchetypeNode::Archetype::Fet));
-    serial.nodes.push_back(
-        std::make_unique<CompressorArchetypeNode>(CompressorArchetypeNode::Archetype::Vca));
-
-    serial.nodes.push_back(std::make_unique<ExciterNode>());
-    serial.nodes.push_back(std::make_unique<SpectralCompressorNode>());
-
-    std::vector<GraphStep> steps;
-    steps.emplace_back(std::move(serial));
-    return std::make_unique<GraphPlan>(std::move(steps));
+    auto d = module(AudioNodeKind::Filter);
+    d.filterCutoffHz = cutoffHz;
+    return d;
 }
 
-std::unique_ptr<GraphPlan> GraphPlanFactory::makeCompactVocalChainPhase3(double sampleRate)
+FlexSlotDesc latencyModule(int samples)
 {
-    (void) sampleRate;
-
-    SerialStep serial;
-
-    serial.nodes.push_back(std::make_unique<MicCorrectionNode>());
-    serial.nodes.push_back(std::make_unique<GainNode>(1.0f));
-
-    auto filt = std::make_unique<FilterNode>();
-    filt->setCutoffHz(20000.0f);
-    serial.nodes.push_back(std::move(filt));
-
-    serial.nodes.push_back(
-        std::make_unique<CompressorArchetypeNode>(CompressorArchetypeNode::Archetype::Opto));
-
-    serial.nodes.push_back(std::make_unique<ExciterNode>());
-    serial.nodes.push_back(std::make_unique<SpectralCompressorNode>());
-
-    std::vector<GraphStep> steps;
-    steps.emplace_back(std::move(serial));
-    return std::make_unique<GraphPlan>(std::move(steps));
+    auto d = module(AudioNodeKind::Latency);
+    d.latencySamples = samples;
+    return d;
 }
 
-std::unique_ptr<GraphPlan> GraphPlanFactory::makeFetForwardVocalChainPhase3(double sampleRate)
+FlexSlotDesc compressorModule(CompressorArchetypeNode::Archetype arch)
+{
+    FlexSlotDesc d;
+    d.descType = FlexSlotDescType::Module;
+    switch (arch)
+    {
+        case CompressorArchetypeNode::Archetype::Opto:
+            d.kind = AudioNodeKind::OptoCompressor;
+            break;
+        case CompressorArchetypeNode::Archetype::Fet:
+            d.kind = AudioNodeKind::FetCompressor;
+            break;
+        case CompressorArchetypeNode::Archetype::Vca:
+            d.kind = AudioNodeKind::VcaCompressor;
+            break;
+    }
+    return d;
+}
+
+} // namespace
+
+FlexSegmentDesc GraphPlanFactory::makePassthroughDesc()
+{
+    return {};
+}
+
+FlexSegmentDesc GraphPlanFactory::makeSerialGainAndWideFilterDesc(double sampleRate)
 {
     (void) sampleRate;
-
-    SerialStep serial;
-
-    serial.nodes.push_back(std::make_unique<MicCorrectionNode>());
-    serial.nodes.push_back(std::make_unique<GainNode>(1.0f));
-
-    auto filt = std::make_unique<FilterNode>();
-    filt->setCutoffHz(20000.0f);
-    serial.nodes.push_back(std::move(filt));
-
-    serial.nodes.push_back(std::make_unique<DeesserNode>());
-
-    serial.nodes.push_back(
-        std::make_unique<CompressorArchetypeNode>(CompressorArchetypeNode::Archetype::Fet));
-    serial.nodes.push_back(
-        std::make_unique<CompressorArchetypeNode>(CompressorArchetypeNode::Archetype::Opto));
-    serial.nodes.push_back(
-        std::make_unique<CompressorArchetypeNode>(CompressorArchetypeNode::Archetype::Vca));
-
-    serial.nodes.push_back(std::make_unique<ExciterNode>());
-    serial.nodes.push_back(std::make_unique<SpectralCompressorNode>());
-
-    std::vector<GraphStep> steps;
-    steps.emplace_back(std::move(serial));
-    return std::make_unique<GraphPlan>(std::move(steps));
+    FlexSegmentDesc d;
+    d.push_back(gainModule(1.0f));
+    d.push_back(filterModule(20000.0f));
+    return d;
 }
 
-std::unique_ptr<GraphPlan> GraphPlanFactory::makeStartupChainForIndex(int index, double sampleRate)
+FlexSegmentDesc GraphPlanFactory::makeDefaultVocalChainPhase3Desc(double sampleRate)
+{
+    (void) sampleRate;
+    FlexSegmentDesc d;
+    d.push_back(module(AudioNodeKind::MicCorrection));
+    d.push_back(gainModule(1.0f));
+    d.push_back(filterModule(20000.0f));
+    d.push_back(module(AudioNodeKind::Deesser));
+    d.push_back(compressorModule(CompressorArchetypeNode::Archetype::Opto));
+    d.push_back(compressorModule(CompressorArchetypeNode::Archetype::Fet));
+    d.push_back(compressorModule(CompressorArchetypeNode::Archetype::Vca));
+    d.push_back(module(AudioNodeKind::Exciter));
+    d.push_back(module(AudioNodeKind::SpectralCompressor));
+    return d;
+}
+
+FlexSegmentDesc GraphPlanFactory::makeCompactVocalChainPhase3Desc(double sampleRate)
+{
+    (void) sampleRate;
+    FlexSegmentDesc d;
+    d.push_back(module(AudioNodeKind::MicCorrection));
+    d.push_back(gainModule(1.0f));
+    d.push_back(filterModule(20000.0f));
+    d.push_back(compressorModule(CompressorArchetypeNode::Archetype::Opto));
+    d.push_back(module(AudioNodeKind::Exciter));
+    d.push_back(module(AudioNodeKind::SpectralCompressor));
+    return d;
+}
+
+FlexSegmentDesc GraphPlanFactory::makeFetForwardVocalChainPhase3Desc(double sampleRate)
+{
+    (void) sampleRate;
+    FlexSegmentDesc d;
+    d.push_back(module(AudioNodeKind::MicCorrection));
+    d.push_back(gainModule(1.0f));
+    d.push_back(filterModule(20000.0f));
+    d.push_back(module(AudioNodeKind::Deesser));
+    d.push_back(compressorModule(CompressorArchetypeNode::Archetype::Fet));
+    d.push_back(compressorModule(CompressorArchetypeNode::Archetype::Opto));
+    d.push_back(compressorModule(CompressorArchetypeNode::Archetype::Vca));
+    d.push_back(module(AudioNodeKind::Exciter));
+    d.push_back(module(AudioNodeKind::SpectralCompressor));
+    return d;
+}
+
+FlexSegmentDesc GraphPlanFactory::makeStartupDescForIndex(int index, double sampleRate)
 {
     switch (index)
     {
         case 1:
-            return makeCompactVocalChainPhase3(sampleRate);
+            return makeCompactVocalChainPhase3Desc(sampleRate);
         case 2:
-            return makeFetForwardVocalChainPhase3(sampleRate);
+            return makeFetForwardVocalChainPhase3Desc(sampleRate);
         case 0:
         default:
-            return makeDefaultVocalChainPhase3(sampleRate);
+            return makeDefaultVocalChainPhase3Desc(sampleRate);
     }
 }
 
-std::unique_ptr<GraphPlan> GraphPlanFactory::makeParallelHalves()
+FlexSegmentDesc GraphPlanFactory::makeParallelHalvesDesc()
 {
-    auto gl = std::make_unique<GainNode>(0.5f);
-    auto gr = std::make_unique<GainNode>(0.5f);
-
-    ParallelStep par;
-    par.left.push_back(std::move(gl));
-    par.right.push_back(std::move(gr));
-
-    std::vector<GraphStep> steps;
-    steps.emplace_back(std::move(par));
-    return std::make_unique<GraphPlan>(std::move(steps));
+    FlexSlotDesc split;
+    split.descType = FlexSlotDescType::Split;
+    split.branches.resize(2);
+    split.branches[0].push_back(gainModule(0.5f));
+    split.branches[1].push_back(gainModule(0.5f));
+    return FlexSegmentDesc { split };
 }
 
-std::unique_ptr<GraphPlan> GraphPlanFactory::makeParallelMismatchedLatencyForTests()
+FlexSegmentDesc GraphPlanFactory::makeParallelMismatchedLatencyDescForTests()
 {
-    auto gl = std::make_unique<GainNode>(0.5f);
-    auto dr = std::make_unique<LatencyNode>(64);
-    auto gr = std::make_unique<GainNode>(0.5f);
+    FlexSlotDesc split;
+    split.descType = FlexSlotDescType::Split;
+    split.branches.resize(2);
+    split.branches[0].push_back(gainModule(0.5f));
+    split.branches[1].push_back(latencyModule(64));
+    split.branches[1].push_back(gainModule(0.5f));
+    return FlexSegmentDesc { split };
+}
 
-    ParallelStep par;
-    par.left.push_back(std::move(gl));
-    par.right.push_back(std::move(dr));
-    par.right.push_back(std::move(gr));
+std::unique_ptr<FlexGraphPlan> GraphPlanFactory::makePlanFromDesc(const FlexSegmentDesc& desc)
+{
+    return std::make_unique<FlexGraphPlan>(FlexGraphPlan::buildFromDesc(desc));
+}
 
-    std::vector<GraphStep> steps;
-    steps.emplace_back(std::move(par));
-    return std::make_unique<GraphPlan>(std::move(steps));
+std::unique_ptr<FlexGraphPlan> GraphPlanFactory::makeStartupChainForIndex(int index, double sampleRate)
+{
+    return makePlanFromDesc(makeStartupDescForIndex(index, sampleRate));
 }
 
 } // namespace razumov::graph

@@ -18,9 +18,22 @@ void setBoolParam(juce::AudioProcessorValueTreeState& apvts, const juce::String&
         p->setValueNotifyingHost(value ? 1.0f : 0.0f);
 }
 
+void setChoiceParam(juce::AudioProcessorValueTreeState& apvts, const juce::String& id, int index)
+{
+    if (auto* p = dynamic_cast<juce::AudioParameterChoice*>(apvts.getParameter(id)))
+    {
+        const int n = p->choices.size();
+        if (n <= 0)
+            return;
+        const int i = juce::jlimit(0, n - 1, index);
+        p->setValueNotifyingHost(p->convertTo0to1((float) i));
+    }
+}
+
 void applyDefault(juce::AudioProcessorValueTreeState& apvts)
 {
     using namespace razumov::params;
+    setChoiceParam(apvts, micProfile, 0);
     setBoolParam(apvts, micBypass, false);
     setFloatParam(apvts, micAmount, 1.0f);
     setFloatParam(apvts, gainDb, 0.0f);

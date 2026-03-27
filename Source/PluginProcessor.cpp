@@ -1,5 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "dsp/graph/FlexGraphPlan.h"
 #include "dsp/graph/GraphPlanFactory.h"
 #include "params/ParamIDs.h"
 #include "params/ParameterLayout.h"
@@ -87,6 +88,7 @@ RazumovVocalChainAudioProcessor::RazumovVocalChainAudioProcessor()
 {
     graphEngine_.setLatencyCallback([this](int latency) { setLatencySamples(latency); });
     apvts.addParameterListener(razumov::params::chainProfile, this);
+    graphDesc_ = razumov::graph::GraphPlanFactory::makeStartupDescForIndex(getStartupChainIndex(apvts), 44100.0);
 }
 
 RazumovVocalChainAudioProcessor::~RazumovVocalChainAudioProcessor()
@@ -97,8 +99,9 @@ RazumovVocalChainAudioProcessor::~RazumovVocalChainAudioProcessor()
 void RazumovVocalChainAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
     lastSampleRate_ = sampleRate;
-    auto plan = razumov::graph::GraphPlanFactory::makeStartupChainForIndex(getStartupChainIndex(apvts), sampleRate);
-    graphEngine_.submitPlan(std::shared_ptr<razumov::graph::GraphPlan>(std::move(plan)));
+    graphDesc_ = razumov::graph::GraphPlanFactory::makeStartupDescForIndex(getStartupChainIndex(apvts), sampleRate);
+    auto plan = razumov::graph::GraphPlanFactory::makePlanFromDesc(graphDesc_);
+    graphEngine_.submitPlan(std::shared_ptr<razumov::graph::FlexGraphPlan>(std::move(plan)));
     graphEngine_.prepare(sampleRate, samplesPerBlock, 2);
 }
 
@@ -128,8 +131,7 @@ void RazumovVocalChainAudioProcessor::processBlock(juce::AudioBuffer<float>& buf
 
     juce::ScopedNoDenormals noDenormals;
 
-    graphEngine_.applyPhase3Parameters(buildPhase3RealtimeParams(apvts));
-    graphEngine_.process(buffer);
+    graphEngine_.process(buffer, buildPhase3RealtimeParams(apvts));
 }
 
 juce::AudioProcessorEditor* RazumovVocalChainAudioProcessor::createEditor()
@@ -175,8 +177,14 @@ void RazumovVocalChainAudioProcessor::parameterChanged(const juce::String& param
 void RazumovVocalChainAudioProcessor::submitGraphPlanForCurrentParameter()
 {
     const int idx = getStartupChainIndex(apvts);
-    auto plan = razumov::graph::GraphPlanFactory::makeStartupChainForIndex(idx, lastSampleRate_);
-    graphEngine_.submitPlan(std::shared_ptr<razumov::graph::GraphPlan>(std::move(plan)));
+    graphDesc_ = razumov::graph::GraphPlanFactory::makeStartupDescForIndex(idx, lastSampleRate_);
+    auto plan = razumov::graph::GraphPlanFactory::makePlanFromDesc(graphDesc_);
+    graphEngine_.submitPlan(std::shared_ptr<razumov::graph::FlexGraphPlan>(std::move(plan)));
+}
+
+juce::StringArray RazumovVocalChainAudioProcessor::getChainStripLabelArray() const
+{
+    return razumov::graph::segmentDescToChainStripLabels(graphDesc_);
 }
 
 void RazumovVocalChainAudioProcessor::changeProgramName(int index, const juce::String& newName)

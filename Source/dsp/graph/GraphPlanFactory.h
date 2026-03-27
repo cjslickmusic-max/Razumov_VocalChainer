@@ -1,40 +1,40 @@
 #pragma once
 
-#include "GraphPlan.h"
+#include "FlexGraphDesc.h"
+#include "FlexGraphPlan.h"
 #include <memory>
 
 namespace razumov::graph
 {
 
-/** Сборка типовых планов (UI/пресеты позже подставят свои). */
+/** Сборка описаний и планов (пресеты / тесты). */
 class GraphPlanFactory
 {
 public:
     /** Пустой граф — прозрачный проход. */
-    static std::unique_ptr<GraphPlan> makePassthrough();
+    static FlexSegmentDesc makePassthroughDesc();
 
-    /** Gain(1) + LP почти Nyquist — слышимо как passthrough. */
-    static std::unique_ptr<GraphPlan> makeSerialGainAndWideFilter(double sampleRate);
+    /** Описание: Gain(1) + LP почти Nyquist. */
+    static FlexSegmentDesc makeSerialGainAndWideFilterDesc(double sampleRate);
 
-    /**
-     * Цепочка фазы 3: mic slot (пока прозрачно) -> gain -> LP -> de-esser -> Opto/FET/VCA -> exciter -> spectral stub.
-     */
-    static std::unique_ptr<GraphPlan> makeDefaultVocalChainPhase3(double sampleRate);
+    /** Фаза 3: mic -> gain -> LP -> de-esser -> Opto/FET/VCA -> exciter -> spectral. */
+    static FlexSegmentDesc makeDefaultVocalChainPhase3Desc(double sampleRate);
 
-    /** Короче: без de-esser и без FET/VCA — один Opto, дальше exciter + spectral. */
-    static std::unique_ptr<GraphPlan> makeCompactVocalChainPhase3(double sampleRate);
+    static FlexSegmentDesc makeCompactVocalChainPhase3Desc(double sampleRate);
+    static FlexSegmentDesc makeFetForwardVocalChainPhase3Desc(double sampleRate);
 
-    /** Тот же набор узлов, порядок компрессоров: FET → Opto → VCA (другой «характер» цепи). */
-    static std::unique_ptr<GraphPlan> makeFetForwardVocalChainPhase3(double sampleRate);
+    /** Индекс 0 = Full, 1 = Compact, 2 = FET-forward (APVTS chainProfile). */
+    static FlexSegmentDesc makeStartupDescForIndex(int index, double sampleRate);
 
-    /** Индекс 0 = Full, 1 = Compact, 2 = FET-forward (см. APVTS chainProfile). */
-    static std::unique_ptr<GraphPlan> makeStartupChainForIndex(int index, double sampleRate);
+    /** Две ветки gain 0.5 + суммирование (уровень как у входа). */
+    static FlexSegmentDesc makeParallelHalvesDesc();
 
-    /** Две ветки с gain 0.5 + суммирование (уровень как у входа). */
-    static std::unique_ptr<GraphPlan> makeParallelHalves();
+    /** Разная задержка в ветках — merge с выравниванием (тесты). */
+    static FlexSegmentDesc makeParallelMismatchedLatencyDescForTests();
 
-    /** Для тестов: разная задержка в ветках — merge с выравниванием. */
-    static std::unique_ptr<GraphPlan> makeParallelMismatchedLatencyForTests();
+    static std::unique_ptr<FlexGraphPlan> makePlanFromDesc(const FlexSegmentDesc& desc);
+
+    static std::unique_ptr<FlexGraphPlan> makeStartupChainForIndex(int index, double sampleRate);
 };
 
 } // namespace razumov::graph

@@ -23,6 +23,8 @@ private:
     RazumovVocalChainAudioProcessor& processor;
     razumov::ui::ChainStripComponent chainStrip;
 
+    juce::Label micProfileLabel;
+    juce::ComboBox micProfileCombo;
     juce::Label presetLabel;
     juce::ComboBox presetCombo;
     juce::Label chainLabel;
@@ -87,6 +89,7 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> spectralMixAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> spectralThreshAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> spectralRatioAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> micProfileAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> chainAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroGlueAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroAirAttachment;

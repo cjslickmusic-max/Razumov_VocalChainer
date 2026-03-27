@@ -4,6 +4,13 @@
 
 ---
 
+## Quick check — v0.8.2 (2026-03-27) — Flex graph (serial + N-way parallel, PDC)
+
+- `FlexGraphDesc` / `FlexGraphPlan`, `AudioNodeFactory`, `GraphEngine` (merge pool + `MergeDelayPad` per branch); `GraphPlanFactory` через `FlexSegmentDesc`; Phase3 после swap в `process(buf, params)`; `micProfile` APVTS + UI; полоса цепочки из `graphDesc_`.
+- ReadLints (изменённые исходники); сборка Release + `RazumovVocalChainTests`: OK.
+
+---
+
 ## Quick check — v0.8.0 (2026-03-25) — Chain strip UI (ShaperX-style)
 
 - `ChainStripComponent`, `chainProfile` listener; сборка: OK.

@@ -48,7 +48,7 @@
 
 ## Параметры
 
-- **Глобально (APVTS):** `chainProfile`, `micProfile`, четыре макроса — `ParameterLayout.cpp`, `ParamIDs.h`.
+- **Глобально (APVTS):** `chainProfile`, `micProfile`, **восемь** макросов — `ParameterLayout.cpp`, `ParamIDs.h`.
 - **По экземпляру узла (per `slotId`):** `ModuleParamsRuntime` — атомики и узел `ModuleParams` внутри XML состояния плагина. В `processBlock` для каждого модуля: `fillSlot` → `Phase3RealtimeParams` → узел; макросы применяются в `applyMacroOffsetsToPhase3` после сырых значений слота.
 - **Загрузка старых проектов** без `ModuleParams`: разбор legacy `PARAM` в XML и начальное заполнение слотов (общий снимок).
 

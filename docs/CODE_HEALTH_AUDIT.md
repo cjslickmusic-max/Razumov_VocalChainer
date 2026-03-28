@@ -4,6 +4,14 @@
 
 ---
 
+## Quick check — v0.9.1 (2026-03-28) — code critique + GraphEngine split scratch
+
+- Аудит: `docs/CODE_REVIEW_CRITIQUE.md`; журнал `REFACTOR_SUSPICIOUS_LOG.md` (mutex, spectral scratch, fillSlot, walk apply).
+- `processSplit`: убрана аллокация `std::vector<int>` на блок — `latPerBranchScratch_` в `ensureBranchPool`.
+- ReadLints; Release + `RazumovVocalChainTests`: OK.
+
+---
+
 ## Quick check — v0.9.1 (2026-03-28) — merge PDC tests + nested split pads
 
 - `MergeDelayPad::setDelaySamples` не сбрасывает линию при том же `delay` (PDC между аудиоблоками). `GraphEngine`: раздельные merge pads по `splitDepth` и индексу ветки; вложенные split не конфликтуют с внешним уровнем. `FlexGraphPlan::computeMaxSplitNestingDepth()`.

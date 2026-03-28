@@ -60,6 +60,8 @@ private:
 
     std::vector<juce::AudioBuffer<float>> branchBuffers_;
     std::vector<std::unique_ptr<MergeDelayPad>> mergePads_;
+    /** Задержки веток при split; размер >= maxSplitBreadth, без аллокаций в processSplit. */
+    std::vector<int> latPerBranchScratch_;
 };
 
 } // namespace razumov::graph

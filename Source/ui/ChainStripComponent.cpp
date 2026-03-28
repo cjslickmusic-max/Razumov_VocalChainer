@@ -1,4 +1,5 @@
 #include "ChainStripComponent.h"
+#include "EditorVisualAssets.h"
 #include "PluginProcessor.h"
 #include "params/ParamIDs.h"
 #include <cmath>
@@ -127,6 +128,13 @@ void ChainStripComponent::paint(juce::Graphics& g)
         drawWire(g, w.a, w.b, wireCol);
 
     const float corner = 6.0f;
+
+    for (const auto& c : layout_.cards)
+    {
+        const bool sel = (c.slotId != 0 && c.slotId == selectedSlotId_);
+        if (sel && c.selectable)
+            drawRoundedRectGlow(g, c.bounds, corner, selOutline, 5);
+    }
 
     for (const auto& c : layout_.cards)
     {

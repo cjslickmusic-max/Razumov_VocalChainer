@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(RazumovVocalChain VERSION 0.9.6 LANGUAGES C CXX)
+project(RazumovVocalChain VERSION 0.9.7 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -17,6 +17,14 @@ FetchContent_Declare(
     GIT_TAG 8.0.12
 )
 FetchContent_MakeAvailable(juce)
+
+juce_add_binary_data(
+    RazumovVocalChainBinaryData
+    SOURCES
+        Resources/ui/brushed_panel_placeholder.png
+        Resources/ui/editor_corner_accent.svg
+        Resources/ui/editor_corner_accent_r.svg
+)
 
 juce_add_plugin(
     RazumovVocalChain
@@ -42,6 +50,7 @@ target_sources(
         Source/PluginEditor.cpp
         Source/ui/ChainStripComponent.cpp
         Source/ui/ChainStripLayout.cpp
+        Source/ui/EditorVisualAssets.cpp
         Source/presets/FactoryPresets.cpp
         Source/params/ParameterLayout.cpp
         Source/params/ModuleParamsRuntime.cpp
@@ -79,6 +88,7 @@ target_compile_definitions(
 target_link_libraries(
     RazumovVocalChain
     PRIVATE
+        RazumovVocalChainBinaryData
         juce::juce_audio_utils
         juce::juce_audio_processors
         juce::juce_dsp

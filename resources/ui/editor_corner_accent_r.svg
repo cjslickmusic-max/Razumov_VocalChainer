@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72">
+  <defs>
+    <linearGradient id="strokeGradR" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8ec4ff"/>
+      <stop offset="100%" stop-color="#4a8fd2"/>
+    </linearGradient>
+  </defs>
+  <path d="M 62 32 L 62 10 L 40 10" fill="none" stroke="url(#strokeGradR)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.92"/>
+  <circle cx="62" cy="10" r="2.2" fill="#c8e4ff" opacity="0.85"/>
+</svg>

@@ -152,6 +152,22 @@ FlexSegmentDesc GraphPlanFactory::makeParallelHalvesDesc()
     return d;
 }
 
+FlexSegmentDesc GraphPlanFactory::makeParallelHalvesPhaseAlignDesc(int branch0Align, int branch1Align)
+{
+    FlexSlotDesc split;
+    split.descType = FlexSlotDescType::Split;
+    split.branches.resize(2);
+    split.branchPhaseAlignSamples.resize(2);
+    split.branchPhaseAlignSamples[0] = juce::jlimit(0, kMaxBranchPhaseAlignSamples, branch0Align);
+    split.branchPhaseAlignSamples[1] = juce::jlimit(0, kMaxBranchPhaseAlignSamples, branch1Align);
+    split.branches[0].push_back(gainModule(0.5f));
+    split.branches[1].push_back(gainModule(0.5f));
+    FlexSegmentDesc d { split };
+    uint32_t n = 1;
+    assignUniqueSlotIds(d, n);
+    return d;
+}
+
 FlexSegmentDesc GraphPlanFactory::makeParallelThirdsDesc()
 {
     FlexSlotDesc split;

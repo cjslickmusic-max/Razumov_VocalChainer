@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(RazumovVocalChain VERSION 0.9.1 LANGUAGES C CXX)
+project(RazumovVocalChain VERSION 0.9.2 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -109,6 +109,7 @@ add_executable(
     Tests/TestMain.cpp
     Tests/GraphTests.cpp
     Tests/MergePdcTests.cpp
+    Tests/PhaseAlignTests.cpp
     Tests/FlexGraphSerializationTests.cpp
     Tests/DspDeterminismTests.cpp
     ${RAZUMOV_GRAPH_DSP_TEST_SOURCES}

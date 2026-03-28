@@ -4,6 +4,14 @@
 
 ---
 
+## Quick check — v0.9.2 (2026-03-28) — Phase G branch phase align + long regression script
+
+- `FlexSlotDesc` / `FlexSlot`: `branchPhaseAlignSamples`; `FlexGraphSerialization`: свойство `phaseAlign` на `Branch`; `slotLatencySamples` / `GraphEngine::processSplit`: phase pad + PDC pad; пул `phaseAlignPads_`.
+- `GraphPlanFactory::makeParallelHalvesPhaseAlignDesc`; `Tests/PhaseAlignTests.cpp`; stress включает phase-align сценарий; `scripts/regression_loop_until_duration.sh`.
+- Версия **0.9.2**; ReadLints; Release + оба тестовых таргета: OK.
+
+---
+
 ## Quick check — v0.9.1 (2026-03-28) — FlexGraph serialization tests + stress binary
 
 - `Tests/FlexGraphSerializationTests.cpp`: `ValueTree` round-trip (`isEquivalentTo`), пустой сегмент, `assignUniqueSlotIds` при `slotId == 0`.

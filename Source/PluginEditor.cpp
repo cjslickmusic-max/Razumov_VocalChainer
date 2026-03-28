@@ -612,7 +612,7 @@ void RazumovVocalChainAudioProcessorEditor::paint(juce::Graphics& g)
     g.setColour(juce::Colour(0xffaab4c0));
     auto ver = titleRow;
     ver.removeFromRight(620);
-    g.drawText("v0.9.1", ver, juce::Justification::centredRight);
+    g.drawText("v0.9.2", ver, juce::Justification::centredRight);
 }
 
 void RazumovVocalChainAudioProcessorEditor::resized()

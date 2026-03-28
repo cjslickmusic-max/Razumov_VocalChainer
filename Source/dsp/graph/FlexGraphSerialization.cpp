@@ -1,5 +1,7 @@
 #include "FlexGraphSerialization.h"
 
+#include "FlexGraphDesc.h"
+
 namespace razumov::graph
 {
 namespace
@@ -23,10 +25,12 @@ juce::ValueTree slotToTree(const FlexSlotDesc& s)
     }
 
     t.setProperty("shape", "split", nullptr);
-    for (const auto& branch : s.branches)
+    for (size_t bi = 0; bi < s.branches.size(); ++bi)
     {
         juce::ValueTree b(flexBranchValueTreeType);
-        for (const auto& child : branch)
+        const int pa = (bi < s.branchPhaseAlignSamples.size()) ? s.branchPhaseAlignSamples[bi] : 0;
+        b.setProperty("phaseAlign", juce::jlimit(0, kMaxBranchPhaseAlignSamples, pa), nullptr);
+        for (const auto& child : s.branches[bi])
             b.addChild(slotToTree(child), -1, nullptr);
         t.addChild(b, -1, nullptr);
     }
@@ -60,12 +64,15 @@ bool treeToSlot(const juce::ValueTree& t, FlexSlotDesc& s) noexcept
     s.descType = FlexSlotDescType::Split;
     s.kind = AudioNodeKind::Gain;
     s.branches.clear();
+    s.branchPhaseAlignSamples.clear();
 
     for (int i = 0; i < t.getNumChildren(); ++i)
     {
         const auto b = t.getChild(i);
         if (!b.hasType(flexBranchValueTreeType))
             continue;
+        const int pa = juce::jlimit(0, kMaxBranchPhaseAlignSamples, (int) b.getProperty("phaseAlign", 0));
+        s.branchPhaseAlignSamples.push_back(pa);
         std::vector<FlexSlotDesc> branchSlots;
         for (int j = 0; j < b.getNumChildren(); ++j)
         {

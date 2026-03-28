@@ -1,14 +1,14 @@
 # Handoff для следующего агента — Razumov Vocal Chain
 
 **Дата:** 2026-03-28  
-**Состояние репозитория:** `main`, версия продукта **0.9.1** (`CMakeLists.txt`, строка версии в `PluginEditor::paint`).
+**Состояние репозитория:** `main`, версия продукта **0.9.2** (`CMakeLists.txt`, строка версии в `PluginEditor::paint`).
 
 ---
 
 ## 0. Система тестов (для следующего агента)
 
 - **Документ:** `docs/TESTING.md` — структура таргета, политика детерминизма / DC / фаза на задержке.
-- **Точка входа:** `Tests/TestMain.cpp` вызывает `runGraphEngineTests()` (`GraphTests.cpp`), `runMergePdcTests()` (`MergePdcTests.cpp`), `runFlexGraphSerializationTests()` (`FlexGraphSerializationTests.cpp`), `runDspDeterminismTests()` (`DspDeterminismTests.cpp`). Долгий stress: `StressMain.cpp` + `GraphStressTests.cpp` -> бинарник `RazumovVocalChainStressTests`.
+- **Точка входа:** `Tests/TestMain.cpp` вызывает `runGraphEngineTests()`, `runMergePdcTests()`, `runFlexGraphSerializationTests()`, `runPhaseAlignTests()` (`PhaseAlignTests.cpp`), `runDspDeterminismTests()`. Долгий stress: `RazumovVocalChainStressTests`; долгий wall-clock цикл: `scripts/regression_loop_until_duration.sh`.
 - **Хелперы:** `Tests/DspTestHelpers.h` (`fillSine`, сравнение буферов).
 - **Идея:** на одних и тех же входах узел даёт тот же выход после `reset()`; тишина на входе компрессоров → тишина на выходе; `LatencyNode` сохраняет сдвиг синуса; расширять новыми `run*Tests()` и вызовом из `TestMain`.
 

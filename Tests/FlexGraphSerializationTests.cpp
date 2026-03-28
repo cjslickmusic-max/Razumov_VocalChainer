@@ -36,6 +36,19 @@ void testRoundTripPassthroughEmpty()
     assert(vt.isEquivalentTo(vt2));
 }
 
+void testRoundTripPhaseAlignHalves()
+{
+    const auto desc = GraphPlanFactory::makeParallelHalvesPhaseAlignDesc(17, 4);
+    const juce::ValueTree vt = flexSegmentDescToValueTree(desc, 500u);
+
+    FlexSegmentDesc out;
+    uint32_t counterOut = 0;
+    assert(valueTreeToFlexSegmentDesc(vt, out, &counterOut));
+
+    const juce::ValueTree vt2 = flexSegmentDescToValueTree(out, counterOut);
+    assert(vt.isEquivalentTo(vt2));
+}
+
 void testMaxSlotIdMatchesAfterAssign()
 {
     auto desc = GraphPlanFactory::makeParallelThirdsDesc();
@@ -63,5 +76,6 @@ void runFlexGraphSerializationTests()
 {
     testRoundTripPreservesValueTree();
     testRoundTripPassthroughEmpty();
+    testRoundTripPhaseAlignHalves();
     testMaxSlotIdMatchesAfterAssign();
 }

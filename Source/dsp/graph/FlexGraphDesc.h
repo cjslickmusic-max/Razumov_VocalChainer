@@ -10,6 +10,9 @@
 namespace razumov::graph
 {
 
+/** Верхняя граница phase align на ветку (сэмплы), merge + PDC. */
+inline constexpr int kMaxBranchPhaseAlignSamples = 2048;
+
 /** POD-описание слота для UI/сериализации и сборки FlexGraphPlan (без владения DSP). */
 enum class FlexSlotDescType : uint8_t
 {
@@ -28,6 +31,9 @@ struct FlexSlotDesc
     float gainLinear { 1.0f };
     float filterCutoffHz { 20000.0f };
     int latencySamples { 0 };
+
+    /** Только для Split: доп. задержка на ветку (phase align, сэмплы), размер = branches.size(). */
+    std::vector<int> branchPhaseAlignSamples;
 
     std::vector<std::vector<FlexSlotDesc>> branches;
 };

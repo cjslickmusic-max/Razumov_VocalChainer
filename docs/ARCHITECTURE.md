@@ -7,12 +7,12 @@
 3. В начале `process`: **swap** pending-плана → для каждого модуля по `slotId` — `ModuleParamsRuntime::fillSlot` → `applyPhase3ToNode` → расчёт динамической задержки → **рекурсивный** `processSegment` по корню.
 4. План — **FlexSegment** (`std::vector<FlexSlot>`), слот:
    - **Module:** один `AudioNode`, in-place `process`, при `bypassed` — пропуск.
-   - **Split:** `N >= 2` веток (`FlexSegment` каждая). Вход копируется в **N** предвыделенных буферов пула, ветки обрабатываются независимо; к каждой ветке — **MergeDelayPad** до `max(lat_i)`; затем ветки **суммируются** в выходной буфер. Индекс pad: `splitDepth * maxSplitBreadth + branchIndex` (вложенные split не делят один и тот же экземпляр с внешним). Размер пула: `maxSplitBreadth * max(1, computeMaxSplitNestingDepth())` в `FlexGraphPlan`.
+   - **Split:** `N >= 2` веток (`FlexSegment` каждая). Вход копируется в **N** предвыделенных буферов пула, ветки обрабатываются независимо; к каждой ветке — **два** `MergeDelayPad` подряд: (1) **phase align** — целочисленная задержка `branchPhaseAlignSamples[i]` (этап G, подгонка фазы между ветками поверх PDC); (2) **PDC merge** — до `max(lat_i + phaseAlign_i)` по веткам; затем ветки **суммируются** в выходной буфер. Индекс pad: `splitDepth * maxSplitBreadth + branchIndex` (вложенные split не делят один и тот же экземпляр с внешним). Размер пула **на тип** (phase + PDC): `2 * maxSplitBreadth * max(1, computeMaxSplitNestingDepth())` в `GraphEngine::ensureBranchPool`.
 
 ## Задержка (PDC)
 
 - Каждый узел реализует `AudioNode::getLatencySamples()`.
-- По дереву: по **serial** — сумма задержек слотов; внутри **Split** — **max** по веткам; рекурсивно. Это же значение — отчётная задержка плагина для хоста.
+- По дереву: по **serial** — сумма задержек слотов; внутри **Split** — **max** по веткам **с учётом** `branchPhaseAlignSamples` на ветку; рекурсивно. Это же значение — отчётная задержка плагина для хоста.
 - `GraphEngine` вызывает `setLatencySamples` через callback при `prepare`, при смене плана и при изменении задержки внутри блока (например spectral bypass).
 
 ## Описание vs исполнение
@@ -44,7 +44,7 @@
 
 ## Тесты
 
-Консольная цель `RazumovVocalChainTests`: см. **`docs/TESTING.md`**. Граф (`GraphTests.cpp`): PDC/merge, импульсы, вложенные split. DSP (`DspDeterminismTests.cpp`): детерминизм узлов (компрессоры Opto/FET/VCA, Gain, Filter, De-esser, Exciter, Mic, `MergeDelayPad`, `LatencyNode`), тишина на нуле, сдвиг синуса на задержке, DC через Gain.
+Консольная цель `RazumovVocalChainTests`: см. **`docs/TESTING.md`**. Граф (`GraphTests.cpp`, `MergePdcTests.cpp`, `PhaseAlignTests.cpp`): PDC/merge, phase align на ветках, импульсы, вложенные split. DSP (`DspDeterminismTests.cpp`): детерминизм узлов (компрессоры Opto/FET/VCA, Gain, Filter, De-esser, Exciter, Mic, `MergeDelayPad`, `LatencyNode`), тишина на нуле, сдвиг синуса на задержке, DC через Gain.
 
 ## Параметры
 

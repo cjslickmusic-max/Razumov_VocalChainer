@@ -15,8 +15,14 @@ int slotLatencySamples(const FlexSlot& slot) noexcept
     }
 
     int mx = 0;
-    for (const auto& br : slot.branches)
-        mx = juce::jmax(mx, segmentLatencySamples(br));
+    for (size_t i = 0; i < slot.branches.size(); ++i)
+    {
+        const int ph = juce::jlimit(
+            0,
+            kMaxBranchPhaseAlignSamples,
+            (i < slot.branchPhaseAlignSamples.size()) ? slot.branchPhaseAlignSamples[i] : 0);
+        mx = juce::jmax(mx, segmentLatencySamples(slot.branches[i]) + ph);
+    }
     return mx;
 }
 
@@ -91,6 +97,12 @@ FlexSlot FlexGraphPlan::buildSlotFromDesc(const FlexSlotDesc& d)
     }
 
     slot.type = FlexSlot::Type::Split;
+    slot.branchPhaseAlignSamples.resize(d.branches.size(), 0);
+    for (size_t bi = 0; bi < d.branches.size(); ++bi)
+    {
+        const int v = (bi < d.branchPhaseAlignSamples.size()) ? d.branchPhaseAlignSamples[bi] : 0;
+        slot.branchPhaseAlignSamples[bi] = juce::jlimit(0, kMaxBranchPhaseAlignSamples, v);
+    }
     for (const auto& branchDesc : d.branches)
     {
         FlexSegment branch;

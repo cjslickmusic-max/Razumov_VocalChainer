@@ -28,7 +28,9 @@
 | + | 1.4 | Очередь изменений графа (message thread → audio): без модификации вектора узлов в `processBlock` | Нет крашей при смене цепочки в хосте |
 | + | 1.5 | Заглушки: `GainNode`, `FilterNode` (минимум) | Регрессия: проход сигнала, измеримая фильтрация |
 
-**Дальше по фазе 1 (не блокер для фазы 2):** редактор графа в UI, расширенный формат плана. DSP-тесты импульса/DC/PDC на merge и вложенных split — `Tests/GraphTests.cpp`, `Tests/MergePdcTests.cpp` (2026-03-28).
+**Дальше по фазе 1 (не блокер для фазы 2):** редактор графа в UI, расширенный формат плана. DSP-тесты импульса/DC/PDC на merge и вложенных split — `Tests/GraphTests.cpp`, `Tests/MergePdcTests.cpp`, `Tests/PhaseAlignTests.cpp` (2026-03-28).
+
+**Этап G (продуктовый документ):** целочисленный **phase align** на ветках split (`branchPhaseAlignSamples` в `FlexSlotDesc` / ValueTree `phaseAlign` на `Branch`), два `MergeDelayPad` на ветку в `GraphEngine`; UI/автоматика all-pass — по мере следующих итераций.
 
 ---
 
@@ -128,4 +130,5 @@
 | 2026-03-28 | Система тестов: `TestMain.cpp`, `DspDeterminismTests.cpp`, `DspTestHelpers.h`, `docs/TESTING.md` — детерминизм узлов, тишина/DC/фаза на задержке |
 | 2026-03-28 | `MergePdcTests`: 3-way и вложенный mismatch на merge; синус/импульс = чистая задержка после PDC; детерминизм `SpectralCompressorNode` |
 | 2026-03-28 | `FlexGraphSerializationTests` + `RazumovVocalChainStressTests` (долгий DSP-прогон, `ctest -L stress`); общий список DSP-источников в CMake |
+| 2026-03-28 | v0.9.2: этап G — phase align на split-ветках (сериализация, `GraphEngine`, тесты); `scripts/regression_loop_until_duration.sh` для длительной регрессии |
 | 2026-03-28 | v0.9.0: per-instance параметры модулей по `slotId` (`ModuleParamsRuntime`), APVTS — chain/mic profile/макросы; инспектор по выбранному слоту; сохранение `ModuleParams` в state; миграция legacy XML |

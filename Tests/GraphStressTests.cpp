@@ -114,6 +114,7 @@ void stressGraphEnginesLongRun()
     stressOnePlan(GraphPlanFactory::makeNestedParallelMismatchedLatencyDescForTests());
     stressOnePlan(GraphPlanFactory::makeParallelHalvesDesc());
     stressOnePlan(GraphPlanFactory::makeParallelThirdsDesc());
+    stressOnePlan(GraphPlanFactory::makeParallelHalvesPhaseAlignDesc(13, 2));
 }
 
 void stressDualEnginesBitIdenticalStream()

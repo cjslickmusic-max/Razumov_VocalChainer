@@ -29,6 +29,9 @@ public:
     /** Две ветки gain 0.5 + суммирование (уровень как у входа). */
     static FlexSegmentDesc makeParallelHalvesDesc();
 
+    /** Как halves, но phase align (сэмплы) на ветках 0/1 — этап G. */
+    static FlexSegmentDesc makeParallelHalvesPhaseAlignDesc(int branch0Align, int branch1Align);
+
     /** Три ветки gain 1/3 + суммирование (тесты). */
     static FlexSegmentDesc makeParallelThirdsDesc();
 

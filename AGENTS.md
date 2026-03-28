@@ -57,6 +57,6 @@ JUCE **8.0.12** подтягивается через `FetchContent` при пе
 
 **Цель CMake:** `RazumovVocalChain` (объединённый таргет плагина + Standalone).
 
-**Версия:** `project(... VERSION x.y.z)` и `VERSION` внутри `juce_add_plugin` — держать синхронно в `CMakeLists.txt` (сейчас **0.9.1**: макросы x8, полоса цепочки с рядами для параллелей; per-slot модули + chain/mic profile).
+**Версия:** `project(... VERSION x.y.z)` и `VERSION` внутри `juce_add_plugin` — держать синхронно в `CMakeLists.txt` (сейчас **0.9.2**: phase align на split-ветках + PDC; макросы x8; per-slot модули + chain/mic profile).
 
 **Тесты:** `cmake --build build --target RazumovVocalChainTests` затем `./build/RazumovVocalChainTests`; долгий прогон: таргет `RazumovVocalChainStressTests` или `ctest` (см. **`docs/TESTING.md`**).

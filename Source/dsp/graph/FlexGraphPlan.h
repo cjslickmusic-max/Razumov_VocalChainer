@@ -22,6 +22,8 @@ struct FlexSlot
     uint32_t slotId { 0 };
     bool bypassed { false };
     std::unique_ptr<AudioNode> node;
+    /** Split: доп. задержка на ветку перед PDC merge (phase align). */
+    std::vector<int> branchPhaseAlignSamples;
     std::vector<std::vector<FlexSlot>> branches;
 };
 

@@ -10,6 +10,8 @@
 #include "params/ModuleParamsRuntime.h"
 #include "params/Phase3RealtimeParams.h"
 
+#include "FlexGraphDesc.h"
+
 #include <juce_core/juce_core.h>
 
 namespace razumov::graph
@@ -130,12 +132,17 @@ void GraphEngine::ensureBranchPool(int breadth)
     const int nest = activePlan_ != nullptr ? activePlan_->computeMaxSplitNestingDepth() : 1;
     const int padCount = b * juce::jmax(1, nest);
 
+    phaseAlignPads_.resize((size_t) padCount);
     mergePads_.resize((size_t) padCount);
     for (int i = 0; i < padCount; ++i)
     {
+        if (phaseAlignPads_[(size_t) i] == nullptr)
+            phaseAlignPads_[(size_t) i] = std::make_unique<MergeDelayPad>();
+
         if (mergePads_[(size_t) i] == nullptr)
             mergePads_[(size_t) i] = std::make_unique<MergeDelayPad>();
 
+        phaseAlignPads_[(size_t) i]->prepare(numChannels_, maxBlockSize_, maxDelayStorage_);
         mergePads_[(size_t) i]->prepare(numChannels_, maxBlockSize_, maxDelayStorage_);
     }
 }
@@ -277,7 +284,13 @@ void GraphEngine::processSplit(FlexSlot& slot, juce::AudioBuffer<float>& buffer,
 
     jassert(numBranches <= (int) latPerBranchScratch_.size());
     for (int i = 0; i < numBranches; ++i)
-        latPerBranchScratch_[(size_t) i] = segmentLatencySamples(slot.branches[(size_t) i]);
+    {
+        const int ph = juce::jlimit(
+            0,
+            kMaxBranchPhaseAlignSamples,
+            (i < (int) slot.branchPhaseAlignSamples.size()) ? slot.branchPhaseAlignSamples[(size_t) i] : 0);
+        latPerBranchScratch_[(size_t) i] = segmentLatencySamples(slot.branches[(size_t) i]) + ph;
+    }
 
     int mx = 0;
     for (int i = 0; i < numBranches; ++i)
@@ -295,10 +308,20 @@ void GraphEngine::processSplit(FlexSlot& slot, juce::AudioBuffer<float>& buffer,
 
         processSegment(slot.branches[(size_t) i], work, splitDepth + 1);
 
-        const int pad = mx - latPerBranchScratch_[(size_t) i];
         const int padIdx = padBase + i;
         jassert(padIdx >= 0 && padIdx < (int) mergePads_.size());
-        mergePads_[(size_t) padIdx]->setDelaySamples(pad);
+        const int ph = juce::jlimit(
+            0,
+            kMaxBranchPhaseAlignSamples,
+            (i < (int) slot.branchPhaseAlignSamples.size()) ? slot.branchPhaseAlignSamples[(size_t) i] : 0);
+        const int segLat = segmentLatencySamples(slot.branches[(size_t) i]);
+        const int pdcPad = mx - segLat - ph;
+        jassert(pdcPad >= 0);
+
+        phaseAlignPads_[(size_t) padIdx]->setDelaySamples(ph);
+        phaseAlignPads_[(size_t) padIdx]->process(work);
+
+        mergePads_[(size_t) padIdx]->setDelaySamples(pdcPad);
         mergePads_[(size_t) padIdx]->process(work);
     }
 

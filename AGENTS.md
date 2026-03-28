@@ -62,6 +62,6 @@ JUCE **8.0.12** подтягивается через `FetchContent` при пе
 
 **Версия:** `project(... VERSION x.y.z)` и `VERSION` внутри `juce_add_plugin` — держать синхронно в `CMakeLists.txt` (сейчас **0.9.7**: `COPY_PLUGIN_AFTER_BUILD` OFF — без копии в `~/Library/...`; VST3 в `Artifacts/` + `build/.../artefacts/`; цепочка в UI по дереву графа + fork/merge; phase align на split-ветках + PDC; макросы x8; per-slot модули + chain/mic profile).
 
-**UI ресурсы:** `juce_add_binary_data` (`RazumovVocalChainBinaryData`), PNG/SVG в `Resources/ui/`, см. `docs/design/UI_ASSETS.md`.
+**UI ресурсы:** `juce_add_binary_data` (`RazumovVocalChainBinaryData`), PNG/SVG в `resources/ui/`, см. `docs/design/UI_ASSETS.md`.
 
 **Тесты:** `cmake --build build --target RazumovVocalChainTests` затем `./build/RazumovVocalChainTests`; долгий прогон: таргет `RazumovVocalChainStressTests` или `ctest` (см. **`docs/TESTING.md`**). **Сборка после правок кода** — см. `.cursor/rules/agent-build-after-changes.mdc` (агент запускает сам).

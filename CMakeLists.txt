@@ -21,9 +21,9 @@ FetchContent_MakeAvailable(juce)
 juce_add_binary_data(
     RazumovVocalChainBinaryData
     SOURCES
-        Resources/ui/brushed_panel_placeholder.png
-        Resources/ui/editor_corner_accent.svg
-        Resources/ui/editor_corner_accent_r.svg
+        resources/ui/brushed_panel_placeholder.png
+        resources/ui/editor_corner_accent.svg
+        resources/ui/editor_corner_accent_r.svg
 )
 
 juce_add_plugin(

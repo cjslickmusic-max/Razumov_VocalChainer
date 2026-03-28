@@ -4,14 +4,14 @@
 
 | File | Size (px) | Role |
 |------|-----------|------|
-| `Resources/ui/brushed_panel_placeholder.png` | **512 x 256** | Brushed metal placeholder; tiled in editor at ~15% opacity over base fill. |
-| `Resources/ui/editor_corner_accent.svg` | **72 x 72** viewBox | Top-left accent (stroke + dot). |
-| `Resources/ui/editor_corner_accent_r.svg` | **72 x 72** viewBox | Top-right mirror accent. |
+| `resources/ui/brushed_panel_placeholder.png` | **512 x 256** | Brushed metal placeholder; tiled in editor at ~15% opacity over base fill. |
+| `resources/ui/editor_corner_accent.svg` | **72 x 72** viewBox | Top-left accent (stroke + dot). |
+| `resources/ui/editor_corner_accent_r.svg` | **72 x 72** viewBox | Top-right mirror accent. |
 
 Regenerate PNG (no third-party deps):
 
 ```bash
-python3 Resources/ui/generate_placeholder_texture.py
+python3 resources/ui/generate_placeholder_texture.py
 ```
 
 ## Code

@@ -4,6 +4,14 @@
 
 ---
 
+## Quick check — v0.9.1 (2026-03-28) — merge PDC tests + nested split pads
+
+- `MergeDelayPad::setDelaySamples` не сбрасывает линию при том же `delay` (PDC между аудиоблоками). `GraphEngine`: раздельные merge pads по `splitDepth` и индексу ветки; вложенные split не конфликтуют с внешним уровнем. `FlexGraphPlan::computeMaxSplitNestingDepth()`.
+- Фабрика: `makeParallelThirdsDesc`, `makeNestedParallelHalvesDesc`. Расширены `Tests/GraphTests.cpp`.
+- ReadLints на изменённых файлах; Release + `RazumovVocalChainTests`: OK.
+
+---
+
 ## Quick check — v0.9.1 (2026-03-28) — macros x8 + parallel strip rows
 
 - APVTS: `macroPunch` / `macroBody` / `macroSmooth` / `macroDensity`; `MacroAudioState` + `applyMacroOffsetsToPhase3`; UI: две строки по четыре макро-ротора; `ChainStripItem::row` + полоса 100px (ветки на нижнем ряду).

@@ -131,4 +131,26 @@ int FlexGraphPlan::computePluginLatencySamples() const noexcept
     return segmentLatencySamples(root_);
 }
 
+namespace
+{
+int maxSplitNestingDepthRec(const FlexSegment& seg) noexcept
+{
+    int m = 0;
+    for (const auto& slot : seg)
+    {
+        if (slot.type == FlexSlot::Type::Split)
+        {
+            for (const auto& br : slot.branches)
+                m = juce::jmax(m, 1 + maxSplitNestingDepthRec(br));
+        }
+    }
+    return m;
+}
+} // namespace
+
+int FlexGraphPlan::computeMaxSplitNestingDepth() const noexcept
+{
+    return maxSplitNestingDepthRec(root_);
+}
+
 } // namespace razumov::graph

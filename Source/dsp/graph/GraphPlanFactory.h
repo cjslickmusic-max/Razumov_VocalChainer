@@ -29,6 +29,12 @@ public:
     /** Две ветки gain 0.5 + суммирование (уровень как у входа). */
     static FlexSegmentDesc makeParallelHalvesDesc();
 
+    /** Три ветки gain 1/3 + суммирование (тесты). */
+    static FlexSegmentDesc makeParallelThirdsDesc();
+
+    /** Вложенный split: внутри ветки 0 — два gain 0.25, ветка 1 — gain 0.5 (сумма 1). */
+    static FlexSegmentDesc makeNestedParallelHalvesDesc();
+
     /** Разная задержка в ветках — merge с выравниванием (тесты). */
     static FlexSegmentDesc makeParallelMismatchedLatencyDescForTests();
 

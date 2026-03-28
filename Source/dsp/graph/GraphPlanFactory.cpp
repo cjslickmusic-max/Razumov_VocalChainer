@@ -152,6 +152,39 @@ FlexSegmentDesc GraphPlanFactory::makeParallelHalvesDesc()
     return d;
 }
 
+FlexSegmentDesc GraphPlanFactory::makeParallelThirdsDesc()
+{
+    FlexSlotDesc split;
+    split.descType = FlexSlotDescType::Split;
+    split.branches.resize(3);
+    split.branches[0].push_back(gainModule(1.0f / 3.0f));
+    split.branches[1].push_back(gainModule(1.0f / 3.0f));
+    split.branches[2].push_back(gainModule(1.0f / 3.0f));
+    FlexSegmentDesc d { split };
+    uint32_t n = 1;
+    assignUniqueSlotIds(d, n);
+    return d;
+}
+
+FlexSegmentDesc GraphPlanFactory::makeNestedParallelHalvesDesc()
+{
+    FlexSlotDesc inner;
+    inner.descType = FlexSlotDescType::Split;
+    inner.branches.resize(2);
+    inner.branches[0].push_back(gainModule(0.25f));
+    inner.branches[1].push_back(gainModule(0.25f));
+
+    FlexSlotDesc outer;
+    outer.descType = FlexSlotDescType::Split;
+    outer.branches.resize(2);
+    outer.branches[0].push_back(inner);
+    outer.branches[1].push_back(gainModule(0.5f));
+    FlexSegmentDesc d { outer };
+    uint32_t n = 1;
+    assignUniqueSlotIds(d, n);
+    return d;
+}
+
 FlexSegmentDesc GraphPlanFactory::makeParallelMismatchedLatencyDescForTests()
 {
     FlexSlotDesc split;

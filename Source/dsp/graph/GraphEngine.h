@@ -40,8 +40,8 @@ public:
 private:
     void swapAndPreparePendingPlan();
     void ensureBranchPool(int breadth);
-    void processSegment(FlexSegment& seg, juce::AudioBuffer<float>& buffer);
-    void processSplit(FlexSlot& slot, juce::AudioBuffer<float>& buffer);
+    void processSegment(FlexSegment& seg, juce::AudioBuffer<float>& buffer, int splitDepth);
+    void processSplit(FlexSlot& slot, juce::AudioBuffer<float>& buffer, int splitDepth);
 
     std::function<void(int)> onLatency_;
 
@@ -56,6 +56,7 @@ private:
     int reportedLatency_ { 0 };
 
     int maxDelayStorage_ { 0 };
+    int maxSplitBreadthForPads_ { 2 };
 
     std::vector<juce::AudioBuffer<float>> branchBuffers_;
     std::vector<std::unique_ptr<MergeDelayPad>> mergePads_;

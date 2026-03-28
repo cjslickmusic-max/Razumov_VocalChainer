@@ -118,13 +118,18 @@ void walkApplyPhase3Segment(FlexSegment& seg,
 
 void GraphEngine::ensureBranchPool(int breadth)
 {
-    const int n = juce::jmax(2, breadth);
-    branchBuffers_.resize((size_t) n);
-    for (auto& b : branchBuffers_)
-        b.setSize(numChannels_, maxBlockSize_, false, false, true);
+    const int b = juce::jmax(2, breadth);
+    maxSplitBreadthForPads_ = b;
 
-    mergePads_.resize((size_t) n);
-    for (int i = 0; i < n; ++i)
+    branchBuffers_.resize((size_t) b);
+    for (auto& bbuf : branchBuffers_)
+        bbuf.setSize(numChannels_, maxBlockSize_, false, false, true);
+
+    const int nest = activePlan_ != nullptr ? activePlan_->computeMaxSplitNestingDepth() : 1;
+    const int padCount = b * juce::jmax(1, nest);
+
+    mergePads_.resize((size_t) padCount);
+    for (int i = 0; i < padCount; ++i)
     {
         if (mergePads_[(size_t) i] == nullptr)
             mergePads_[(size_t) i] = std::make_unique<MergeDelayPad>();
@@ -234,10 +239,10 @@ void GraphEngine::process(juce::AudioBuffer<float>& buffer,
             onLatency_(reportedLatency_);
     }
 
-    processSegment(root, buffer);
+    processSegment(root, buffer, 0);
 }
 
-void GraphEngine::processSegment(FlexSegment& seg, juce::AudioBuffer<float>& buffer)
+void GraphEngine::processSegment(FlexSegment& seg, juce::AudioBuffer<float>& buffer, int splitDepth)
 {
     for (auto& slot : seg)
     {
@@ -249,12 +254,12 @@ void GraphEngine::processSegment(FlexSegment& seg, juce::AudioBuffer<float>& buf
         }
         else
         {
-            processSplit(slot, buffer);
+            processSplit(slot, buffer, splitDepth);
         }
     }
 }
 
-void GraphEngine::processSplit(FlexSlot& slot, juce::AudioBuffer<float>& buffer)
+void GraphEngine::processSplit(FlexSlot& slot, juce::AudioBuffer<float>& buffer, int splitDepth)
 {
     if (slot.bypassed)
         return;
@@ -276,6 +281,8 @@ void GraphEngine::processSplit(FlexSlot& slot, juce::AudioBuffer<float>& buffer)
     for (int l : latPerBranch)
         mx = juce::jmax(mx, l);
 
+    const int padBase = splitDepth * maxSplitBreadthForPads_;
+
     for (int i = 0; i < numBranches; ++i)
     {
         auto& work = branchBuffers_[(size_t) i];
@@ -284,11 +291,13 @@ void GraphEngine::processSplit(FlexSlot& slot, juce::AudioBuffer<float>& buffer)
         for (int c = 0; c < ch; ++c)
             work.copyFrom(c, 0, buffer, c, 0, n);
 
-        processSegment(slot.branches[(size_t) i], work);
+        processSegment(slot.branches[(size_t) i], work, splitDepth + 1);
 
         const int pad = mx - latPerBranch[(size_t) i];
-        mergePads_[(size_t) i]->setDelaySamples(pad);
-        mergePads_[(size_t) i]->process(work);
+        const int padIdx = padBase + i;
+        jassert(padIdx >= 0 && padIdx < (int) mergePads_.size());
+        mergePads_[(size_t) padIdx]->setDelaySamples(pad);
+        mergePads_[(size_t) padIdx]->process(work);
     }
 
     buffer.clear();

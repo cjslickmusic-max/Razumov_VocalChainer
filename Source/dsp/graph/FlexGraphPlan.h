@@ -49,6 +49,12 @@ public:
     /** Serial: сумма задержек слотов; Split: max по веткам; суммируется по корню. */
     int computePluginLatencySamples() const noexcept;
 
+    /**
+     * Максимальная глубина вложенности Split (1 = один параллель без внутренних split).
+     * Нужна для размера пула MergeDelayPad: maxSplitBreadth * max(1, depth).
+     */
+    int computeMaxSplitNestingDepth() const noexcept;
+
     static FlexGraphPlan buildFromDesc(const FlexSegmentDesc& desc);
 
 private:

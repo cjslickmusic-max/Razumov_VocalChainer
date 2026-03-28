@@ -28,7 +28,7 @@
 | + | 1.4 | Очередь изменений графа (message thread → audio): без модификации вектора узлов в `processBlock` | Нет крашей при смене цепочки в хосте |
 | + | 1.5 | Заглушки: `GainNode`, `FilterNode` (минимум) | Регрессия: проход сигнала, измеримая фильтрация |
 
-**Дальше по фазе 1 (не блокер для фазы 2):** редактор графа в UI, расширенный формат плана, DSP-тесты импульса/фазы на merge.
+**Дальше по фазе 1 (не блокер для фазы 2):** редактор графа в UI, расширенный формат плана. DSP-тесты импульса/DC/PDC на merge и вложенных split — см. `Tests/GraphTests.cpp` (2026-03-28).
 
 ---
 
@@ -124,4 +124,5 @@
 | 2026-03-27 | v0.8.2: FlexGraph (serial + N-way parallel, PDC), `micProfile`, полоса цепочки из `graphDesc_` |
 | 2026-03-27 | v0.8.3: FlexGraph в APVTS (`FlexGraphSerialization`), выбор слота на полосе, toolbar Bypass/Remove/Add/Split x2/x3, глобальная зона Mic/Gain/макросы; `prepare` не затирает сохранённый граф |
 | 2026-03-28 | v0.9.1: макросы x8 (Punch/Body/Smooth/Density + существующие четыре); полоса цепочки — вложенные параллели на отдельном ряду (`ChainStripItem::row`); UI макросов — две строки |
+| 2026-03-28 | PDC merge: `MergeDelayPad` сохраняет состояние между блоками; пул merge pads по глубине split; расширенные `GraphTests` (импульс, DC, 3-way, nested, multi-block) |
 | 2026-03-28 | v0.9.0: per-instance параметры модулей по `slotId` (`ModuleParamsRuntime`), APVTS — chain/mic profile/макросы; инспектор по выбранному слоту; сохранение `ModuleParams` в state; миграция legacy XML |

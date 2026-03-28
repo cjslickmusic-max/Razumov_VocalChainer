@@ -16,9 +16,13 @@ void MergeDelayPad::prepare(int numChannels, int maxBlock, int maxDelay)
 
 void MergeDelayPad::setDelaySamples(int delaySamples)
 {
-    delaySamples_ = juce::jmax(0, delaySamples);
-    writePos_ = 0;
-    line_.clear();
+    const int d = juce::jmax(0, delaySamples);
+    if (d != delaySamples_)
+    {
+        delaySamples_ = d;
+        writePos_ = 0;
+        line_.clear();
+    }
 }
 
 void MergeDelayPad::process(juce::AudioBuffer<float>& buf)

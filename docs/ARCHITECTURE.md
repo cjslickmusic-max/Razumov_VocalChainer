@@ -7,7 +7,7 @@
 3. В начале `process`: **swap** pending-плана → для каждого модуля по `slotId` — `ModuleParamsRuntime::fillSlot` → `applyPhase3ToNode` → расчёт динамической задержки → **рекурсивный** `processSegment` по корню.
 4. План — **FlexSegment** (`std::vector<FlexSlot>`), слот:
    - **Module:** один `AudioNode`, in-place `process`, при `bypassed` — пропуск.
-   - **Split:** `N >= 2` веток (`FlexSegment` каждая). Вход копируется в **N** предвыделенных буферов пула, ветки обрабатываются независимо; к каждой ветке — **MergeDelayPad** до `max(lat_i)`; затем ветки **суммируются** в выходной буфер.
+   - **Split:** `N >= 2` веток (`FlexSegment` каждая). Вход копируется в **N** предвыделенных буферов пула, ветки обрабатываются независимо; к каждой ветке — **MergeDelayPad** до `max(lat_i)`; затем ветки **суммируются** в выходной буфер. Индекс pad: `splitDepth * maxSplitBreadth + branchIndex` (вложенные split не делят один и тот же экземпляр с внешним). Размер пула: `maxSplitBreadth * max(1, computeMaxSplitNestingDepth())` в `FlexGraphPlan`.
 
 ## Задержка (PDC)
 
@@ -44,7 +44,7 @@
 
 ## Тесты
 
-Консольная цель `RazumovVocalChainTests`: отчётная задержка при несовпадающих задержках веток и параллель 0.5+0.5.
+Консольная цель `RazumovVocalChainTests` (`Tests/GraphTests.cpp`): PDC/merge — импульс и DC при `0.5+0.5`, несовпадение задержек (пик на выравненной позиции), **многоблочный** сценарий с малым `blockSize` (состояние `MergeDelayPad` между блоками), три ветки `1/3+1/3+1/3`, вложенный split, серийный gain+широкий LP, согласованность `getReportedLatencySamples()`.
 
 ## Параметры
 

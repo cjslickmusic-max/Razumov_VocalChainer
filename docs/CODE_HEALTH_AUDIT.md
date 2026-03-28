@@ -4,6 +4,13 @@
 
 ---
 
+## Quick check — v0.9.5 (2026-03-28) — COPY_PLUGIN_AFTER_BUILD OFF (no ~/Library copy)
+
+- `CMakeLists.txt`: `COPY_PLUGIN_AFTER_BUILD FALSE`; `README.md`, `Artifacts/README.md`, `HANDOFF_NEXT_AGENT.md`, `plugin-artifacts-only.mdc`.
+- Версия **0.9.5**; `cmake -S . -B build` + `RazumovVocalChain_VST3`: по логу сборки без install в Library.
+
+---
+
 ## Quick check — v0.9.4 (2026-03-28) — Canonical VST3 in Artifacts/ via POST_BUILD
 
 - `CMakeLists.txt`: `POST_BUILD` на `RazumovVocalChain_VST3` -> `Artifacts/Razumov Vocal Chain.vst3`; `README.md`, `Artifacts/README.md`, `agent-build-after-changes.mdc` (сборка `RazumovVocalChain_VST3`).

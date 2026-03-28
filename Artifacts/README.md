@@ -12,4 +12,6 @@
 
 Ручное `cp` не нужно (копирование делает `POST_BUILD` в `CMakeLists.txt`).
 
+Сборка **не** кладёт плагин в `~/Library/Audio/Plug-Ins/` (`COPY_PLUGIN_AFTER_BUILD FALSE`), чтобы в REAPER не было двух копий. Старый файл в Library, если был от прошлых сборок, удали вручную один раз.
+
 Папка `Artifacts/*.vst3` в `.gitignore` — бинарники в git не коммитим.

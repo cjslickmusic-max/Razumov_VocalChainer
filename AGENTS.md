@@ -20,6 +20,7 @@
 |------|------|
 | `answer-in-russian.mdc` | Ответы на русском |
 | `response-version-footer.mdc` | В конце ответа — версия из `CMakeLists.txt` (x.y.z, напр. **0.9.3**) |
+| `plugin-artifacts-only.mdc` | Без копирования в системные Plug-Ins; канон — `Artifacts/` + `build/.../artefacts/` |
 | `cross-platform-only.mdc` | Без Win-only / Mac-only в общем коде |
 | `dsp-audio-safety.mdc` | Нет аллокаций/блокировок в audio thread; границы буферов |
 | `vocal-chain-graph-dsp.mdc` | Граф, latency, merge, фаза, отдельные компрессоры |
@@ -59,6 +60,6 @@ JUCE **8.0.12** подтягивается через `FetchContent` при пе
 
 **Цели CMake:** `RazumovVocalChain` — общий код; для **готового VST3** и копии в `Artifacts/` собирать **`RazumovVocalChain_VST3`** (после `POST_BUILD` плагин лежит в `Artifacts/Razumov Vocal Chain.vst3`).
 
-**Версия:** `project(... VERSION x.y.z)` и `VERSION` внутри `juce_add_plugin` — держать синхронно в `CMakeLists.txt` (сейчас **0.9.4**: канонический VST3 в `Artifacts/` после сборки `RazumovVocalChain_VST3`; цепочка в UI по дереву графа + fork/merge; phase align на split-ветках + PDC; макросы x8; per-slot модули + chain/mic profile).
+**Версия:** `project(... VERSION x.y.z)` и `VERSION` внутри `juce_add_plugin` — держать синхронно в `CMakeLists.txt` (сейчас **0.9.5**: `COPY_PLUGIN_AFTER_BUILD` OFF — без копии в `~/Library/...`; VST3 в `Artifacts/` + `build/.../artefacts/`; цепочка в UI по дереву графа + fork/merge; phase align на split-ветках + PDC; макросы x8; per-slot модули + chain/mic profile).
 
 **Тесты:** `cmake --build build --target RazumovVocalChainTests` затем `./build/RazumovVocalChainTests`; долгий прогон: таргет `RazumovVocalChainStressTests` или `ctest` (см. **`docs/TESTING.md`**). **Сборка после правок кода** — см. `.cursor/rules/agent-build-after-changes.mdc` (агент запускает сам).

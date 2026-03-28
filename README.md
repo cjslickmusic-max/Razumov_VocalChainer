@@ -39,10 +39,7 @@ cmake --build build --target RazumovVocalChainTests
 Если **`lib..._SharedCode.a` свежее, а `Razumov Vocal Chain.vst3` со старой датой** — инкрементальная сборка не перелинковала бандл. Сделайте полную пересборку цели:  
 `cmake --build build --parallel --target RazumovVocalChain` или явно `RazumovVocalChain_VST3` (или удалите каталог `build/RazumovVocalChain_artefacts` и соберите снова).
 
-Дополнительно JUCE при `COPY_PLUGIN_AFTER_BUILD` дублирует в пользовательские Plug-Ins (удобно для хостов, которые смотрят только туда):
-
-- `~/Library/Audio/Plug-Ins/VST3/Razumov Vocal Chain.vst3`
-- `~/Library/Audio/Plug-Ins/Components/Razumov Vocal Chain.component`
+**Системные Plug-Ins (macOS):** в проекте **`COPY_PLUGIN_AFTER_BUILD` выключен** — сборка **не** копирует VST3/AU в `~/Library/Audio/Plug-Ins/...`, чтобы в REAPER не появлялись **две копии** одного плагина (отдельно укажи только папку **`Artifacts`** в хосте). Если раньше JUCE уже копировал плагин в `~/Library/...`, удалите оттуда `Razumov Vocal Chain.vst3` / `.component`, чтобы не дублировать с `Artifacts/`.
 
 ## Сборка (Windows)
 

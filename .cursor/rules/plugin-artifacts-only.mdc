@@ -1,0 +1,11 @@
+---
+description: Плагин только в build/ и Artifacts/ — не копировать в системные Plug-Ins.
+alwaysApply: true
+---
+
+# Установка плагина (macOS / Windows)
+
+- В `CMakeLists.txt` для `juce_add_plugin` задано **`COPY_PLUGIN_AFTER_BUILD FALSE`**: JUCE **не** должен копировать бандлы в `~/Library/Audio/Plug-Ins/` (macOS) или в общие каталоги VST3 на Windows.
+- Каноническая копия для проверки в хосте: **`Artifacts/Razumov Vocal Chain.vst3`** (обновляется `POST_BUILD` при сборке `RazumovVocalChain_VST3`), плюс исходный вывод в `build/.../RazumovVocalChain_artefacts/.../VST3/`.
+- **Не предлагать** пользователю копировать VST3 в системную Library / Program Files ради удобства — это даёт **дубликаты** в REAPER и путаницу с версиями.
+- Если пользователь просит «убрать дубли» — напомнить про одну папку в настройках хоста (`Artifacts`) и при необходимости удалить старый экземпляр из `~/Library/Audio/Plug-Ins/VST3/` вручную (однократная чистка).

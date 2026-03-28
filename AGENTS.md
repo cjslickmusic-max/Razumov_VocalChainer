@@ -29,6 +29,7 @@
 | `code-health-check.mdc` | Scoped/Full аудит → `docs/CODE_HEALTH_AUDIT.md` |
 | `performance-checkpoints.mdc` | Замеры → `docs/PERF_CHECKPOINTS.md` |
 | `git-auto-checkpoint.mdc` | Локальные WIP-коммиты, если есть `.git` |
+| `agent-build-after-changes.mdc` | После правок кода — агент сам запускает сборку (`cmake --build`), пользователь не обязан компилировать вручную |
 | `ui-strings-ascii.mdc` | Строки UI — ASCII-first |
 | `refactor-suspicious-log.mdc` | Сомнения → `docs/REFACTOR_SUSPICIOUS_LOG.md` |
 
@@ -59,4 +60,4 @@ JUCE **8.0.12** подтягивается через `FetchContent` при пе
 
 **Версия:** `project(... VERSION x.y.z)` и `VERSION` внутри `juce_add_plugin` — держать синхронно в `CMakeLists.txt` (сейчас **0.9.2**: phase align на split-ветках + PDC; макросы x8; per-slot модули + chain/mic profile).
 
-**Тесты:** `cmake --build build --target RazumovVocalChainTests` затем `./build/RazumovVocalChainTests`; долгий прогон: таргет `RazumovVocalChainStressTests` или `ctest` (см. **`docs/TESTING.md`**).
+**Тесты:** `cmake --build build --target RazumovVocalChainTests` затем `./build/RazumovVocalChainTests`; долгий прогон: таргет `RazumovVocalChainStressTests` или `ctest` (см. **`docs/TESTING.md`**). **Сборка после правок кода** — см. `.cursor/rules/agent-build-after-changes.mdc` (агент запускает сам).

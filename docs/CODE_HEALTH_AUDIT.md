@@ -4,6 +4,15 @@
 
 ---
 
+## Quick check — v0.9.1 (2026-03-28) — FlexGraph serialization tests + stress binary
+
+- `Tests/FlexGraphSerializationTests.cpp`: `ValueTree` round-trip (`isEquivalentTo`), пустой сегмент, `assignUniqueSlotIds` при `slotId == 0`.
+- `Tests/GraphStressTests.cpp`, `RazumovVocalChainStressTests`: сотни тысяч/миллионы сэмплов (merge 2/3-way, nested, halves, thirds), два `GraphEngine` побитово, чередование `submitPlan`, `MergeDelayPad`, `SpectralCompressorNode`, полная phase3 цепочка; проверки `finite` и пик.
+- CMake: `RAZUMOV_GRAPH_DSP_TEST_SOURCES`, `ctest` `GraphStress` (LABELS `long`/`stress`, TIMEOUT 600). `docs/TESTING.md`, `AGENTS.md`.
+- ReadLints; Release: `RazumovVocalChainTests` + `RazumovVocalChainStressTests` + `RazumovVocalChain`: OK.
+
+---
+
 ## Quick check — v0.9.1 (2026-03-28) — MergePdcTests + Spectral determinism
 
 - `GraphPlanFactory`: `makeParallelThreeWayMismatchedLatencyDescForTests`, `makeNestedParallelMismatchedLatencyDescForTests`.

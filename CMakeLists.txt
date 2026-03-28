@@ -85,12 +85,8 @@ target_link_libraries(
         juce::juce_data_structures
 )
 
-add_executable(
-    RazumovVocalChainTests
-    Tests/TestMain.cpp
-    Tests/GraphTests.cpp
-    Tests/MergePdcTests.cpp
-    Tests/DspDeterminismTests.cpp
+set(
+    RAZUMOV_GRAPH_DSP_TEST_SOURCES
     Source/dsp/graph/FilterNode.cpp
     Source/dsp/graph/LatencyNode.cpp
     Source/dsp/graph/FlexGraphDesc.cpp
@@ -108,8 +104,32 @@ add_executable(
     Source/dsp/graph/SpectralCompressorNode.cpp
 )
 
+add_executable(
+    RazumovVocalChainTests
+    Tests/TestMain.cpp
+    Tests/GraphTests.cpp
+    Tests/MergePdcTests.cpp
+    Tests/FlexGraphSerializationTests.cpp
+    Tests/DspDeterminismTests.cpp
+    ${RAZUMOV_GRAPH_DSP_TEST_SOURCES}
+)
+
+add_executable(
+    RazumovVocalChainStressTests
+    Tests/StressMain.cpp
+    Tests/GraphStressTests.cpp
+    ${RAZUMOV_GRAPH_DSP_TEST_SOURCES}
+)
+
 target_include_directories(
     RazumovVocalChainTests
+    PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/Source"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Tests"
+)
+
+target_include_directories(
+    RazumovVocalChainStressTests
     PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/Source"
         "${CMAKE_CURRENT_SOURCE_DIR}/Tests"
@@ -125,5 +145,17 @@ target_link_libraries(
         juce::juce_data_structures
 )
 
+target_link_libraries(
+    RazumovVocalChainStressTests
+    PRIVATE
+        juce::juce_dsp
+        juce::juce_audio_basics
+        juce::juce_audio_processors
+        juce::juce_core
+        juce::juce_data_structures
+)
+
 enable_testing()
 add_test(NAME GraphEngine COMMAND $<TARGET_FILE:RazumovVocalChainTests>)
+add_test(NAME GraphStress COMMAND $<TARGET_FILE:RazumovVocalChainStressTests>)
+set_tests_properties(GraphStress PROPERTIES LABELS "long;stress" TIMEOUT 600)

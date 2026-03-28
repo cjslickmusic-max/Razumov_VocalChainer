@@ -8,17 +8,26 @@ cmake --build build --target RazumovVocalChainTests
 ./build/RazumovVocalChainTests
 ```
 
-`ctest` (если включён `enable_testing`): тест `GraphEngine` вызывает тот же бинарник.
+**Долгий stress-таргет** (миллионы сэмплов, типично **~10-20 с** wall на современном CPU; константы в `Tests/GraphStressTests.cpp`):
+
+```bash
+cmake --build build --target RazumovVocalChainStressTests
+./build/RazumovVocalChainStressTests
+```
+
+`ctest`: быстрый `GraphEngine` (`RazumovVocalChainTests`) и помеченный `long`/`stress` тест `GraphStress` (`RazumovVocalChainStressTests`). Только быстрые тесты: `ctest -LE stress` или исключите по метке.
 
 ## Структура
 
 | Файл | Назначение |
 |------|------------|
-| `Tests/TestMain.cpp` | `main`: `runGraphEngineTests()`, `runMergePdcTests()`, `runDspDeterminismTests()`. |
+| `Tests/TestMain.cpp` | `main`: `runGraphEngineTests()`, `runMergePdcTests()`, `runFlexGraphSerializationTests()`, `runDspDeterminismTests()`. |
 | `Tests/GraphTests.cpp` | Граф, merge, PDC, импульсы, вложенные split. |
 | `Tests/MergePdcTests.cpp` | 2/3-way merge + вложенный split: импульс, синус = чистая задержка после PDC, DC. |
+| `Tests/FlexGraphSerializationTests.cpp` | ValueTree round-trip, `assignUniqueSlotIds`, пустой сегмент. |
 | `Tests/DspDeterminismTests.cpp` | Детерминизм узлов (в т.ч. Spectral), тишина на компрессорах, задержка и фаза синуса. |
-| `Tests/DspTestHelpers.h` | Общие хелперы: `nearAbs`, `fillSine`, `assertBuffersNearEqual`, `copyBuffer`. |
+| `Tests/GraphStressTests.cpp` + `StressMain.cpp` | Отдельный бинарник: длинные прогоны merge/PDC, смена планов, Spectral, цепочка phase3, NaN/пик. |
+| `Tests/DspTestHelpers.h` | Общие хелперы: `nearAbs`, `fillSine`, `assertBuffersNearEqual`, `copyBuffer`, `buffersExactlyEqual`. |
 
 ## Политика проверок
 

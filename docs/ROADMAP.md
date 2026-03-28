@@ -127,4 +127,5 @@
 | 2026-03-28 | PDC merge: `MergeDelayPad` сохраняет состояние между блоками; пул merge pads по глубине split; расширенные `GraphTests` (импульс, DC, 3-way, nested, multi-block) |
 | 2026-03-28 | Система тестов: `TestMain.cpp`, `DspDeterminismTests.cpp`, `DspTestHelpers.h`, `docs/TESTING.md` — детерминизм узлов, тишина/DC/фаза на задержке |
 | 2026-03-28 | `MergePdcTests`: 3-way и вложенный mismatch на merge; синус/импульс = чистая задержка после PDC; детерминизм `SpectralCompressorNode` |
+| 2026-03-28 | `FlexGraphSerializationTests` + `RazumovVocalChainStressTests` (долгий DSP-прогон, `ctest -L stress`); общий список DSP-источников в CMake |
 | 2026-03-28 | v0.9.0: per-instance параметры модулей по `slotId` (`ModuleParamsRuntime`), APVTS — chain/mic profile/макросы; инспектор по выбранному слоту; сохранение `ModuleParams` в state; миграция legacy XML |

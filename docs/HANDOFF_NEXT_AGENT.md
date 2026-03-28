@@ -8,7 +8,7 @@
 ## 0. Система тестов (для следующего агента)
 
 - **Документ:** `docs/TESTING.md` — структура таргета, политика детерминизма / DC / фаза на задержке.
-- **Точка входа:** `Tests/TestMain.cpp` вызывает `runGraphEngineTests()` (`GraphTests.cpp`), `runMergePdcTests()` (`MergePdcTests.cpp`), `runDspDeterminismTests()` (`DspDeterminismTests.cpp`).
+- **Точка входа:** `Tests/TestMain.cpp` вызывает `runGraphEngineTests()` (`GraphTests.cpp`), `runMergePdcTests()` (`MergePdcTests.cpp`), `runFlexGraphSerializationTests()` (`FlexGraphSerializationTests.cpp`), `runDspDeterminismTests()` (`DspDeterminismTests.cpp`). Долгий stress: `StressMain.cpp` + `GraphStressTests.cpp` -> бинарник `RazumovVocalChainStressTests`.
 - **Хелперы:** `Tests/DspTestHelpers.h` (`fillSine`, сравнение буферов).
 - **Идея:** на одних и тех же входах узел даёт тот же выход после `reset()`; тишина на входе компрессоров → тишина на выходе; `LatencyNode` сохраняет сдвиг синуса; расширять новыми `run*Tests()` и вызовом из `TestMain`.
 

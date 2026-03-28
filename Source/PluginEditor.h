@@ -54,10 +54,18 @@ private:
     juce::Slider macroAirSlider;
     juce::Slider macroSibilanceSlider;
     juce::Slider macroPresenceSlider;
+    juce::Slider macroPunchSlider;
+    juce::Slider macroBodySlider;
+    juce::Slider macroSmoothSlider;
+    juce::Slider macroDensitySlider;
     juce::Label macroGlueLabel;
     juce::Label macroAirLabel;
     juce::Label macroSibilanceLabel;
     juce::Label macroPresenceLabel;
+    juce::Label macroPunchLabel;
+    juce::Label macroBodyLabel;
+    juce::Label macroSmoothLabel;
+    juce::Label macroDensityLabel;
 
     juce::ToggleButton micBypassBtn;
     juce::ToggleButton spectralBypassBtn;
@@ -89,6 +97,10 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroAirAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroSibilanceAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroPresenceAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroPunchAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroBodyAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroSmoothAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroDensityAttachment;
 
     uint32_t selectedSlotId_ { 0 };
 

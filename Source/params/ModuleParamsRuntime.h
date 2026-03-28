@@ -21,6 +21,10 @@ struct MacroAudioState
     float air01 { 0.5f };
     float sibil01 { 0.5f };
     float presence01 { 0.5f };
+    float punch01 { 0.5f };
+    float body01 { 0.5f };
+    float smooth01 { 0.5f };
+    float density01 { 0.5f };
 };
 
 /** Сырые значения на слот (как бывшие параметры APVTS), потокобезопасно для audio thread. */

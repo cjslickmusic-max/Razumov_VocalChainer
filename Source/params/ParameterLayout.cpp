@@ -36,6 +36,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
     addMacro(macroAir, "Macro Air");
     addMacro(macroSibilance, "Macro Sibilance");
     addMacro(macroPresence, "Macro Presence");
+    addMacro(macroPunch, "Macro Punch");
+    addMacro(macroBody, "Macro Body");
+    addMacro(macroSmooth, "Macro Smooth");
+    addMacro(macroDensity, "Macro Density");
 
     return { params.begin(), params.end() };
 }

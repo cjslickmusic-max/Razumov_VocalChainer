@@ -84,6 +84,14 @@ razumov::params::MacroAudioState buildMacroStateFromApvts(juce::AudioProcessorVa
         m.sibil01 = raw->load();
     if (auto* raw = apvts.getRawParameterValue(macroPresence))
         m.presence01 = raw->load();
+    if (auto* raw = apvts.getRawParameterValue(macroPunch))
+        m.punch01 = raw->load();
+    if (auto* raw = apvts.getRawParameterValue(macroBody))
+        m.body01 = raw->load();
+    if (auto* raw = apvts.getRawParameterValue(macroSmooth))
+        m.smooth01 = raw->load();
+    if (auto* raw = apvts.getRawParameterValue(macroDensity))
+        m.density01 = raw->load();
     return m;
 }
 

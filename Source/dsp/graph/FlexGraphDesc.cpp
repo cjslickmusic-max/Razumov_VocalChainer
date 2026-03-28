@@ -48,7 +48,7 @@ int maxBreadthInSegment(const FlexSegmentDesc& seg) noexcept
     return m;
 }
 
-void walkSegmentForStrip(const FlexSegmentDesc& seg, std::vector<ChainStripItem>& out)
+void walkSegmentForStrip(const FlexSegmentDesc& seg, std::vector<ChainStripItem>& out, int depth)
 {
     for (const auto& slot : seg)
     {
@@ -57,6 +57,7 @@ void walkSegmentForStrip(const FlexSegmentDesc& seg, std::vector<ChainStripItem>
             ChainStripItem it;
             it.slotId = slot.slotId;
             it.bypassed = slot.bypassed;
+            it.row = depth;
             it.label = slot.uiLabel.isNotEmpty() ? slot.uiLabel : juce::String(shortNameForKind(slot.kind));
             out.push_back(it);
             continue;
@@ -65,11 +66,12 @@ void walkSegmentForStrip(const FlexSegmentDesc& seg, std::vector<ChainStripItem>
         ChainStripItem splitIt;
         splitIt.slotId = slot.slotId;
         splitIt.bypassed = slot.bypassed;
+        splitIt.row = depth;
         splitIt.label = "Par" + juce::String((int) slot.branches.size());
         out.push_back(splitIt);
 
         for (const auto& br : slot.branches)
-            walkSegmentForStrip(br, out);
+            walkSegmentForStrip(br, out, depth + 1);
     }
 }
 
@@ -97,7 +99,7 @@ int computeMaxSplitBreadth(const FlexSegmentDesc& root) noexcept
 std::vector<ChainStripItem> segmentDescToChainStripItems(const FlexSegmentDesc& root)
 {
     std::vector<ChainStripItem> out;
-    walkSegmentForStrip(root, out);
+    walkSegmentForStrip(root, out, 0);
     return out;
 }
 

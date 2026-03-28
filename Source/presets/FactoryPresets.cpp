@@ -34,6 +34,10 @@ void applyPresetGlobalsNeutralMacros(juce::AudioProcessorValueTreeState& apvts)
     setFloatParam(apvts, macroAir, 0.5f);
     setFloatParam(apvts, macroSibilance, 0.5f);
     setFloatParam(apvts, macroPresence, 0.5f);
+    setFloatParam(apvts, macroPunch, 0.5f);
+    setFloatParam(apvts, macroBody, 0.5f);
+    setFloatParam(apvts, macroSmooth, 0.5f);
+    setFloatParam(apvts, macroDensity, 0.5f);
 }
 
 razumov::params::Phase3RealtimeParams buildDefaultModule()

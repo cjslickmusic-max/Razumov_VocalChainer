@@ -4,6 +4,13 @@
 
 ---
 
+## Quick check — v0.9.1 (2026-03-28) — macros x8 + parallel strip rows
+
+- APVTS: `macroPunch` / `macroBody` / `macroSmooth` / `macroDensity`; `MacroAudioState` + `applyMacroOffsetsToPhase3`; UI: две строки по четыре макро-ротора; `ChainStripItem::row` + полоса 100px (ветки на нижнем ряду).
+- ReadLints (изменённые файлы); сборка Release + `RazumovVocalChainTests`: OK.
+
+---
+
 ## Quick check — v0.9.0 (2026-03-28) — per-slot module params
 
 - `ModuleParamsRuntime` (atomics per `slotId`, `ModuleParams` in state XML); `GraphEngine::process(buf, macros, moduleParams)`; APVTS: chain / mic profile / macros only; legacy PARAM migration; UI sliders bound to `selectedSlotId_`.

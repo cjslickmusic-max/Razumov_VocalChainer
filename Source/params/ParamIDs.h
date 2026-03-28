@@ -46,4 +46,10 @@ inline constexpr const char* macroAir = "macroAir";
 inline constexpr const char* macroSibilance = "macroSibilance";
 inline constexpr const char* macroPresence = "macroPresence";
 
+/** Доп. макросы (0...1, нейтраль 0.5) — расширение до x8. */
+inline constexpr const char* macroPunch = "macroPunch";
+inline constexpr const char* macroBody = "macroBody";
+inline constexpr const char* macroSmooth = "macroSmooth";
+inline constexpr const char* macroDensity = "macroDensity";
+
 } // namespace razumov::params

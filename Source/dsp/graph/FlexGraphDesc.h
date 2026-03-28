@@ -40,6 +40,8 @@ struct ChainStripItem
     uint32_t slotId { 0 };
     juce::String label;
     bool bypassed { false };
+    /** 0 = main serial row; 1+ = nested parallel depth (split children). */
+    int row { 0 };
 };
 
 /** Максимум веток у любого Split в дереве (для пула буферов / MergeDelayPad). */

@@ -71,6 +71,10 @@ void ChainStripComponent::rebuildLayout()
     if (n <= 0)
         return;
 
+    int maxRow = 0;
+    for (const auto& it : items_)
+        maxRow = juce::jmax(maxRow, it.row);
+
     const float gap = 10.0f;
     const float arrowW = 12.0f;
     const float totalArrows = (float)(n - 1) * arrowW;
@@ -81,10 +85,14 @@ void ChainStripComponent::rebuildLayout()
     float x = (float) area.getX();
     const float midY = (float) area.getCentreY() + 4.0f;
     const float cardH = 40.0f;
+    const float rowPitch = 44.0f;
+    const float centerOffset = -0.5f * (float) maxRow * rowPitch;
 
     for (int i = 0; i < n; ++i)
     {
-        auto card = juce::Rectangle<float>(x, midY - cardH * 0.5f, cardW, cardH);
+        const int r = juce::jlimit(0, maxRow, items_[(size_t) i].row);
+        const float yTop = midY + centerOffset + (float) r * rowPitch - cardH * 0.5f;
+        auto card = juce::Rectangle<float>(x, yTop, cardW, cardH);
         hitRects_.push_back(card.toNearestInt());
         x = card.getRight();
         if (i < n - 1)
@@ -112,6 +120,10 @@ void ChainStripComponent::paint(juce::Graphics& g)
     if (n <= 0)
         return;
 
+    int maxRow = 0;
+    for (const auto& it : items_)
+        maxRow = juce::jmax(maxRow, it.row);
+
     const float gap = 10.0f;
     const float arrowW = 12.0f;
     const float totalArrows = (float)(n - 1) * arrowW;
@@ -122,11 +134,15 @@ void ChainStripComponent::paint(juce::Graphics& g)
     float x = (float) area.getX();
     const float midY = (float) area.getCentreY() + 4.0f;
     const float cardH = 40.0f;
+    const float rowPitch = 44.0f;
+    const float centerOffset = -0.5f * (float) maxRow * rowPitch;
     const float corner = 6.0f;
 
     for (int i = 0; i < n; ++i)
     {
-        auto card = juce::Rectangle<float>(x, midY - cardH * 0.5f, cardW, cardH);
+        const int r = juce::jlimit(0, maxRow, items_[(size_t) i].row);
+        const float yTop = midY + centerOffset + (float) r * rowPitch - cardH * 0.5f;
+        auto card = juce::Rectangle<float>(x, yTop, cardW, cardH);
         const bool sel = (items_[(size_t) i].slotId == selectedSlotId_);
         const bool byp = items_[(size_t) i].bypassed;
 

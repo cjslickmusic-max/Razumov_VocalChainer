@@ -419,6 +419,22 @@ void applyMacroOffsetsToPhase3(Phase3RealtimeParams& p, const MacroAudioState& m
     const float bPr = bipolarMacro01(macros.presence01);
     p.exciterDrive = juce::jlimit(0.1f, 8.0f, p.exciterDrive + bPr * 2.0f);
     p.gainLinear *= juce::Decibels::decibelsToGain(bPr * 2.0f);
+
+    const float bPunch = bipolarMacro01(macros.punch01);
+    p.fetRatio = juce::jlimit(1.0f, 20.0f, p.fetRatio + bPunch * 6.0f);
+    p.fetMakeupDb = juce::jlimit(0.0f, 24.0f, p.fetMakeupDb + bPunch * 2.5f);
+
+    const float bBody = bipolarMacro01(macros.body01);
+    p.lowpassHz = juce::jlimit(400.0f, 20000.0f, p.lowpassHz + bBody * -3200.0f);
+    p.gainLinear *= juce::Decibels::decibelsToGain(bBody * 1.5f);
+
+    const float bSmooth = bipolarMacro01(macros.smooth01);
+    p.spectralMix = juce::jlimit(0.0f, 1.0f, p.spectralMix + bSmooth * 0.18f);
+    p.spectralThresholdDb = juce::jlimit(-60.0f, 0.0f, p.spectralThresholdDb + bSmooth * 8.0f);
+
+    const float bDen = bipolarMacro01(macros.density01);
+    p.optoRatio = juce::jlimit(1.0f, 20.0f, p.optoRatio + bDen * 4.5f);
+    p.vcaRatio = juce::jlimit(1.0f, 20.0f, p.vcaRatio + bDen * 4.0f);
 }
 
 } // namespace razumov::params

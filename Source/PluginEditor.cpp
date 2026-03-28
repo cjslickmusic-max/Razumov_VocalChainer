@@ -85,7 +85,7 @@ void RazumovVocalChainAudioProcessorEditor::refreshModulePanelVisibility()
     if (isSplit)
     {
         moduleTitleLabel.setText("Parallel split", juce::dontSendNotification);
-        moduleHintLabel.setText("Branches appear as cards to the right in the strip.", juce::dontSendNotification);
+        moduleHintLabel.setText("Parallel branches use the lower row in the strip.", juce::dontSendNotification);
         moduleHintLabel.setVisible(true);
     }
     else if (kind.has_value())
@@ -187,22 +187,31 @@ void RazumovVocalChainAudioProcessorEditor::layoutGlobalSection(juce::Rectangle<
 {
     const int pad = 12;
     const int kw = 96;
-    const int mkh = 96;
+    const int mkh = 88;
     const int mlab = 16;
+    const int colGap = 10;
+    const int rowGap = 10;
     int x = area.getX() + pad;
     int y = area.getY() + pad;
 
-    macroGlueLabel.setBounds(x, y, kw, mlab);
-    macroGlueSlider.setBounds(x, y + mlab, kw, mkh);
-    x += kw + 10;
-    macroAirLabel.setBounds(x, y, kw, mlab);
-    macroAirSlider.setBounds(x, y + mlab, kw, mkh);
-    x += kw + 10;
-    macroSibilanceLabel.setBounds(x, y, kw, mlab);
-    macroSibilanceSlider.setBounds(x, y + mlab, kw, mkh);
-    x += kw + 10;
-    macroPresenceLabel.setBounds(x, y, kw, mlab);
-    macroPresenceSlider.setBounds(x, y + mlab, kw, mkh);
+    auto place = [&](juce::Label& lbl, juce::Slider& s) {
+        lbl.setBounds(x, y, kw, mlab);
+        s.setBounds(x, y + mlab, kw, mkh);
+        x += kw + colGap;
+    };
+
+    place(macroGlueLabel, macroGlueSlider);
+    place(macroAirLabel, macroAirSlider);
+    place(macroSibilanceLabel, macroSibilanceSlider);
+    place(macroPresenceLabel, macroPresenceSlider);
+
+    x = area.getX() + pad;
+    y += mlab + mkh + rowGap;
+
+    place(macroPunchLabel, macroPunchSlider);
+    place(macroBodyLabel, macroBodySlider);
+    place(macroSmoothLabel, macroSmoothSlider);
+    place(macroDensityLabel, macroDensitySlider);
 }
 
 void RazumovVocalChainAudioProcessorEditor::layoutModuleViewport(int viewportWidth)
@@ -279,9 +288,9 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     , processor(p)
     , chainStrip(processor)
 {
-    setSize(920, 840);
+    setSize(920, 960);
     setResizable(true, true);
-    setResizeLimits(680, 560, 2000, 1600);
+    setResizeLimits(680, 720, 2000, 1800);
 
     micProfileLabel.setText("Mic profile", juce::dontSendNotification);
     micProfileLabel.setJustificationType(juce::Justification::centredRight);
@@ -474,6 +483,10 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     setupMacro(macroAirSlider, macroAirLabel, "Air", juce::Colour(0xff80c0c8));
     setupMacro(macroSibilanceSlider, macroSibilanceLabel, "Sibil", juce::Colour(0xffd0a868));
     setupMacro(macroPresenceSlider, macroPresenceLabel, "Presence", juce::Colour(0xffa8d080));
+    setupMacro(macroPunchSlider, macroPunchLabel, "Punch", juce::Colour(0xffe88860));
+    setupMacro(macroBodySlider, macroBodyLabel, "Body", juce::Colour(0xffb89870));
+    setupMacro(macroSmoothSlider, macroSmoothLabel, "Smooth", juce::Colour(0xff8898d0));
+    setupMacro(macroDensitySlider, macroDensityLabel, "Density", juce::Colour(0xff78b0a0));
 
     macroGlueAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
         apvts, razumov::params::macroGlue, macroGlueSlider);
@@ -483,6 +496,14 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
         apvts, razumov::params::macroSibilance, macroSibilanceSlider);
     macroPresenceAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
         apvts, razumov::params::macroPresence, macroPresenceSlider);
+    macroPunchAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+        apvts, razumov::params::macroPunch, macroPunchSlider);
+    macroBodyAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+        apvts, razumov::params::macroBody, macroBodySlider);
+    macroSmoothAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+        apvts, razumov::params::macroSmooth, macroSmoothSlider);
+    macroDensityAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+        apvts, razumov::params::macroDensity, macroDensitySlider);
 
     micBypassBtn.setButtonText("Mic bypass");
     micBypassBtn.setClickingTogglesState(true);
@@ -591,7 +612,7 @@ void RazumovVocalChainAudioProcessorEditor::paint(juce::Graphics& g)
     g.setColour(juce::Colour(0xffaab4c0));
     auto ver = titleRow;
     ver.removeFromRight(620);
-    g.drawText("v0.9.0", ver, juce::Justification::centredRight);
+    g.drawText("v0.9.1", ver, juce::Justification::centredRight);
 }
 
 void RazumovVocalChainAudioProcessorEditor::resized()
@@ -608,7 +629,7 @@ void RazumovVocalChainAudioProcessorEditor::resized()
     micProfileCombo.setBounds(micRow.removeFromRight(320).reduced(4, 4));
     micProfileLabel.setBounds(micRow.removeFromRight(88).reduced(4, 6));
 
-    chainStrip.setBounds(bounds.removeFromTop(58));
+    chainStrip.setBounds(bounds.removeFromTop(100));
 
     auto toolRow = bounds.removeFromTop(32);
     const int tw = 88;
@@ -623,7 +644,7 @@ void RazumovVocalChainAudioProcessorEditor::resized()
     tx += 48;
     addModuleBtn.setBounds(tx, toolRow.getY() + 2, 100, 28);
 
-    auto globalArea = bounds.removeFromTop(140);
+    auto globalArea = bounds.removeFromTop(260);
     layoutGlobalSection(globalArea);
 
     viewport.setBounds(bounds);

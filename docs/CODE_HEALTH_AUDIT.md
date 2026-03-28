@@ -4,6 +4,15 @@
 
 ---
 
+## Quick check — v0.9.1 (2026-03-28) — DSP determinism test suite + TESTING.md
+
+- `Tests/TestMain.cpp`, `DspDeterminismTests.cpp`, `DspTestHelpers.h`; `GraphTests.cpp` -> `runGraphEngineTests()`. CMake: include `Tests/`, `ctest` на тот же бинарник.
+- Детерминизм: компрессоры Opto/FET/VCA, Gain, Filter, Deesser, Exciter, Mic, MergeDelayPad, Latency; синус-сдвиг на задержке; DC через Gain; тишина на входе компрессоров.
+- `docs/TESTING.md`, `HANDOFF_NEXT_AGENT.md` секция 0; `ARCHITECTURE.md` (тесты).
+- Release + `RazumovVocalChainTests`: OK.
+
+---
+
 ## Quick check — v0.9.1 (2026-03-28) — code critique + GraphEngine split scratch
 
 - Аудит: `docs/CODE_REVIEW_CRITIQUE.md`; журнал `REFACTOR_SUSPICIOUS_LOG.md` (mutex, spectral scratch, fillSlot, walk apply).

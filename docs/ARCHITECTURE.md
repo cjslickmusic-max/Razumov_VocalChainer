@@ -44,7 +44,7 @@
 
 ## Тесты
 
-Консольная цель `RazumovVocalChainTests` (`Tests/GraphTests.cpp`): PDC/merge — импульс и DC при `0.5+0.5`, несовпадение задержек (пик на выравненной позиции), **многоблочный** сценарий с малым `blockSize` (состояние `MergeDelayPad` между блоками), три ветки `1/3+1/3+1/3`, вложенный split, серийный gain+широкий LP, согласованность `getReportedLatencySamples()`.
+Консольная цель `RazumovVocalChainTests`: см. **`docs/TESTING.md`**. Граф (`GraphTests.cpp`): PDC/merge, импульсы, вложенные split. DSP (`DspDeterminismTests.cpp`): детерминизм узлов (компрессоры Opto/FET/VCA, Gain, Filter, De-esser, Exciter, Mic, `MergeDelayPad`, `LatencyNode`), тишина на нуле, сдвиг синуса на задержке, DC через Gain.
 
 ## Параметры
 

@@ -5,6 +5,15 @@
 
 ---
 
+## 0. Система тестов (для следующего агента)
+
+- **Документ:** `docs/TESTING.md` — структура таргета, политика детерминизма / DC / фаза на задержке.
+- **Точка входа:** `Tests/TestMain.cpp` вызывает `runGraphEngineTests()` (`GraphTests.cpp`) и `runDspDeterminismTests()` (`DspDeterminismTests.cpp`).
+- **Хелперы:** `Tests/DspTestHelpers.h` (`fillSine`, сравнение буферов).
+- **Идея:** на одних и тех же входах узел даёт тот же выход после `reset()`; тишина на входе компрессоров → тишина на выходе; `LatencyNode` сохраняет сдвиг синуса; расширять новыми `run*Tests()` и вызовом из `TestMain`.
+
+---
+
 ## 1. Что сделано непосредственно перед этим handoff
 
 - **Макросы ×8 (этап H по продуктовой карте):** в APVTS добавлены `macroPunch`, `macroBody`, `macroSmooth`, `macroDensity` (плюс прежние Glue / Air / Sibilance / Presence). Состояние: `MacroAudioState` в `Source/params/ModuleParamsRuntime.h`, смещения в `applyMacroOffsetsToPhase3` (`ModuleParamsRuntime.cpp`), чтение из APVTS в `buildMacroStateFromApvts` (`PluginProcessor.cpp`). Фабричные пресеты сбрасывают все восемь в **0.5** (`presets/FactoryPresets.cpp`).

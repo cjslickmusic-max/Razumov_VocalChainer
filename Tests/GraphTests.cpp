@@ -1,3 +1,5 @@
+#include "DspTestHelpers.h"
+
 #include <dsp/graph/FlexGraphPlan.h>
 #include <dsp/graph/GraphEngine.h>
 #include <dsp/graph/GraphPlanFactory.h>
@@ -9,11 +11,6 @@
 
 namespace
 {
-
-bool nearAbs(float a, float b, float eps)
-{
-    return std::abs(a - b) <= eps;
-}
 
 int findMaxAbsSampleIndex(const juce::AudioBuffer<float>& buf, int channel, int numSamples)
 {
@@ -61,8 +58,8 @@ static void testParallelHalvesIsUnityGain()
 
     const float l = buf.getSample(0, 0);
     const float r = buf.getSample(1, 0);
-    assert(nearAbs(l, 1.0f, 1.0e-3f));
-    assert(nearAbs(r, 1.0f, 1.0e-3f));
+    assert(razumov::tests::nearAbs(l, 1.0f, 1.0e-3f));
+    assert(razumov::tests::nearAbs(r, 1.0f, 1.0e-3f));
 }
 
 static void testMergeDelayPadImpulse()
@@ -77,9 +74,9 @@ static void testMergeDelayPadImpulse()
     buf.setSample(0, 0, 1.0f);
     pad.process(buf);
 
-    assert(nearAbs(buf.getSample(0, 0), 0.0f, 1.0e-6f));
-    assert(nearAbs(buf.getSample(0, 16), 0.0f, 1.0e-6f));
-    assert(nearAbs(buf.getSample(0, 17), 1.0f, 1.0e-4f));
+    assert(razumov::tests::nearAbs(buf.getSample(0, 0), 0.0f, 1.0e-6f));
+    assert(razumov::tests::nearAbs(buf.getSample(0, 16), 0.0f, 1.0e-6f));
+    assert(razumov::tests::nearAbs(buf.getSample(0, 17), 1.0f, 1.0e-4f));
 }
 
 static void testMismatchedParallelImpulsePeakAligned()
@@ -100,7 +97,7 @@ static void testMismatchedParallelImpulsePeakAligned()
 
     const int peakIdx = findMaxAbsSampleIndex(buf, 0, 256);
     assert(peakIdx == 64);
-    assert(nearAbs(buf.getSample(0, 64), 1.0f, 2.0e-3f));
+    assert(razumov::tests::nearAbs(buf.getSample(0, 64), 1.0f, 2.0e-3f));
 }
 
 static void testMismatchedParallelImpulseAcrossSmallBlocks()
@@ -128,9 +125,9 @@ static void testMismatchedParallelImpulseAcrossSmallBlocks()
     c.clear();
     engine.process(c, macros, mod);
 
-    assert(nearAbs(a.getSample(0, 0), 0.0f, 1.0e-3f));
-    assert(nearAbs(b.getSample(0, 0), 0.0f, 1.0e-3f));
-    assert(nearAbs(c.getSample(0, 0), 1.0f, 2.0e-3f));
+    assert(razumov::tests::nearAbs(a.getSample(0, 0), 0.0f, 1.0e-3f));
+    assert(razumov::tests::nearAbs(b.getSample(0, 0), 0.0f, 1.0e-3f));
+    assert(razumov::tests::nearAbs(c.getSample(0, 0), 1.0f, 2.0e-3f));
 }
 
 static void testParallelThirdsUnity()
@@ -150,8 +147,8 @@ static void testParallelThirdsUnity()
     razumov::params::ModuleParamsRuntime mod;
     engine.process(buf, macros, mod);
 
-    assert(nearAbs(buf.getSample(0, 10), 0.75f, 1.0e-3f));
-    assert(nearAbs(buf.getSample(1, 10), -0.4f, 1.0e-3f));
+    assert(razumov::tests::nearAbs(buf.getSample(0, 10), 0.75f, 1.0e-3f));
+    assert(razumov::tests::nearAbs(buf.getSample(1, 10), -0.4f, 1.0e-3f));
 }
 
 static void testNestedParallelUnity()
@@ -170,7 +167,7 @@ static void testNestedParallelUnity()
     razumov::params::ModuleParamsRuntime mod;
     engine.process(buf, macros, mod);
 
-    assert(nearAbs(buf.getSample(0, 5), 1.0f, 1.0e-3f));
+    assert(razumov::tests::nearAbs(buf.getSample(0, 5), 1.0f, 1.0e-3f));
 }
 
 static void testReportedLatencyMatchesPlan()
@@ -202,7 +199,7 @@ static void testMergePreservesDcHalves()
     engine.process(buf, macros, mod);
 
     for (int i = 0; i < 64; ++i)
-        assert(nearAbs(buf.getSample(0, i), 0.125f, 1.0e-4f));
+        assert(razumov::tests::nearAbs(buf.getSample(0, i), 0.125f, 1.0e-4f));
 }
 
 static void testSerialWideFilterPassesImpulse()
@@ -227,7 +224,7 @@ static void testSerialWideFilterPassesImpulse()
     for (int i = 0; i < 128; ++i)
         energy += buf.getSample(0, i) * buf.getSample(0, i);
     assert(energy > 0.9f * 0.9f);
-    assert(nearAbs(buf.getSample(0, 0), 1.0f, 0.05f));
+    assert(razumov::tests::nearAbs(buf.getSample(0, 0), 1.0f, 0.05f));
 }
 
 static void testPlanNestingDepthForNestedGraph()
@@ -237,7 +234,7 @@ static void testPlanNestingDepthForNestedGraph()
     assert(plan->computeMaxSplitNestingDepth() == 2);
 }
 
-int main()
+void runGraphEngineTests()
 {
     testChainLatencySum();
     testParallelHalvesIsUnityGain();
@@ -250,5 +247,4 @@ int main()
     testMergePreservesDcHalves();
     testSerialWideFilterPassesImpulse();
     testPlanNestingDepthForNestedGraph();
-    return 0;
 }

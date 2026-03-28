@@ -87,7 +87,9 @@ target_link_libraries(
 
 add_executable(
     RazumovVocalChainTests
+    Tests/TestMain.cpp
     Tests/GraphTests.cpp
+    Tests/DspDeterminismTests.cpp
     Source/dsp/graph/FilterNode.cpp
     Source/dsp/graph/LatencyNode.cpp
     Source/dsp/graph/FlexGraphDesc.cpp
@@ -109,6 +111,7 @@ target_include_directories(
     RazumovVocalChainTests
     PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/Source"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Tests"
 )
 
 target_link_libraries(

@@ -6,7 +6,7 @@
 
 ## Quick check — v0.9.0 (2026-03-28) — per-slot module params
 
-- `ModuleParamsRuntime` (atomics per `slotId`, `ModuleParams` in state XML); `GraphEngine::process(buf, macros, moduleParams)`; APVTS: chain / mic profile / macros only; `FactoryPresets` split globals + module snapshot; legacy PARAM migration; UI sliders bound to `selectedSlotId_`.
+- `ModuleParamsRuntime` (atomics per `slotId`, `ModuleParams` in state XML); `GraphEngine::process(buf, macros, moduleParams)`; APVTS: chain / mic profile / macros only; legacy PARAM migration; UI sliders bound to `selectedSlotId_`.
 - ReadLints (изменённые файлы); сборка Release + `RazumovVocalChainTests`: OK.
 
 ---

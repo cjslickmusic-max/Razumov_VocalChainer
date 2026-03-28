@@ -121,4 +121,4 @@
 | 2026-03-25 | v0.8.1: спектральный компрессор STFT (фаза входа сохранена), PDC + dry/wet; APVTS mix/thr/ratio; динамическая задержка при spectral bypass |
 | 2026-03-27 | v0.8.2: FlexGraph (serial + N-way parallel, PDC), `micProfile`, полоса цепочки из `graphDesc_` |
 | 2026-03-27 | v0.8.3: FlexGraph в APVTS (`FlexGraphSerialization`), выбор слота на полосе, toolbar Bypass/Remove/Add/Split x2/x3, глобальная зона Mic/Gain/макросы; `prepare` не затирает сохранённый граф |
-| 2026-03-28 | v0.9.0: per-instance параметры модулей по `slotId` (`ModuleParamsRuntime`), APVTS только chain/mic profile/макросы; UI инспектор по выбранному слоту; миграция legacy state |
+| 2026-03-28 | v0.9.0: per-instance параметры модулей по `slotId` (`ModuleParamsRuntime`), APVTS — chain/mic profile/макросы; инспектор по выбранному слоту; сохранение `ModuleParams` в state; миграция legacy XML |

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(RazumovVocalChain VERSION 0.9.3 LANGUAGES C CXX)
+project(RazumovVocalChain VERSION 0.9.4 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -84,6 +84,18 @@ target_link_libraries(
         juce::juce_dsp
         juce::juce_gui_extra
         juce::juce_data_structures
+)
+
+# Always refresh the same repo path after VST3 build (REAPER: one extra VST3 folder, no manual copy).
+file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/Artifacts")
+set(RAZUMOV_CANONICAL_VST3 "${CMAKE_SOURCE_DIR}/Artifacts/Razumov Vocal Chain.vst3")
+add_custom_command(
+    TARGET RazumovVocalChain_VST3
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E rm -rf "${RAZUMOV_CANONICAL_VST3}"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "$<TARGET_BUNDLE_DIR:RazumovVocalChain_VST3>" "${RAZUMOV_CANONICAL_VST3}"
+    COMMENT "Copy VST3 to Artifacts/ (canonical)"
+    VERBATIM
 )
 
 set(

@@ -4,6 +4,13 @@
 
 ---
 
+## Quick check — v0.9.4 (2026-03-28) — Canonical VST3 in Artifacts/ via POST_BUILD
+
+- `CMakeLists.txt`: `POST_BUILD` на `RazumovVocalChain_VST3` -> `Artifacts/Razumov Vocal Chain.vst3`; `README.md`, `Artifacts/README.md`, `agent-build-after-changes.mdc` (сборка `RazumovVocalChain_VST3`).
+- Версия **0.9.4**; Release + `RazumovVocalChain_VST3`: OK.
+
+---
+
 ## Quick check — v0.9.3 (2026-03-28) — Chain strip layout + UI compact
 
 - `Source/ui/ChainStripLayout.{h,cpp}`: раскладка по `FlexSegmentDesc` (split, ветки рядом, merge, провода fork/join, scale-to-fit).

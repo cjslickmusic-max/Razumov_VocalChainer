@@ -12,8 +12,10 @@ VST3 / AU / Standalone: вокальный цепной плагин с граф
 
 ```bash
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build --parallel
+cmake --build build --parallel --target RazumovVocalChain_VST3
 ```
+
+Сборка только `RazumovVocalChain` (shared code) **не** обновляет VST3 в `Artifacts/` — для проверки в REAPER используй цель **`RazumovVocalChain_VST3`** (см. выше).
 
 ### Тесты (консоль)
 
@@ -22,8 +24,13 @@ cmake --build build --target RazumovVocalChainTests
 ./build/RazumovVocalChainTests
 ```
 
-**Где лежит плагин после сборки (один канонический путь в репозитории):** каталог  
-`build/RazumovVocalChain_artefacts/Release/` — отсюда можно указать путь к VST3 в хосте (REAPER и т.д.), без копирования.
+**VST3 для REAPER (один фиксированный путь в проекте):** после `cmake --build` бандл **автоматически** копируется в:
+
+- **`Artifacts/Razumov Vocal Chain.vst3`**
+
+Укажи в REAPER папку **`Artifacts`** как дополнительный каталог VST3 и не меняй путь — после каждой сборки файл там обновляется (ручное копирование не нужно).
+
+Исходный вывод CMake (то же содержимое):
 
 - **VST3:** `build/RazumovVocalChain_artefacts/Release/VST3/Razumov Vocal Chain.vst3`
 - **AU:** `build/RazumovVocalChain_artefacts/Release/AU/Razumov Vocal Chain.component`

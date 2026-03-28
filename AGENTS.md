@@ -57,8 +57,8 @@ cmake --build build --parallel
 
 JUCE **8.0.12** подтягивается через `FetchContent` при первом `cmake`. Подробности и пути к VST3/AU — в **`README.md`**.
 
-**Цель CMake:** `RazumovVocalChain` (объединённый таргет плагина + Standalone).
+**Цели CMake:** `RazumovVocalChain` — общий код; для **готового VST3** и копии в `Artifacts/` собирать **`RazumovVocalChain_VST3`** (после `POST_BUILD` плагин лежит в `Artifacts/Razumov Vocal Chain.vst3`).
 
-**Версия:** `project(... VERSION x.y.z)` и `VERSION` внутри `juce_add_plugin` — держать синхронно в `CMakeLists.txt` (сейчас **0.9.3**: цепочка в UI по дереву графа + fork/merge; phase align на split-ветках + PDC; макросы x8; per-slot модули + chain/mic profile).
+**Версия:** `project(... VERSION x.y.z)` и `VERSION` внутри `juce_add_plugin` — держать синхронно в `CMakeLists.txt` (сейчас **0.9.4**: канонический VST3 в `Artifacts/` после сборки `RazumovVocalChain_VST3`; цепочка в UI по дереву графа + fork/merge; phase align на split-ветках + PDC; макросы x8; per-slot модули + chain/mic profile).
 
 **Тесты:** `cmake --build build --target RazumovVocalChainTests` затем `./build/RazumovVocalChainTests`; долгий прогон: таргет `RazumovVocalChainStressTests` или `ctest` (см. **`docs/TESTING.md`**). **Сборка после правок кода** — см. `.cursor/rules/agent-build-after-changes.mdc` (агент запускает сам).

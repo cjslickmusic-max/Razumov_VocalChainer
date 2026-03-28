@@ -3,6 +3,7 @@
 #include "dsp/graph/FlexGraphDesc.h"
 #include "dsp/graph/GraphEngine.h"
 #include <juce_audio_processors/juce_audio_processors.h>
+#include <vector>
 
 class RazumovVocalChainAudioProcessor : public juce::AudioProcessor,
                                           public juce::AudioProcessorValueTreeState::Listener
@@ -40,20 +41,36 @@ public:
     juce::AudioProcessorValueTreeState& getAPVTS() noexcept { return apvts; }
     const juce::AudioProcessorValueTreeState& getAPVTS() const noexcept { return apvts; }
 
-    /** Подписи для полосы цепочки (из текущего FlexSegmentDesc). */
     juce::StringArray getChainStripLabelArray() const;
+    std::vector<razumov::graph::ChainStripItem> getChainStripItems() const;
 
-    /** Фабричный пресет (фаза 4); синхронизирует program index и APVTS. */
+    razumov::graph::FlexSegmentDesc& getGraphDesc() noexcept { return graphDesc_; }
+    const razumov::graph::FlexSegmentDesc& getGraphDesc() const noexcept { return graphDesc_; }
+
+    /** Сохранить FlexGraph в APVTS и отправить план в движок (message thread). */
+    void commitGraphMutation();
+
     void applyFactoryPreset(int index);
 
     void parameterChanged(const juce::String& parameterID, float newValue) override;
 
+    void setSlotBypassForId(uint32_t slotId, bool bypassed);
+    void removeGraphSlotById(uint32_t slotId);
+    void moveRootSlotContainingId(uint32_t slotId, int delta);
+    void insertPaletteModuleAfterSlot(uint32_t referenceSlotId, razumov::graph::AudioNodeKind kind);
+    void insertSplitAfterSlot(uint32_t referenceSlotId, int numBranches);
+
 private:
-    void submitGraphPlanForCurrentParameter();
+    void submitGraphPlanFromCurrentDesc();
+    void applyChainProfileTemplate();
+    void syncGraphDescFromApvtsState();
+    void persistFlexGraphToApvtsState();
+    void ensureGraphAfterStateLoad();
 
     juce::AudioProcessorValueTreeState apvts;
     razumov::graph::GraphEngine graphEngine_;
     razumov::graph::FlexSegmentDesc graphDesc_;
+    uint32_t nextSlotCounter_ { 1 };
     double lastSampleRate_ { 44100.0 };
     int currentProgram_ { 0 };
 

@@ -4,6 +4,13 @@
 
 ---
 
+## Quick check — v0.8.3 (2026-03-27) — FlexGraph persist + chain toolbar + slot selection
+
+- `FlexGraphSerialization`, `persistFlexGraphToApvtsState` / sync / ensure после load; `ChainStripComponent` selection + hit test; `PluginEditor` toolbar, Add (modules + Split x2/x3), global vs module viewport; удалён лишний `ignoreUnused` в `refreshModulePanelVisibility`.
+- Сборка Release + `RazumovVocalChainTests`: OK.
+
+---
+
 ## Quick check — v0.8.2 (2026-03-27) — Flex graph (serial + N-way parallel, PDC)
 
 - `FlexGraphDesc` / `FlexGraphPlan`, `AudioNodeFactory`, `GraphEngine` (merge pool + `MergeDelayPad` per branch); `GraphPlanFactory` через `FlexSegmentDesc`; Phase3 после swap в `process(buf, params)`; `micProfile` APVTS + UI; полоса цепочки из `graphDesc_`.

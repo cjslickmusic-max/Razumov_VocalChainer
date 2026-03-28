@@ -1,6 +1,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "dsp/graph/FlexGraphPlan.h"
+#include "dsp/graph/FlexGraphSerialization.h"
 #include "dsp/graph/GraphPlanFactory.h"
 #include "params/ParamIDs.h"
 #include "params/ParameterLayout.h"
@@ -89,6 +90,7 @@ RazumovVocalChainAudioProcessor::RazumovVocalChainAudioProcessor()
     graphEngine_.setLatencyCallback([this](int latency) { setLatencySamples(latency); });
     apvts.addParameterListener(razumov::params::chainProfile, this);
     graphDesc_ = razumov::graph::GraphPlanFactory::makeStartupDescForIndex(getStartupChainIndex(apvts), 44100.0);
+    nextSlotCounter_ = juce::jmax(1u, razumov::graph::maxSlotIdInSegment(graphDesc_) + 1);
 }
 
 RazumovVocalChainAudioProcessor::~RazumovVocalChainAudioProcessor()
@@ -96,10 +98,75 @@ RazumovVocalChainAudioProcessor::~RazumovVocalChainAudioProcessor()
     apvts.removeParameterListener(razumov::params::chainProfile, this);
 }
 
+void RazumovVocalChainAudioProcessor::submitGraphPlanFromCurrentDesc()
+{
+    auto plan = razumov::graph::GraphPlanFactory::makePlanFromDesc(graphDesc_);
+    graphEngine_.submitPlan(std::shared_ptr<razumov::graph::FlexGraphPlan>(std::move(plan)));
+}
+
+void RazumovVocalChainAudioProcessor::persistFlexGraphToApvtsState()
+{
+    auto root = apvts.copyState();
+    auto old = root.getChildWithName(razumov::graph::flexGraphValueTreeType);
+    if (old.isValid())
+        root.removeChild(old, nullptr);
+    root.addChild(razumov::graph::flexSegmentDescToValueTree(graphDesc_, nextSlotCounter_), -1, nullptr);
+    apvts.replaceState(root);
+}
+
+void RazumovVocalChainAudioProcessor::syncGraphDescFromApvtsState()
+{
+    const auto g = apvts.state.getChildWithName(razumov::graph::flexGraphValueTreeType);
+    if (!g.isValid())
+        return;
+
+    razumov::graph::FlexSegmentDesc tmp;
+    uint32_t fileNext = 1;
+    if (!razumov::graph::valueTreeToFlexSegmentDesc(g, tmp, &fileNext))
+        return;
+
+    graphDesc_ = std::move(tmp);
+
+    if (razumov::graph::flexGraphNeedsSlotIdAssignment(graphDesc_))
+    {
+        uint32_t n = 1;
+        razumov::graph::assignUniqueSlotIds(graphDesc_, n);
+        nextSlotCounter_ = n;
+    }
+    else
+    {
+        nextSlotCounter_ = juce::jmax(fileNext, razumov::graph::maxSlotIdInSegment(graphDesc_) + 1);
+        if (nextSlotCounter_ < 2)
+            nextSlotCounter_ = 1;
+    }
+}
+
+void RazumovVocalChainAudioProcessor::ensureGraphAfterStateLoad()
+{
+    const auto g = apvts.state.getChildWithName(razumov::graph::flexGraphValueTreeType);
+    if (!g.isValid() || graphDesc_.empty())
+    {
+        graphDesc_ = razumov::graph::GraphPlanFactory::makeStartupDescForIndex(getStartupChainIndex(apvts), lastSampleRate_);
+        nextSlotCounter_ = juce::jmax(1u, razumov::graph::maxSlotIdInSegment(graphDesc_) + 1);
+        persistFlexGraphToApvtsState();
+    }
+}
+
+void RazumovVocalChainAudioProcessor::applyChainProfileTemplate()
+{
+    graphDesc_ = razumov::graph::GraphPlanFactory::makeStartupDescForIndex(getStartupChainIndex(apvts), lastSampleRate_);
+    nextSlotCounter_ = juce::jmax(1u, razumov::graph::maxSlotIdInSegment(graphDesc_) + 1);
+    persistFlexGraphToApvtsState();
+    submitGraphPlanFromCurrentDesc();
+}
+
 void RazumovVocalChainAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
     lastSampleRate_ = sampleRate;
-    graphDesc_ = razumov::graph::GraphPlanFactory::makeStartupDescForIndex(getStartupChainIndex(apvts), sampleRate);
+    syncGraphDescFromApvtsState();
+    if (graphDesc_.empty())
+        ensureGraphAfterStateLoad();
+
     auto plan = razumov::graph::GraphPlanFactory::makePlanFromDesc(graphDesc_);
     graphEngine_.submitPlan(std::shared_ptr<razumov::graph::FlexGraphPlan>(std::move(plan)));
     graphEngine_.prepare(sampleRate, samplesPerBlock, 2);
@@ -171,20 +238,80 @@ void RazumovVocalChainAudioProcessor::parameterChanged(const juce::String& param
     juce::ignoreUnused(newValue);
     if (parameterID != razumov::params::chainProfile)
         return;
-    juce::MessageManager::callAsync([this]() { submitGraphPlanForCurrentParameter(); });
+    juce::MessageManager::callAsync([this]() { applyChainProfileTemplate(); });
 }
 
-void RazumovVocalChainAudioProcessor::submitGraphPlanForCurrentParameter()
+void RazumovVocalChainAudioProcessor::commitGraphMutation()
 {
-    const int idx = getStartupChainIndex(apvts);
-    graphDesc_ = razumov::graph::GraphPlanFactory::makeStartupDescForIndex(idx, lastSampleRate_);
-    auto plan = razumov::graph::GraphPlanFactory::makePlanFromDesc(graphDesc_);
-    graphEngine_.submitPlan(std::shared_ptr<razumov::graph::FlexGraphPlan>(std::move(plan)));
+    persistFlexGraphToApvtsState();
+    submitGraphPlanFromCurrentDesc();
+}
+
+void RazumovVocalChainAudioProcessor::setSlotBypassForId(uint32_t slotId, bool bypassed)
+{
+    if (razumov::graph::setSlotBypassById(graphDesc_, slotId, bypassed))
+        commitGraphMutation();
+}
+
+void RazumovVocalChainAudioProcessor::removeGraphSlotById(uint32_t slotId)
+{
+    if (razumov::graph::removeSlotById(graphDesc_, slotId))
+        commitGraphMutation();
+}
+
+void RazumovVocalChainAudioProcessor::moveRootSlotContainingId(uint32_t slotId, int delta)
+{
+    const int idx = razumov::graph::findRootSlotIndexContainingId(graphDesc_, slotId);
+    if (idx < 0)
+        return;
+    const int ni = idx + delta;
+    if (ni < 0 || ni >= (int) graphDesc_.size())
+        return;
+    std::swap(graphDesc_[(size_t) idx], graphDesc_[(size_t) ni]);
+    commitGraphMutation();
+}
+
+void RazumovVocalChainAudioProcessor::insertPaletteModuleAfterSlot(uint32_t referenceSlotId,
+                                                                  razumov::graph::AudioNodeKind kind)
+{
+    razumov::graph::FlexSlotDesc ns = razumov::graph::GraphPlanFactory::makeModulePaletteSlot(kind);
+    uint32_t n = nextSlotCounter_;
+    razumov::graph::assignSlotIdsForSubtree(ns, n);
+    nextSlotCounter_ = n;
+
+    const int ri = razumov::graph::findRootSlotIndexContainingId(graphDesc_, referenceSlotId);
+    if (ri < 0)
+        graphDesc_.push_back(std::move(ns));
+    else
+        graphDesc_.insert(graphDesc_.begin() + ri + 1, std::move(ns));
+
+    commitGraphMutation();
+}
+
+void RazumovVocalChainAudioProcessor::insertSplitAfterSlot(uint32_t referenceSlotId, int numBranches)
+{
+    razumov::graph::FlexSlotDesc sp = razumov::graph::GraphPlanFactory::makeSplitWithUnityBranches(numBranches);
+    uint32_t n = nextSlotCounter_;
+    razumov::graph::assignSlotIdsForSubtree(sp, n);
+    nextSlotCounter_ = n;
+
+    const int ri = razumov::graph::findRootSlotIndexContainingId(graphDesc_, referenceSlotId);
+    if (ri < 0)
+        graphDesc_.push_back(std::move(sp));
+    else
+        graphDesc_.insert(graphDesc_.begin() + ri + 1, std::move(sp));
+
+    commitGraphMutation();
 }
 
 juce::StringArray RazumovVocalChainAudioProcessor::getChainStripLabelArray() const
 {
     return razumov::graph::segmentDescToChainStripLabels(graphDesc_);
+}
+
+std::vector<razumov::graph::ChainStripItem> RazumovVocalChainAudioProcessor::getChainStripItems() const
+{
+    return razumov::graph::segmentDescToChainStripItems(graphDesc_);
 }
 
 void RazumovVocalChainAudioProcessor::changeProgramName(int index, const juce::String& newName)
@@ -194,6 +321,7 @@ void RazumovVocalChainAudioProcessor::changeProgramName(int index, const juce::S
 
 void RazumovVocalChainAudioProcessor::getStateInformation(juce::MemoryBlock& destData)
 {
+    persistFlexGraphToApvtsState();
     if (auto xml = apvts.copyState().createXml())
         copyXmlToBinary(*xml, destData);
 }
@@ -204,7 +332,10 @@ void RazumovVocalChainAudioProcessor::setStateInformation(const void* data, int 
         if (xml->hasTagName(apvts.state.getType()))
         {
             apvts.replaceState(juce::ValueTree::fromXml(*xml));
-            submitGraphPlanForCurrentParameter();
+            graphDesc_.clear();
+            syncGraphDescFromApvtsState();
+            ensureGraphAfterStateLoad();
+            submitGraphPlanFromCurrentDesc();
         }
 }
 

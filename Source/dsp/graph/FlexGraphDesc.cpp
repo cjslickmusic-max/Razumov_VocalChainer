@@ -48,39 +48,42 @@ int maxBreadthInSegment(const FlexSegmentDesc& seg) noexcept
     return m;
 }
 
-void appendSlotStripLabels(const FlexSlotDesc& slot, juce::StringArray& out)
+void walkSegmentForStrip(const FlexSegmentDesc& seg, std::vector<ChainStripItem>& out)
 {
-    if (slot.descType == FlexSlotDescType::Module)
+    for (const auto& slot : seg)
     {
-        const juce::String lab =
-            slot.uiLabel.isNotEmpty() ? slot.uiLabel : juce::String(shortNameForKind(slot.kind));
-        out.add(lab);
-        return;
-    }
-
-    out.add("Par" + juce::String((int) slot.branches.size()));
-
-    for (const auto& br : slot.branches)
-    {
-        juce::String inner;
-        for (size_t i = 0; i < br.size(); ++i)
+        if (slot.descType == FlexSlotDescType::Module)
         {
-            if (i > 0)
-                inner << " ";
-            if (br[i].descType == FlexSlotDescType::Module)
-            {
-                const juce::String lab = br[i].uiLabel.isNotEmpty()
-                                             ? br[i].uiLabel
-                                             : juce::String(shortNameForKind(br[i].kind));
-                inner << lab;
-            }
-            else
-            {
-                inner << "{Par}";
-            }
+            ChainStripItem it;
+            it.slotId = slot.slotId;
+            it.bypassed = slot.bypassed;
+            it.label = slot.uiLabel.isNotEmpty() ? slot.uiLabel : juce::String(shortNameForKind(slot.kind));
+            out.push_back(it);
+            continue;
         }
-        out.add("(" + inner + ")");
+
+        ChainStripItem splitIt;
+        splitIt.slotId = slot.slotId;
+        splitIt.bypassed = slot.bypassed;
+        splitIt.label = "Par" + juce::String((int) slot.branches.size());
+        out.push_back(splitIt);
+
+        for (const auto& br : slot.branches)
+            walkSegmentForStrip(br, out);
     }
+}
+
+bool slotTreeContainsId(const FlexSlotDesc& s, uint32_t id) noexcept
+{
+    if (s.slotId == id)
+        return true;
+    if (s.descType != FlexSlotDescType::Split)
+        return false;
+    for (const auto& br : s.branches)
+        for (const auto& c : br)
+            if (slotTreeContainsId(c, id))
+                return true;
+    return false;
 }
 
 } // namespace
@@ -91,12 +94,101 @@ int computeMaxSplitBreadth(const FlexSegmentDesc& root) noexcept
     return juce::jmax(2, b);
 }
 
+std::vector<ChainStripItem> segmentDescToChainStripItems(const FlexSegmentDesc& root)
+{
+    std::vector<ChainStripItem> out;
+    walkSegmentForStrip(root, out);
+    return out;
+}
+
 juce::StringArray segmentDescToChainStripLabels(const FlexSegmentDesc& root)
 {
-    juce::StringArray out;
-    for (const auto& slot : root)
-        appendSlotStripLabels(slot, out);
-    return out;
+    juce::StringArray a;
+    for (const auto& it : segmentDescToChainStripItems(root))
+        a.add(it.label);
+    return a;
+}
+
+bool setSlotBypassById(FlexSegmentDesc& root, uint32_t slotId, bool bypassed) noexcept
+{
+    for (auto& s : root)
+    {
+        if (s.slotId == slotId)
+        {
+            s.bypassed = bypassed;
+            return true;
+        }
+        if (s.descType == FlexSlotDescType::Split)
+        {
+            for (auto& br : s.branches)
+                if (setSlotBypassById(br, slotId, bypassed))
+                    return true;
+        }
+    }
+    return false;
+}
+
+bool removeSlotById(FlexSegmentDesc& root, uint32_t slotId) noexcept
+{
+    for (auto it = root.begin(); it != root.end(); ++it)
+    {
+        if (it->slotId == slotId)
+        {
+            root.erase(it);
+            return true;
+        }
+        if (it->descType == FlexSlotDescType::Split)
+        {
+            for (auto& br : it->branches)
+                if (removeSlotById(br, slotId))
+                    return true;
+        }
+    }
+    return false;
+}
+
+std::optional<AudioNodeKind> queryModuleKindForSlotId(const FlexSegmentDesc& root, uint32_t slotId) noexcept
+{
+    for (const auto& s : root)
+    {
+        if (s.slotId == slotId)
+        {
+            if (s.descType == FlexSlotDescType::Module)
+                return s.kind;
+            return std::nullopt;
+        }
+        if (s.descType == FlexSlotDescType::Split)
+        {
+            for (const auto& br : s.branches)
+                if (auto k = queryModuleKindForSlotId(br, slotId))
+                    return k;
+        }
+    }
+    return std::nullopt;
+}
+
+bool queryIsParallelSplitSlot(const FlexSegmentDesc& seg, uint32_t slotId) noexcept
+{
+    for (const auto& s : seg)
+    {
+        if (s.slotId == slotId)
+            return s.descType == FlexSlotDescType::Split;
+        if (s.descType == FlexSlotDescType::Split)
+        {
+            for (const auto& br : s.branches)
+                if (queryIsParallelSplitSlot(br, slotId))
+                    return true;
+        }
+    }
+    return false;
+}
+
+int findRootSlotIndexContainingId(const FlexSegmentDesc& root, uint32_t slotId) noexcept
+{
+    for (int i = 0; i < (int) root.size(); ++i)
+        if (slotTreeContainsId(root[(size_t) i], slotId))
+            return i;
+    return -1;
 }
 
 } // namespace razumov::graph

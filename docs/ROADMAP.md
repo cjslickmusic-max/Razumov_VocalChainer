@@ -119,3 +119,5 @@
 | 2026-03-25 | v0.7.1: дорожная карта — 3.1 (слот+pass-through) закрыт; план для spectral (3.5) в фазе 3; комментарии в Mic/Spectral узлах |
 | 2026-03-25 | v0.8.0: полоса цепочки в UI (как ShaperX normal view, read-only); без Advanced-графа |
 | 2026-03-25 | v0.8.1: спектральный компрессор STFT (фаза входа сохранена), PDC + dry/wet; APVTS mix/thr/ratio; динамическая задержка при spectral bypass |
+| 2026-03-27 | v0.8.2: FlexGraph (serial + N-way parallel, PDC), `micProfile`, полоса цепочки из `graphDesc_` |
+| 2026-03-27 | v0.8.3: FlexGraph в APVTS (`FlexGraphSerialization`), выбор слота на полосе, toolbar Bypass/Remove/Add/Split x2/x3, глобальная зона Mic/Gain/макросы; `prepare` не затирает сохранённый граф |

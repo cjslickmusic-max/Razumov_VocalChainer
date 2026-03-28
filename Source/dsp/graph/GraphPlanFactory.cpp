@@ -1,5 +1,6 @@
 #include "GraphPlanFactory.h"
 #include "CompressorArchetypeNode.h"
+#include "FlexGraphSerialization.h"
 
 namespace razumov::graph
 {
@@ -67,6 +68,8 @@ FlexSegmentDesc GraphPlanFactory::makeSerialGainAndWideFilterDesc(double sampleR
     FlexSegmentDesc d;
     d.push_back(gainModule(1.0f));
     d.push_back(filterModule(20000.0f));
+    uint32_t n = 1;
+    assignUniqueSlotIds(d, n);
     return d;
 }
 
@@ -117,16 +120,23 @@ FlexSegmentDesc GraphPlanFactory::makeFetForwardVocalChainPhase3Desc(double samp
 
 FlexSegmentDesc GraphPlanFactory::makeStartupDescForIndex(int index, double sampleRate)
 {
+    FlexSegmentDesc d;
     switch (index)
     {
         case 1:
-            return makeCompactVocalChainPhase3Desc(sampleRate);
+            d = makeCompactVocalChainPhase3Desc(sampleRate);
+            break;
         case 2:
-            return makeFetForwardVocalChainPhase3Desc(sampleRate);
+            d = makeFetForwardVocalChainPhase3Desc(sampleRate);
+            break;
         case 0:
         default:
-            return makeDefaultVocalChainPhase3Desc(sampleRate);
+            d = makeDefaultVocalChainPhase3Desc(sampleRate);
+            break;
     }
+    uint32_t n = 1;
+    assignUniqueSlotIds(d, n);
+    return d;
 }
 
 FlexSegmentDesc GraphPlanFactory::makeParallelHalvesDesc()
@@ -136,7 +146,10 @@ FlexSegmentDesc GraphPlanFactory::makeParallelHalvesDesc()
     split.branches.resize(2);
     split.branches[0].push_back(gainModule(0.5f));
     split.branches[1].push_back(gainModule(0.5f));
-    return FlexSegmentDesc { split };
+    FlexSegmentDesc d { split };
+    uint32_t n = 1;
+    assignUniqueSlotIds(d, n);
+    return d;
 }
 
 FlexSegmentDesc GraphPlanFactory::makeParallelMismatchedLatencyDescForTests()
@@ -147,7 +160,50 @@ FlexSegmentDesc GraphPlanFactory::makeParallelMismatchedLatencyDescForTests()
     split.branches[0].push_back(gainModule(0.5f));
     split.branches[1].push_back(latencyModule(64));
     split.branches[1].push_back(gainModule(0.5f));
-    return FlexSegmentDesc { split };
+    FlexSegmentDesc d { split };
+    uint32_t n = 1;
+    assignUniqueSlotIds(d, n);
+    return d;
+}
+
+FlexSlotDesc GraphPlanFactory::makeModulePaletteSlot(AudioNodeKind kind)
+{
+    switch (kind)
+    {
+        case AudioNodeKind::Gain:
+            return gainModule(1.0f);
+        case AudioNodeKind::Filter:
+            return filterModule(20000.0f);
+        case AudioNodeKind::MicCorrection:
+            return module(AudioNodeKind::MicCorrection);
+        case AudioNodeKind::Deesser:
+            return module(AudioNodeKind::Deesser);
+        case AudioNodeKind::OptoCompressor:
+            return compressorModule(CompressorArchetypeNode::Archetype::Opto);
+        case AudioNodeKind::FetCompressor:
+            return compressorModule(CompressorArchetypeNode::Archetype::Fet);
+        case AudioNodeKind::VcaCompressor:
+            return compressorModule(CompressorArchetypeNode::Archetype::Vca);
+        case AudioNodeKind::Exciter:
+            return module(AudioNodeKind::Exciter);
+        case AudioNodeKind::SpectralCompressor:
+            return module(AudioNodeKind::SpectralCompressor);
+        case AudioNodeKind::Latency:
+            return latencyModule(0);
+        default:
+            return gainModule(1.0f);
+    }
+}
+
+FlexSlotDesc GraphPlanFactory::makeSplitWithUnityBranches(int numBranches)
+{
+    const int n = juce::jmax(2, numBranches);
+    FlexSlotDesc sp;
+    sp.descType = FlexSlotDescType::Split;
+    sp.branches.resize((size_t) n);
+    for (int i = 0; i < n; ++i)
+        sp.branches[(size_t) i].push_back(gainModule(1.0f));
+    return sp;
 }
 
 std::unique_ptr<FlexGraphPlan> GraphPlanFactory::makePlanFromDesc(const FlexSegmentDesc& desc)

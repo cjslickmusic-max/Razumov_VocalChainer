@@ -35,6 +35,12 @@ public:
     static std::unique_ptr<FlexGraphPlan> makePlanFromDesc(const FlexSegmentDesc& desc);
 
     static std::unique_ptr<FlexGraphPlan> makeStartupChainForIndex(int index, double sampleRate);
+
+    /** Новый модуль в палитру редактора (id=0, назначит процессор). */
+    static FlexSlotDesc makeModulePaletteSlot(AudioNodeKind kind);
+
+    /** Split с N ветками, в каждой Gain(1) как заглушка прохода. */
+    static FlexSlotDesc makeSplitWithUnityBranches(int numBranches);
 };
 
 } // namespace razumov::graph

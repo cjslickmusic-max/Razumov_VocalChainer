@@ -4,6 +4,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <memory>
 
+#include "dsp/graph/AudioNode.h"
 #include "ui/ChainStripComponent.h"
 
 class RazumovVocalChainAudioProcessor;
@@ -20,6 +21,12 @@ public:
 private:
     static void styleRotary(juce::Slider&);
 
+    void populateComboBoxes();
+    void refreshModulePanelVisibility();
+    void syncChainStripAfterGraphEdit();
+    void layoutGlobalSection(juce::Rectangle<int> area);
+    void layoutModuleViewport(int viewportWidth);
+
     RazumovVocalChainAudioProcessor& processor;
     razumov::ui::ChainStripComponent chainStrip;
 
@@ -29,6 +36,15 @@ private:
     juce::ComboBox presetCombo;
     juce::Label chainLabel;
     juce::ComboBox chainCombo;
+
+    juce::TextButton bypassSlotBtn { {}, "Bypass" };
+    juce::TextButton removeSlotBtn { {}, "Remove" };
+    juce::TextButton moveLeftBtn { {}, "<" };
+    juce::TextButton moveRightBtn { {}, ">" };
+    juce::TextButton addModuleBtn { {}, "Add..." };
+
+    juce::Label moduleTitleLabel;
+    juce::Label moduleHintLabel;
 
     juce::Viewport viewport;
     juce::Component content;
@@ -95,6 +111,8 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroAirAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroSibilanceAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroPresenceAttachment;
+
+    uint32_t selectedSlotId_ { 0 };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RazumovVocalChainAudioProcessorEditor)
 };

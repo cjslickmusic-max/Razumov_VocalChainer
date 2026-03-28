@@ -2,6 +2,7 @@
 
 #include "dsp/graph/FlexGraphDesc.h"
 #include "dsp/graph/GraphEngine.h"
+#include "params/ModuleParamsRuntime.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <vector>
 
@@ -41,13 +42,19 @@ public:
     juce::AudioProcessorValueTreeState& getAPVTS() noexcept { return apvts; }
     const juce::AudioProcessorValueTreeState& getAPVTS() const noexcept { return apvts; }
 
+    /** Параметры DSP по slotId (per-instance). */
+    float getModuleFloatParam(uint32_t slotId, const juce::String& paramId) const;
+    void setModuleFloatParam(uint32_t slotId, const juce::String& paramId, float value);
+    bool getModuleBoolParam(uint32_t slotId, const juce::String& paramId) const;
+    void setModuleBoolParam(uint32_t slotId, const juce::String& paramId, bool value);
+
     juce::StringArray getChainStripLabelArray() const;
     std::vector<razumov::graph::ChainStripItem> getChainStripItems() const;
 
     razumov::graph::FlexSegmentDesc& getGraphDesc() noexcept { return graphDesc_; }
     const razumov::graph::FlexSegmentDesc& getGraphDesc() const noexcept { return graphDesc_; }
 
-    /** Сохранить FlexGraph в APVTS и отправить план в движок (message thread). */
+    /** Сохранить FlexGraph + ModuleParams в APVTS и отправить план в движок (message thread). */
     void commitGraphMutation();
 
     void applyFactoryPreset(int index);
@@ -64,10 +71,12 @@ private:
     void submitGraphPlanFromCurrentDesc();
     void applyChainProfileTemplate();
     void syncGraphDescFromApvtsState();
-    void persistFlexGraphToApvtsState();
+    void persistEmbeddedStateToApvts();
     void ensureGraphAfterStateLoad();
+    void syncModuleParamsWithGraph();
 
     juce::AudioProcessorValueTreeState apvts;
+    razumov::params::ModuleParamsRuntime moduleParams_;
     razumov::graph::GraphEngine graphEngine_;
     razumov::graph::FlexSegmentDesc graphDesc_;
     uint32_t nextSlotCounter_ { 1 };

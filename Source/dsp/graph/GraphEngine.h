@@ -9,7 +9,8 @@
 
 namespace razumov::params
 {
-struct Phase3RealtimeParams;
+struct MacroAudioState;
+class ModuleParamsRuntime;
 }
 
 namespace razumov::graph
@@ -26,14 +27,13 @@ public:
     void prepare(double sampleRate, int maxBlockSize, int numChannels);
     void releaseResources();
 
-    /** Audio thread: swap плана, применение Phase3 к активному графу, затем DSP. */
-    void process(juce::AudioBuffer<float>& buffer, const razumov::params::Phase3RealtimeParams& params);
+    /** Audio thread: swap плана, применение параметров по slotId, затем DSP. */
+    void process(juce::AudioBuffer<float>& buffer,
+                 const razumov::params::MacroAudioState& macros,
+                 const razumov::params::ModuleParamsRuntime& moduleParams);
 
     /** Message / UI thread: новый план подменится в начале ближайшего process (без аллокаций в audio). */
     void submitPlan(std::shared_ptr<FlexGraphPlan> plan);
-
-    /** Вызывать из audio thread перед process (после чтения APVTS). */
-    void applyPhase3Parameters(const razumov::params::Phase3RealtimeParams& params);
 
     int getReportedLatencySamples() const noexcept { return reportedLatency_; }
 

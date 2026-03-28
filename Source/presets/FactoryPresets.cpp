@@ -1,6 +1,8 @@
 #include "FactoryPresets.h"
 #include "params/ParamIDs.h"
 
+#include <juce_dsp/juce_dsp.h>
+
 namespace razumov::presets
 {
 namespace
@@ -10,12 +12,6 @@ void setFloatParam(juce::AudioProcessorValueTreeState& apvts, const juce::String
 {
     if (auto* p = dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter(id)))
         p->setValueNotifyingHost(p->getNormalisableRange().convertTo0to1(value));
-}
-
-void setBoolParam(juce::AudioProcessorValueTreeState& apvts, const juce::String& id, bool value)
-{
-    if (auto* p = apvts.getParameter(id))
-        p->setValueNotifyingHost(value ? 1.0f : 0.0f);
 }
 
 void setChoiceParam(juce::AudioProcessorValueTreeState& apvts, const juce::String& id, int index)
@@ -30,98 +26,105 @@ void setChoiceParam(juce::AudioProcessorValueTreeState& apvts, const juce::Strin
     }
 }
 
-void applyDefault(juce::AudioProcessorValueTreeState& apvts)
+void applyPresetGlobalsNeutralMacros(juce::AudioProcessorValueTreeState& apvts)
 {
     using namespace razumov::params;
     setChoiceParam(apvts, micProfile, 0);
-    setBoolParam(apvts, micBypass, false);
-    setFloatParam(apvts, micAmount, 1.0f);
-    setFloatParam(apvts, gainDb, 0.0f);
-    setFloatParam(apvts, lowpassHz, 20000.0f);
-    setFloatParam(apvts, deessCrossoverHz, 6000.0f);
-    setFloatParam(apvts, deessThresholdDb, -20.0f);
-    setFloatParam(apvts, deessRatio, 3.0f);
-    setFloatParam(apvts, optoThresholdDb, -12.0f);
-    setFloatParam(apvts, optoRatio, 3.0f);
-    setFloatParam(apvts, optoMakeupDb, 0.0f);
-    setFloatParam(apvts, fetThresholdDb, -12.0f);
-    setFloatParam(apvts, fetRatio, 4.0f);
-    setFloatParam(apvts, fetMakeupDb, 0.0f);
-    setFloatParam(apvts, vcaThresholdDb, -12.0f);
-    setFloatParam(apvts, vcaRatio, 2.5f);
-    setFloatParam(apvts, vcaMakeupDb, 0.0f);
-    setFloatParam(apvts, exciterDrive, 1.5f);
-    setFloatParam(apvts, exciterMix, 0.15f);
-    setBoolParam(apvts, spectralBypass, false);
-    setFloatParam(apvts, spectralMix, 0.75f);
-    setFloatParam(apvts, spectralThresholdDb, -24.0f);
-    setFloatParam(apvts, spectralRatio, 3.0f);
     setFloatParam(apvts, macroGlue, 0.5f);
     setFloatParam(apvts, macroAir, 0.5f);
     setFloatParam(apvts, macroSibilance, 0.5f);
     setFloatParam(apvts, macroPresence, 0.5f);
 }
 
-void applyCleanVocal(juce::AudioProcessorValueTreeState& apvts)
+razumov::params::Phase3RealtimeParams buildDefaultModule()
 {
-    applyDefault(apvts);
     using namespace razumov::params;
-    setFloatParam(apvts, gainDb, 1.5f);
-    setFloatParam(apvts, lowpassHz, 18000.0f);
-    setFloatParam(apvts, deessCrossoverHz, 7000.0f);
-    setFloatParam(apvts, deessThresholdDb, -28.0f);
-    setFloatParam(apvts, deessRatio, 4.0f);
-    setFloatParam(apvts, optoThresholdDb, -18.0f);
-    setFloatParam(apvts, optoRatio, 2.5f);
-    setFloatParam(apvts, fetThresholdDb, -20.0f);
-    setFloatParam(apvts, fetRatio, 3.0f);
-    setFloatParam(apvts, vcaThresholdDb, -18.0f);
-    setFloatParam(apvts, vcaRatio, 2.0f);
-    setFloatParam(apvts, exciterDrive, 1.2f);
-    setFloatParam(apvts, exciterMix, 0.08f);
+    Phase3RealtimeParams p {};
+    p.micBypass = false;
+    p.micAmount = 1.0f;
+    p.gainLinear = juce::Decibels::decibelsToGain(0.0f);
+    p.lowpassHz = 20000.0f;
+    p.deessCrossoverHz = 6000.0f;
+    p.deessThresholdDb = -20.0f;
+    p.deessRatio = 3.0f;
+    p.optoThresholdDb = -12.0f;
+    p.optoRatio = 3.0f;
+    p.optoMakeupDb = 0.0f;
+    p.fetThresholdDb = -12.0f;
+    p.fetRatio = 4.0f;
+    p.fetMakeupDb = 0.0f;
+    p.vcaThresholdDb = -12.0f;
+    p.vcaRatio = 2.5f;
+    p.vcaMakeupDb = 0.0f;
+    p.exciterDrive = 1.5f;
+    p.exciterMix = 0.15f;
+    p.spectralBypass = false;
+    p.spectralMix = 0.75f;
+    p.spectralThresholdDb = -24.0f;
+    p.spectralRatio = 3.0f;
+    return p;
 }
 
-void applyAggressive(juce::AudioProcessorValueTreeState& apvts)
+razumov::params::Phase3RealtimeParams buildCleanVocalModule()
 {
-    applyDefault(apvts);
-    using namespace razumov::params;
-    setFloatParam(apvts, gainDb, 3.0f);
-    setFloatParam(apvts, deessThresholdDb, -14.0f);
-    setFloatParam(apvts, deessRatio, 5.5f);
-    setFloatParam(apvts, optoThresholdDb, -8.0f);
-    setFloatParam(apvts, optoRatio, 5.0f);
-    setFloatParam(apvts, optoMakeupDb, 2.0f);
-    setFloatParam(apvts, fetThresholdDb, -10.0f);
-    setFloatParam(apvts, fetRatio, 6.0f);
-    setFloatParam(apvts, fetMakeupDb, 1.5f);
-    setFloatParam(apvts, vcaThresholdDb, -9.0f);
-    setFloatParam(apvts, vcaRatio, 4.0f);
-    setFloatParam(apvts, vcaMakeupDb, 1.0f);
-    setFloatParam(apvts, exciterDrive, 2.8f);
-    setFloatParam(apvts, exciterMix, 0.28f);
+    auto p = buildDefaultModule();
+    p.gainLinear = juce::Decibels::decibelsToGain(1.5f);
+    p.lowpassHz = 18000.0f;
+    p.deessCrossoverHz = 7000.0f;
+    p.deessThresholdDb = -28.0f;
+    p.deessRatio = 4.0f;
+    p.optoThresholdDb = -18.0f;
+    p.optoRatio = 2.5f;
+    p.fetThresholdDb = -20.0f;
+    p.fetRatio = 3.0f;
+    p.vcaThresholdDb = -18.0f;
+    p.vcaRatio = 2.0f;
+    p.exciterDrive = 1.2f;
+    p.exciterMix = 0.08f;
+    return p;
 }
 
-void applyBroadcast(juce::AudioProcessorValueTreeState& apvts)
+razumov::params::Phase3RealtimeParams buildAggressiveModule()
 {
-    applyDefault(apvts);
-    using namespace razumov::params;
-    setFloatParam(apvts, gainDb, 4.5f);
-    setFloatParam(apvts, lowpassHz, 16500.0f);
-    setFloatParam(apvts, deessCrossoverHz, 6500.0f);
-    setFloatParam(apvts, deessThresholdDb, -22.0f);
-    setFloatParam(apvts, deessRatio, 6.0f);
-    setFloatParam(apvts, optoThresholdDb, -14.0f);
-    setFloatParam(apvts, optoRatio, 4.0f);
-    setFloatParam(apvts, optoMakeupDb, 3.0f);
-    setFloatParam(apvts, fetThresholdDb, -14.0f);
-    setFloatParam(apvts, fetRatio, 5.0f);
-    setFloatParam(apvts, fetMakeupDb, 2.5f);
-    setFloatParam(apvts, vcaThresholdDb, -11.0f);
-    setFloatParam(apvts, vcaRatio, 3.5f);
-    setFloatParam(apvts, vcaMakeupDb, 2.0f);
-    setFloatParam(apvts, exciterDrive, 1.8f);
-    setFloatParam(apvts, exciterMix, 0.12f);
-    setBoolParam(apvts, spectralBypass, false);
+    auto p = buildDefaultModule();
+    p.gainLinear = juce::Decibels::decibelsToGain(3.0f);
+    p.deessThresholdDb = -14.0f;
+    p.deessRatio = 5.5f;
+    p.optoThresholdDb = -8.0f;
+    p.optoRatio = 5.0f;
+    p.optoMakeupDb = 2.0f;
+    p.fetThresholdDb = -10.0f;
+    p.fetRatio = 6.0f;
+    p.fetMakeupDb = 1.5f;
+    p.vcaThresholdDb = -9.0f;
+    p.vcaRatio = 4.0f;
+    p.vcaMakeupDb = 1.0f;
+    p.exciterDrive = 2.8f;
+    p.exciterMix = 0.28f;
+    return p;
+}
+
+razumov::params::Phase3RealtimeParams buildBroadcastModule()
+{
+    auto p = buildDefaultModule();
+    p.gainLinear = juce::Decibels::decibelsToGain(4.5f);
+    p.lowpassHz = 16500.0f;
+    p.deessCrossoverHz = 6500.0f;
+    p.deessThresholdDb = -22.0f;
+    p.deessRatio = 6.0f;
+    p.optoThresholdDb = -14.0f;
+    p.optoRatio = 4.0f;
+    p.optoMakeupDb = 3.0f;
+    p.fetThresholdDb = -14.0f;
+    p.fetRatio = 5.0f;
+    p.fetMakeupDb = 2.5f;
+    p.vcaThresholdDb = -11.0f;
+    p.vcaRatio = 3.5f;
+    p.vcaMakeupDb = 2.0f;
+    p.exciterDrive = 1.8f;
+    p.exciterMix = 0.12f;
+    p.spectralBypass = false;
+    return p;
 }
 
 } // namespace
@@ -144,25 +147,26 @@ const char* getFactoryPresetName(int index) noexcept
     return names[index];
 }
 
-void applyFactoryPreset(int index, juce::AudioProcessorValueTreeState& apvts)
+void applyFactoryPresetGlobals(int index, juce::AudioProcessorValueTreeState& apvts)
+{
+    juce::ignoreUnused(index);
+    applyPresetGlobalsNeutralMacros(apvts);
+}
+
+razumov::params::Phase3RealtimeParams buildFactoryPresetModulePhase3(int index)
 {
     switch (index)
     {
         case 0:
-            applyDefault(apvts);
-            break;
+            return buildDefaultModule();
         case 1:
-            applyCleanVocal(apvts);
-            break;
+            return buildCleanVocalModule();
         case 2:
-            applyAggressive(apvts);
-            break;
+            return buildAggressiveModule();
         case 3:
-            applyBroadcast(apvts);
-            break;
+            return buildBroadcastModule();
         default:
-            applyDefault(apvts);
-            break;
+            return buildDefaultModule();
     }
 }
 

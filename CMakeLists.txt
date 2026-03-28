@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(RazumovVocalChain VERSION 0.8.3 LANGUAGES C CXX)
+project(RazumovVocalChain VERSION 0.9.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -43,6 +43,7 @@ target_sources(
         Source/ui/ChainStripComponent.cpp
         Source/presets/FactoryPresets.cpp
         Source/params/ParameterLayout.cpp
+        Source/params/ModuleParamsRuntime.cpp
         Source/params/MicProfileChoices.cpp
         Source/dsp/graph/FilterNode.cpp
         Source/dsp/graph/LatencyNode.cpp
@@ -96,6 +97,7 @@ add_executable(
     Source/dsp/graph/GraphPlanFactory.cpp
     Source/dsp/graph/GraphEngine.cpp
     Source/dsp/graph/MergeDelayPad.cpp
+    Source/params/ModuleParamsRuntime.cpp
     Source/dsp/graph/MicCorrectionNode.cpp
     Source/dsp/graph/CompressorArchetypeNode.cpp
     Source/dsp/graph/DeesserNode.cpp
@@ -114,6 +116,7 @@ target_link_libraries(
     PRIVATE
         juce::juce_dsp
         juce::juce_audio_basics
+        juce::juce_audio_processors
         juce::juce_core
         juce::juce_data_structures
 )

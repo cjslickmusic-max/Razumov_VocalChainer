@@ -7,6 +7,7 @@
 #include "GainNode.h"
 #include "MicCorrectionNode.h"
 #include "SpectralCompressorNode.h"
+#include "params/ModuleParamsRuntime.h"
 #include "params/Phase3RealtimeParams.h"
 
 #include <juce_core/juce_core.h>
@@ -86,25 +87,31 @@ void applyPhase3ToNode(AudioNode& node, const razumov::params::Phase3RealtimePar
     }
 }
 
-void walkApplyPhase3Slot(FlexSlot& slot, const razumov::params::Phase3RealtimeParams& p)
+void walkApplyPhase3Slot(FlexSlot& slot,
+                         const razumov::params::MacroAudioState& macros,
+                         const razumov::params::ModuleParamsRuntime& runtime)
 {
     if (slot.type == FlexSlot::Type::Module)
     {
         if (slot.bypassed || slot.node == nullptr)
             return;
+        razumov::params::Phase3RealtimeParams p;
+        runtime.fillSlot(slot.slotId, macros, p);
         applyPhase3ToNode(*slot.node, p);
         return;
     }
 
     for (auto& br : slot.branches)
         for (auto& child : br)
-            walkApplyPhase3Slot(child, p);
+            walkApplyPhase3Slot(child, macros, runtime);
 }
 
-void walkApplyPhase3Segment(FlexSegment& seg, const razumov::params::Phase3RealtimeParams& p)
+void walkApplyPhase3Segment(FlexSegment& seg,
+                            const razumov::params::MacroAudioState& macros,
+                            const razumov::params::ModuleParamsRuntime& runtime)
 {
     for (auto& slot : seg)
-        walkApplyPhase3Slot(slot, p);
+        walkApplyPhase3Slot(slot, macros, runtime);
 }
 
 } // namespace
@@ -205,10 +212,10 @@ void GraphEngine::swapAndPreparePendingPlan()
 }
 
 void GraphEngine::process(juce::AudioBuffer<float>& buffer,
-                          const razumov::params::Phase3RealtimeParams& params)
+                          const razumov::params::MacroAudioState& macros,
+                          const razumov::params::ModuleParamsRuntime& moduleParams)
 {
     swapAndPreparePendingPlan();
-    applyPhase3Parameters(params);
 
     if (activePlan_ == nullptr)
         return;
@@ -216,6 +223,8 @@ void GraphEngine::process(juce::AudioBuffer<float>& buffer,
     auto& root = activePlan_->getRoot();
     if (root.empty())
         return;
+
+    walkApplyPhase3Segment(root, macros, moduleParams);
 
     const int newLat = activePlan_->computePluginLatencySamples();
     if (newLat != reportedLatency_)
@@ -288,14 +297,6 @@ void GraphEngine::processSplit(FlexSlot& slot, juce::AudioBuffer<float>& buffer)
         for (int c = 0; c < ch; ++c)
             buffer.addFrom(c, 0, branchBuffers_[(size_t) i], c, 0, n);
     }
-}
-
-void GraphEngine::applyPhase3Parameters(const razumov::params::Phase3RealtimeParams& params)
-{
-    if (activePlan_ == nullptr)
-        return;
-
-    walkApplyPhase3Segment(activePlan_->getRoot(), params);
 }
 
 } // namespace razumov::graph

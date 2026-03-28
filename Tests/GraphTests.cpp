@@ -1,7 +1,7 @@
 #include <dsp/graph/FlexGraphPlan.h>
 #include <dsp/graph/GraphEngine.h>
 #include <dsp/graph/GraphPlanFactory.h>
-#include <params/Phase3RealtimeParams.h>
+#include <params/ModuleParamsRuntime.h>
 
 #include <cassert>
 #include <cmath>
@@ -29,8 +29,9 @@ static void testParallelHalvesIsUnityGain()
     buf.setSample(0, 0, 1.0f);
     buf.setSample(1, 0, 1.0f);
 
-    razumov::params::Phase3RealtimeParams p {};
-    engine.process(buf, p);
+    razumov::params::MacroAudioState macros;
+    razumov::params::ModuleParamsRuntime mod;
+    engine.process(buf, macros, mod);
 
     const float l = buf.getSample(0, 0);
     const float r = buf.getSample(1, 0);

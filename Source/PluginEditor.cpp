@@ -38,6 +38,41 @@ void RazumovVocalChainAudioProcessorEditor::syncChainStripAfterGraphEdit()
     refreshModulePanelVisibility();
 }
 
+void RazumovVocalChainAudioProcessorEditor::reloadModuleParamsFromProcessor()
+{
+    using namespace razumov::params;
+    const auto& desc = processor.getGraphDesc();
+    if (razumov::graph::queryIsParallelSplitSlot(desc, selectedSlotId_))
+        return;
+    const auto kind = razumov::graph::queryModuleKindForSlotId(desc, selectedSlotId_);
+    if (!kind.has_value())
+        return;
+
+    const uint32_t id = selectedSlotId_;
+    micBypassBtn.setToggleState(processor.getModuleBoolParam(id, micBypass), juce::dontSendNotification);
+    spectralBypassBtn.setToggleState(processor.getModuleBoolParam(id, spectralBypass), juce::dontSendNotification);
+    micAmountSlider.setValue(processor.getModuleFloatParam(id, micAmount), juce::dontSendNotification);
+    gainSlider.setValue(processor.getModuleFloatParam(id, gainDb), juce::dontSendNotification);
+    lowpassSlider.setValue(processor.getModuleFloatParam(id, lowpassHz), juce::dontSendNotification);
+    deessCrossSlider.setValue(processor.getModuleFloatParam(id, deessCrossoverHz), juce::dontSendNotification);
+    deessThreshSlider.setValue(processor.getModuleFloatParam(id, deessThresholdDb), juce::dontSendNotification);
+    deessRatioSlider.setValue(processor.getModuleFloatParam(id, deessRatio), juce::dontSendNotification);
+    optoThreshSlider.setValue(processor.getModuleFloatParam(id, optoThresholdDb), juce::dontSendNotification);
+    optoRatioSlider.setValue(processor.getModuleFloatParam(id, optoRatio), juce::dontSendNotification);
+    optoMakeupSlider.setValue(processor.getModuleFloatParam(id, optoMakeupDb), juce::dontSendNotification);
+    fetThreshSlider.setValue(processor.getModuleFloatParam(id, fetThresholdDb), juce::dontSendNotification);
+    fetRatioSlider.setValue(processor.getModuleFloatParam(id, fetRatio), juce::dontSendNotification);
+    fetMakeupSlider.setValue(processor.getModuleFloatParam(id, fetMakeupDb), juce::dontSendNotification);
+    vcaThreshSlider.setValue(processor.getModuleFloatParam(id, vcaThresholdDb), juce::dontSendNotification);
+    vcaRatioSlider.setValue(processor.getModuleFloatParam(id, vcaRatio), juce::dontSendNotification);
+    vcaMakeupSlider.setValue(processor.getModuleFloatParam(id, vcaMakeupDb), juce::dontSendNotification);
+    exciterDriveSlider.setValue(processor.getModuleFloatParam(id, exciterDrive), juce::dontSendNotification);
+    exciterMixSlider.setValue(processor.getModuleFloatParam(id, exciterMix), juce::dontSendNotification);
+    spectralMixSlider.setValue(processor.getModuleFloatParam(id, spectralMix), juce::dontSendNotification);
+    spectralThreshSlider.setValue(processor.getModuleFloatParam(id, spectralThresholdDb), juce::dontSendNotification);
+    spectralRatioSlider.setValue(processor.getModuleFloatParam(id, spectralRatio), juce::dontSendNotification);
+}
+
 void RazumovVocalChainAudioProcessorEditor::refreshModulePanelVisibility()
 {
     using AK = razumov::graph::AudioNodeKind;
@@ -59,7 +94,7 @@ void RazumovVocalChainAudioProcessorEditor::refreshModulePanelVisibility()
         {
             case AK::MicCorrection:
                 moduleTitleLabel.setText("Mic correction", juce::dontSendNotification);
-                moduleHintLabel.setText("Global Mic bypass and Mic amount are above.", juce::dontSendNotification);
+                moduleHintLabel.setText("Per-slot mic correction (bypass and amount below).", juce::dontSendNotification);
                 moduleHintLabel.setVisible(true);
                 break;
             case AK::Gain:
@@ -109,6 +144,14 @@ void RazumovVocalChainAudioProcessorEditor::refreshModulePanelVisibility()
     const bool showSpec = kind == AK::SpectralCompressor;
     const bool showLp = kind == AK::Filter;
     const bool showSplitPanel = isSplit;
+    const bool showMic = kind == AK::MicCorrection;
+    const bool showGainKnob = kind == AK::Gain;
+
+    juce::ignoreUnused(showSplitPanel);
+
+    micBypassBtn.setVisible(showMic);
+    micAmountSlider.setVisible(showMic);
+    gainSlider.setVisible(showGainKnob);
 
     deessCrossSlider.setVisible(showDeess);
     deessThreshSlider.setVisible(showDeess);
@@ -136,6 +179,7 @@ void RazumovVocalChainAudioProcessorEditor::refreshModulePanelVisibility()
 
     lowpassSlider.setVisible(showLp);
 
+    reloadModuleParamsFromProcessor();
     resized();
 }
 
@@ -159,13 +203,6 @@ void RazumovVocalChainAudioProcessorEditor::layoutGlobalSection(juce::Rectangle<
     x += kw + 10;
     macroPresenceLabel.setBounds(x, y, kw, mlab);
     macroPresenceSlider.setBounds(x, y + mlab, kw, mkh);
-
-    y += mlab + mkh + 14;
-    x = area.getX() + pad;
-
-    micBypassBtn.setBounds(x, y, 120, 28);
-    micAmountSlider.setBounds(x + 132, y, kw, 112);
-    gainSlider.setBounds(x + 132 + kw + 10, y, kw, 112);
 }
 
 void RazumovVocalChainAudioProcessorEditor::layoutModuleViewport(int viewportWidth)
@@ -185,6 +222,18 @@ void RazumovVocalChainAudioProcessorEditor::layoutModuleViewport(int viewportWid
     {
         moduleHintLabel.setBounds(x, y, W - 2 * pad, 36);
         y += 42;
+    }
+
+    if (micBypassBtn.isVisible())
+    {
+        micBypassBtn.setBounds(x, y, 120, 28);
+        micAmountSlider.setBounds(x + 132, y, kw, kh);
+        y += kh + gap + 18;
+    }
+    else if (gainSlider.isVisible())
+    {
+        gainSlider.setBounds(x, y, kw, kh);
+        y += kh + gap + 18;
     }
 
     auto row3 = [&](juce::Slider& a, juce::Slider& b, juce::Slider& c) {
@@ -251,7 +300,10 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     presetCombo.onChange = [this] {
         const int id = presetCombo.getSelectedId();
         if (id > 0)
+        {
             processor.applyFactoryPreset(id - 1);
+            reloadModuleParamsFromProcessor();
+        }
     };
     addAndMakeVisible(presetCombo);
 
@@ -434,7 +486,7 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
 
     micBypassBtn.setButtonText("Mic bypass");
     micBypassBtn.setClickingTogglesState(true);
-    addAndMakeVisible(micBypassBtn);
+    content.addAndMakeVisible(micBypassBtn);
 
     spectralBypassBtn.setButtonText("Spectral bypass");
     spectralBypassBtn.setClickingTogglesState(true);
@@ -461,51 +513,63 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     addKnob(spectralThreshSlider, juce::Colour(0xff9a9ae0));
     addKnob(spectralRatioSlider, juce::Colour(0xff9a9ae0));
 
-    micBypassAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
-        apvts, razumov::params::micBypass, micBypassBtn);
-    spectralBypassAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
-        apvts, razumov::params::spectralBypass, spectralBypassBtn);
+    micAmountSlider.setRange(0.0, 1.0, 0.01);
+    gainSlider.setRange(-24.0, 12.0, 0.1);
+    gainSlider.setTextValueSuffix(" dB");
+    lowpassSlider.setRange(400.0, 20000.0, 1.0);
+    lowpassSlider.setSkewFactorFromMidPoint(2500.0);
+    lowpassSlider.setTextValueSuffix(" Hz");
+    deessCrossSlider.setRange(3000.0, 10000.0, 1.0);
+    deessThreshSlider.setRange(-60.0, 0.0, 0.1);
+    deessRatioSlider.setRange(1.0, 10.0, 0.1);
+    optoThreshSlider.setRange(-60.0, 0.0, 0.1);
+    optoRatioSlider.setRange(1.0, 20.0, 0.1);
+    optoMakeupSlider.setRange(0.0, 24.0, 0.1);
+    fetThreshSlider.setRange(-60.0, 0.0, 0.1);
+    fetRatioSlider.setRange(1.0, 20.0, 0.1);
+    fetMakeupSlider.setRange(0.0, 24.0, 0.1);
+    vcaThreshSlider.setRange(-60.0, 0.0, 0.1);
+    vcaRatioSlider.setRange(1.0, 20.0, 0.1);
+    vcaMakeupSlider.setRange(0.0, 24.0, 0.1);
+    exciterDriveSlider.setRange(0.1, 8.0, 0.01);
+    exciterMixSlider.setRange(0.0, 1.0, 0.01);
+    spectralMixSlider.setRange(0.0, 1.0, 0.01);
+    spectralThreshSlider.setRange(-60.0, 0.0, 0.1);
+    spectralRatioSlider.setRange(1.0, 20.0, 0.1);
 
-    micAmountAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvts, razumov::params::micAmount, micAmountSlider);
-    gainAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvts, razumov::params::gainDb, gainSlider);
-    lowpassAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvts, razumov::params::lowpassHz, lowpassSlider);
-    deessCrossAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvts, razumov::params::deessCrossoverHz, deessCrossSlider);
-    deessThreshAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvts, razumov::params::deessThresholdDb, deessThreshSlider);
-    deessRatioAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvts, razumov::params::deessRatio, deessRatioSlider);
-    optoThreshAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvts, razumov::params::optoThresholdDb, optoThreshSlider);
-    optoRatioAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvts, razumov::params::optoRatio, optoRatioSlider);
-    optoMakeupAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvts, razumov::params::optoMakeupDb, optoMakeupSlider);
-    fetThreshAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvts, razumov::params::fetThresholdDb, fetThreshSlider);
-    fetRatioAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvts, razumov::params::fetRatio, fetRatioSlider);
-    fetMakeupAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvts, razumov::params::fetMakeupDb, fetMakeupSlider);
-    vcaThreshAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvts, razumov::params::vcaThresholdDb, vcaThreshSlider);
-    vcaRatioAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvts, razumov::params::vcaRatio, vcaRatioSlider);
-    vcaMakeupAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvts, razumov::params::vcaMakeupDb, vcaMakeupSlider);
-    exciterDriveAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvts, razumov::params::exciterDrive, exciterDriveSlider);
-    exciterMixAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvts, razumov::params::exciterMix, exciterMixSlider);
-    spectralMixAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvts, razumov::params::spectralMix, spectralMixSlider);
-    spectralThreshAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvts, razumov::params::spectralThresholdDb, spectralThreshSlider);
-    spectralRatioAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvts, razumov::params::spectralRatio, spectralRatioSlider);
+    auto wireFloat = [this](juce::Slider& s, const char* paramId) {
+        s.onValueChange = [this, &s, paramId] {
+            processor.setModuleFloatParam(selectedSlotId_, paramId, (float) s.getValue());
+        };
+    };
+
+    wireFloat(micAmountSlider, razumov::params::micAmount);
+    wireFloat(gainSlider, razumov::params::gainDb);
+    wireFloat(lowpassSlider, razumov::params::lowpassHz);
+    wireFloat(deessCrossSlider, razumov::params::deessCrossoverHz);
+    wireFloat(deessThreshSlider, razumov::params::deessThresholdDb);
+    wireFloat(deessRatioSlider, razumov::params::deessRatio);
+    wireFloat(optoThreshSlider, razumov::params::optoThresholdDb);
+    wireFloat(optoRatioSlider, razumov::params::optoRatio);
+    wireFloat(optoMakeupSlider, razumov::params::optoMakeupDb);
+    wireFloat(fetThreshSlider, razumov::params::fetThresholdDb);
+    wireFloat(fetRatioSlider, razumov::params::fetRatio);
+    wireFloat(fetMakeupSlider, razumov::params::fetMakeupDb);
+    wireFloat(vcaThreshSlider, razumov::params::vcaThresholdDb);
+    wireFloat(vcaRatioSlider, razumov::params::vcaRatio);
+    wireFloat(vcaMakeupSlider, razumov::params::vcaMakeupDb);
+    wireFloat(exciterDriveSlider, razumov::params::exciterDrive);
+    wireFloat(exciterMixSlider, razumov::params::exciterMix);
+    wireFloat(spectralMixSlider, razumov::params::spectralMix);
+    wireFloat(spectralThreshSlider, razumov::params::spectralThresholdDb);
+    wireFloat(spectralRatioSlider, razumov::params::spectralRatio);
+
+    micBypassBtn.onClick = [this] {
+        processor.setModuleBoolParam(selectedSlotId_, razumov::params::micBypass, micBypassBtn.getToggleState());
+    };
+    spectralBypassBtn.onClick = [this] {
+        processor.setModuleBoolParam(selectedSlotId_, razumov::params::spectralBypass, spectralBypassBtn.getToggleState());
+    };
 
     viewport.setViewedComponent(&content, false);
 
@@ -527,7 +591,7 @@ void RazumovVocalChainAudioProcessorEditor::paint(juce::Graphics& g)
     g.setColour(juce::Colour(0xffaab4c0));
     auto ver = titleRow;
     ver.removeFromRight(620);
-    g.drawText("v0.8.3", ver, juce::Justification::centredRight);
+    g.drawText("v0.9.0", ver, juce::Justification::centredRight);
 }
 
 void RazumovVocalChainAudioProcessorEditor::resized()
@@ -559,7 +623,7 @@ void RazumovVocalChainAudioProcessorEditor::resized()
     tx += 48;
     addModuleBtn.setBounds(tx, toolRow.getY() + 2, 100, 28);
 
-    auto globalArea = bounds.removeFromTop(230);
+    auto globalArea = bounds.removeFromTop(140);
     layoutGlobalSection(globalArea);
 
     viewport.setBounds(bounds);

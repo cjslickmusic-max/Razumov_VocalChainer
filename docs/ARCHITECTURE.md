@@ -47,12 +47,13 @@
 
 ## Параметры (фаза 2–3)
 
-- `AudioProcessorValueTreeState`: `ParamIDs.h`, `ParameterLayout.cpp`.
-- В `processBlock` значения читаются из APVTS, собираются в `Phase3RealtimeParams` и передаются в **`GraphEngine::process(..., params)`**; обход дерева применяет параметры ко **всем** узлам данного `AudioNodeKind` (одни и те же значения APVTS на каждый экземпляр).
+- `AudioProcessorValueTreeState`: глобальные параметры — `chainProfile`, `micProfile`, четыре макроса (`ParameterLayout.cpp`, `ParamIDs.h`).
+- Параметры **модулей по экземпляру** (per `slotId`): `ModuleParamsRuntime` — атомики + дочерний `ValueTree` `ModuleParams` в состоянии плагина; в `processBlock` макросы читаются из APVTS, для каждого слота `GraphEngine` вызывает `fillSlot(slotId, macros, Phase3RealtimeParams)` и применяет к узлу.
+- Старые проекты без `ModuleParams`: миграция из legacy `PARAM` в XML (общий снимок на все слоты).
 
 ## Пресеты (фаза 4)
 
-- Фабричный банк: `Source/presets/FactoryPresets.*`; `applyFactoryPreset` задаёт APVTS.
+- Фабричный банк: `Source/presets/FactoryPresets.*`; глобально — `applyFactoryPresetGlobals` (mic profile + макросы); снимок модулей — `buildFactoryPresetModulePhase3` → `seedAllSlotsWithSameParams` на все слоты.
 - Стартовая цепочка: `chainProfile` → `makeStartupDescForIndex` → `graphDesc_` + `makePlanFromDesc` → `submitPlan`; `prepareToPlay` и загрузка состояния синхронизируют описание и план.
-- Макросы: смещение в `buildPhase3RealtimeParams`.
+- Макросы: смещение в `applyMacroOffsetsToPhase3` после чтения сырых значений слота.
 - `MicCorrectionNode` / `SpectralCompressorNode`: см. `docs/ROADMAP.md` и комментарии в узлах.

@@ -191,4 +191,28 @@ int findRootSlotIndexContainingId(const FlexSegmentDesc& root, uint32_t slotId) 
     return -1;
 }
 
+namespace
+{
+void walkModuleSlotIds(const FlexSegmentDesc& seg, std::vector<uint32_t>& out)
+{
+    for (const auto& s : seg)
+    {
+        if (s.descType == FlexSlotDescType::Module)
+            out.push_back(s.slotId);
+        else if (s.descType == FlexSlotDescType::Split)
+        {
+            for (const auto& br : s.branches)
+                walkModuleSlotIds(br, out);
+        }
+    }
+}
+} // namespace
+
+std::vector<uint32_t> collectModuleSlotIds(const FlexSegmentDesc& root)
+{
+    std::vector<uint32_t> out;
+    walkModuleSlotIds(root, out);
+    return out;
+}
+
 } // namespace razumov::graph

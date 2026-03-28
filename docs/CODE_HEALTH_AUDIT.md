@@ -4,6 +4,13 @@
 
 ---
 
+## Quick check — v0.9.0 (2026-03-28) — per-slot module params
+
+- `ModuleParamsRuntime` (atomics per `slotId`, `ModuleParams` in state XML); `GraphEngine::process(buf, macros, moduleParams)`; APVTS: chain / mic profile / macros only; `FactoryPresets` split globals + module snapshot; legacy PARAM migration; UI sliders bound to `selectedSlotId_`.
+- ReadLints (изменённые файлы); сборка Release + `RazumovVocalChainTests`: OK.
+
+---
+
 ## Quick check — v0.8.3 (2026-03-27) — FlexGraph persist + chain toolbar + slot selection
 
 - `FlexGraphSerialization`, `persistFlexGraphToApvtsState` / sync / ensure после load; `ChainStripComponent` selection + hit test; `PluginEditor` toolbar, Add (modules + Split x2/x3), global vs module viewport; удалён лишний `ignoreUnused` в `refreshModulePanelVisibility`.

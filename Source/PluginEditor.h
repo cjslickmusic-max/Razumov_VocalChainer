@@ -23,6 +23,7 @@ private:
 
     void populateComboBoxes();
     void refreshModulePanelVisibility();
+    void reloadModuleParamsFromProcessor();
     void syncChainStripAfterGraphEdit();
     void layoutGlobalSection(juce::Rectangle<int> area);
     void layoutModuleViewport(int viewportWidth);
@@ -82,29 +83,6 @@ private:
     juce::Slider spectralThreshSlider;
     juce::Slider spectralRatioSlider;
 
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> micBypassAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> spectralBypassAttachment;
-
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> micAmountAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> gainAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> lowpassAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> deessCrossAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> deessThreshAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> deessRatioAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> optoThreshAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> optoRatioAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> optoMakeupAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> fetThreshAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> fetRatioAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> fetMakeupAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> vcaThreshAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> vcaRatioAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> vcaMakeupAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> exciterDriveAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> exciterMixAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> spectralMixAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> spectralThreshAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> spectralRatioAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> micProfileAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> chainAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroGlueAttachment;

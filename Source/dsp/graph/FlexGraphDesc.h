@@ -62,4 +62,7 @@ bool queryIsParallelSplitSlot(const FlexSegmentDesc& root, uint32_t slotId) noex
 
 int findRootSlotIndexContainingId(const FlexSegmentDesc& root, uint32_t slotId) noexcept;
 
+/** Все slotId узлов Module (без split-карточек), DFS по порядку сегмента. */
+std::vector<uint32_t> collectModuleSlotIds(const FlexSegmentDesc& root);
+
 } // namespace razumov::graph

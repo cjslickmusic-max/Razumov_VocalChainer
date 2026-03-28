@@ -5,6 +5,9 @@
 
 namespace
 {
+/** Время компиляции этого translation unit (обновляется при пересборке редактора). */
+static const char* const kBuildDateTime = __DATE__ " " __TIME__;
+
 uint32_t referenceSlotForInsert(RazumovVocalChainAudioProcessor& proc, uint32_t selectedSlotId)
 {
     if (selectedSlotId != 0)
@@ -604,15 +607,23 @@ void RazumovVocalChainAudioProcessorEditor::paint(juce::Graphics& g)
 {
     g.fillAll(juce::Colour(0xff1a1d23));
     auto r = getLocalBounds().reduced(16);
-    auto titleRow = r.removeFromTop(26);
+    auto titleRow = r.removeFromTop(34);
     g.setColour(juce::Colours::white);
     g.setFont(juce::FontOptions(18.0f, juce::Font::bold));
-    g.drawText("Razumov Vocal Chain", titleRow, juce::Justification::centredLeft);
+    auto titleLeft = titleRow;
+    auto versionBlock = titleRow.removeFromRight(300);
+    g.drawText("Razumov Vocal Chain", titleLeft, juce::Justification::centredLeft);
+
+    const juce::String versionLine = juce::String("v") + JucePlugin_VersionString;
+    const juce::String buildLine = juce::String("build ") + kBuildDateTime;
+
     g.setFont(juce::FontOptions(12.0f));
     g.setColour(juce::Colour(0xffaab4c0));
-    auto ver = titleRow;
-    ver.removeFromRight(620);
-    g.drawText("v0.9.2", ver, juce::Justification::centredRight);
+    auto v1 = versionBlock.removeFromTop(17);
+    g.drawText(versionLine, v1, juce::Justification::centredRight);
+    g.setFont(juce::FontOptions(10.0f));
+    g.setColour(juce::Colour(0xff7a8490));
+    g.drawText(buildLine, versionBlock, juce::Justification::centredRight);
 }
 
 void RazumovVocalChainAudioProcessorEditor::resized()

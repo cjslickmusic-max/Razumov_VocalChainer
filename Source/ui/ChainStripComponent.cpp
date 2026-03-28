@@ -151,6 +151,13 @@ void ChainStripComponent::paint(juce::Graphics& g)
         const float fs = juce::jmin(12.5f, juce::jmax(8.5f, card.getWidth() * 0.18f));
         g.setFont(juce::FontOptions(fs, juce::Font::bold));
         g.drawText(c.label, card.reduced(3.0f), juce::Justification::centred);
+
+        if (c.bypassed)
+        {
+            g.setColour(juce::Colour(0xffe89868));
+            g.setFont(juce::FontOptions(9.0f, juce::Font::bold));
+            g.drawText("BYP", card.reduced(4.0f).removeFromBottom(11.0f), juce::Justification::bottomRight);
+        }
     }
 }
 
@@ -163,6 +170,13 @@ void ChainStripComponent::mouseDown(const juce::MouseEvent& e)
             continue;
         if (c.bounds.expanded(1.0f).contains(p))
         {
+            if (e.getNumberOfClicks() == 2)
+            {
+                processor_.setSlotBypassForId(c.slotId, !c.bypassed);
+                syncFromProcessor();
+                repaint();
+                return;
+            }
             selectedSlotId_ = c.slotId;
             if (onSlotSelected)
                 onSlotSelected(selectedSlotId_);

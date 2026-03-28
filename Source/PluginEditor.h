@@ -9,11 +9,30 @@
 
 class RazumovVocalChainAudioProcessor;
 
+struct VocalChainLookAndFeel;
+
+/** Область под будущую графику микрофона; клик по превью открывает список профиля. */
+struct MicProfilePanel : juce::Component
+{
+    std::function<void()> onPreviewClicked;
+    void resized() override;
+    void paint(juce::Graphics&) override;
+    void mouseDown(const juce::MouseEvent& e) override;
+
+private:
+    juce::Rectangle<int> previewBounds_;
+};
+
+struct ModuleSectionBackdrop : juce::Component
+{
+    void paint(juce::Graphics&) override;
+};
+
 class RazumovVocalChainAudioProcessorEditor : public juce::AudioProcessorEditor
 {
 public:
     explicit RazumovVocalChainAudioProcessorEditor(RazumovVocalChainAudioProcessor&);
-    ~RazumovVocalChainAudioProcessorEditor() override = default;
+    ~RazumovVocalChainAudioProcessorEditor() override;
 
     void paint(juce::Graphics&) override;
     void resized() override;
@@ -31,12 +50,13 @@ private:
     RazumovVocalChainAudioProcessor& processor;
     razumov::ui::ChainStripComponent chainStrip;
 
-    juce::Label micProfileLabel;
+    MicProfilePanel micProfilePanel;
     juce::ComboBox micProfileCombo;
     juce::Label presetLabel;
     juce::ComboBox presetCombo;
     juce::Label chainLabel;
     juce::ComboBox chainCombo;
+    juce::Label macroSectionLabel;
 
     juce::TextButton bypassSlotBtn { {}, "Bypass" };
     juce::TextButton removeSlotBtn { {}, "Remove" };
@@ -49,6 +69,7 @@ private:
 
     juce::Viewport viewport;
     juce::Component content;
+    ModuleSectionBackdrop moduleSectionBackdrop;
 
     juce::Slider macroGlueSlider;
     juce::Slider macroAirSlider;
@@ -101,6 +122,8 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroBodyAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroSmoothAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroDensityAttachment;
+
+    std::unique_ptr<VocalChainLookAndFeel> laf;
 
     uint32_t selectedSlotId_ { 0 };
 

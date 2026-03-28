@@ -19,8 +19,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
 
     params.push_back(std::make_unique<AudioParameterChoice>(
         ParameterID { chainProfile, 1 },
-        "Chain",
-        StringArray { "Full (Opto->FET->VCA)", "Compact (Opto only)", "FET-forward (FET->Opto->VCA)" },
+        "Graph template",
+        StringArray { "Full: Opto>FET>VCA", "Compact: Opto only", "FET-first: FET>Opto>VCA" },
         0));
 
     auto addMacro = [&](const char* id, const char* name) {

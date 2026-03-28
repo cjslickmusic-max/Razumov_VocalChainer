@@ -22,11 +22,17 @@ cmake --build build --target RazumovVocalChainTests
 ./build/RazumovVocalChainTests
 ```
 
-Артефакты JUCE обычно копируются после сборки в системные папки плагинов (см. вывод CMake `Installing:`).
+**Где лежит плагин после сборки (один канонический путь в репозитории):** каталог  
+`build/RazumovVocalChain_artefacts/Release/` — отсюда можно указать путь к VST3 в хосте (REAPER и т.д.), без копирования.
 
-- **VST3:** `~/Library/Audio/Plug-Ins/VST3/Razumov Vocal Chain.vst3`
-- **AU:** `~/Library/Audio/Plug-Ins/Components/Razumov Vocal Chain.component`
-- **Standalone:** `build/RazumovVocalChain_artefacts/Release/Standalone/Razumov Vocal Chain.app` (путь может отличаться в зависимости от генератора)
+- **VST3:** `build/RazumovVocalChain_artefacts/Release/VST3/Razumov Vocal Chain.vst3`
+- **AU:** `build/RazumovVocalChain_artefacts/Release/AU/Razumov Vocal Chain.component`
+- **Standalone:** `build/RazumovVocalChain_artefacts/Release/Standalone/Razumov Vocal Chain.app`
+
+Дополнительно JUCE при `COPY_PLUGIN_AFTER_BUILD` дублирует в пользовательские Plug-Ins (удобно для хостов, которые смотрят только туда):
+
+- `~/Library/Audio/Plug-Ins/VST3/Razumov Vocal Chain.vst3`
+- `~/Library/Audio/Plug-Ins/Components/Razumov Vocal Chain.component`
 
 ## Сборка (Windows)
 

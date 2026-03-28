@@ -54,6 +54,8 @@ cmake --build build --parallel
 
 Цель CMake: **`RazumovVocalChain`**. JUCE **8.0.12** через FetchContent.
 
+**Плагин для хоста (macOS):** канонический путь в дереве — `build/RazumovVocalChain_artefacts/Release/VST3/Razumov Vocal Chain.vst3` (и AU рядом в `.../AU/`). Не подменять на произвольные «другие папки» в ответах; см. **`README.md`**.
+
 ---
 
 ## 5. Риски / неочевидное

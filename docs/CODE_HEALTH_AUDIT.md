@@ -4,6 +4,15 @@
 
 ---
 
+## Quick check — v0.9.1 (2026-03-28) — MergePdcTests + Spectral determinism
+
+- `GraphPlanFactory`: `makeParallelThreeWayMismatchedLatencyDescForTests`, `makeNestedParallelMismatchedLatencyDescForTests`.
+- `Tests/MergePdcTests.cpp`: 2-way/3-way синус после merge = чистая задержка 64; 3-way импульс и multi-block; вложенный split (пик на 32, DC).
+- `DspDeterminismTests`: `SpectralCompressorNode` детерминизм после `reset()`.
+- ReadLints (изменённые тесты/фабрика); Release + `RazumovVocalChainTests` + таргет `RazumovVocalChain`: OK.
+
+---
+
 ## Quick check — v0.9.1 (2026-03-28) — DSP determinism test suite + TESTING.md
 
 - `Tests/TestMain.cpp`, `DspDeterminismTests.cpp`, `DspTestHelpers.h`; `GraphTests.cpp` -> `runGraphEngineTests()`. CMake: include `Tests/`, `ctest` на тот же бинарник.

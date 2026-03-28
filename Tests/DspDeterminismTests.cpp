@@ -8,6 +8,7 @@
 #include <dsp/graph/LatencyNode.h>
 #include <dsp/graph/MergeDelayPad.h>
 #include <dsp/graph/MicCorrectionNode.h>
+#include <dsp/graph/SpectralCompressorNode.h>
 
 #include <cassert>
 
@@ -235,6 +236,29 @@ void testConstantDcThroughGainLinear()
         assert(razumov::tests::nearAbs(buf.getSample(0, i), 0.2f, 1.0e-3f));
 }
 
+void testSpectralCompressorDeterminism()
+{
+    using namespace razumov::graph;
+    SpectralCompressorNode node;
+    node.setMix(0.42f);
+    node.setThresholdDb(-30.0f);
+    node.setRatio(2.0f);
+    node.prepare(kSr, kBlock, 2);
+    juce::AudioBuffer<float> in(2, kBlock);
+    razumov::tests::fillSine(in, kSr, 1200.0, 0.08f);
+
+    juce::AudioBuffer<float> a(2, kBlock);
+    juce::AudioBuffer<float> b(2, kBlock);
+    razumov::tests::copyBuffer(in, a);
+    node.process(a);
+
+    node.reset();
+    razumov::tests::copyBuffer(in, b);
+    node.process(b);
+
+    razumov::tests::assertBuffersNearEqual(a, b, 1.0e-5f);
+}
+
 } // namespace
 
 void runDspDeterminismTests()
@@ -257,4 +281,5 @@ void runDspDeterminismTests()
     testMicPassthroughDeterminism();
     testMergeDelayPadDeterminism();
     testConstantDcThroughGainLinear();
+    testSpectralCompressorDeterminism();
 }

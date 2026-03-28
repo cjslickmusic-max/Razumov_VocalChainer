@@ -14,9 +14,10 @@ cmake --build build --target RazumovVocalChainTests
 
 | Файл | Назначение |
 |------|------------|
-| `Tests/TestMain.cpp` | `main`: `runGraphEngineTests()` затем `runDspDeterminismTests()`. |
+| `Tests/TestMain.cpp` | `main`: `runGraphEngineTests()`, `runMergePdcTests()`, `runDspDeterminismTests()`. |
 | `Tests/GraphTests.cpp` | Граф, merge, PDC, импульсы, вложенные split. |
-| `Tests/DspDeterminismTests.cpp` | Детерминизм узлов, тишина на компрессорах, задержка и фаза синуса. |
+| `Tests/MergePdcTests.cpp` | 2/3-way merge + вложенный split: импульс, синус = чистая задержка после PDC, DC. |
+| `Tests/DspDeterminismTests.cpp` | Детерминизм узлов (в т.ч. Spectral), тишина на компрессорах, задержка и фаза синуса. |
 | `Tests/DspTestHelpers.h` | Общие хелперы: `nearAbs`, `fillSine`, `assertBuffersNearEqual`, `copyBuffer`. |
 
 ## Политика проверок

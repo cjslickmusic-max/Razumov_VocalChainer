@@ -89,6 +89,7 @@ add_executable(
     RazumovVocalChainTests
     Tests/TestMain.cpp
     Tests/GraphTests.cpp
+    Tests/MergePdcTests.cpp
     Tests/DspDeterminismTests.cpp
     Source/dsp/graph/FilterNode.cpp
     Source/dsp/graph/LatencyNode.cpp

@@ -38,6 +38,12 @@ public:
     /** Разная задержка в ветках — merge с выравниванием (тесты). */
     static FlexSegmentDesc makeParallelMismatchedLatencyDescForTests();
 
+    /** Три ветки с разной задержкой (0 / 32 / 64) и gain 1/3 — PDC на merge (тесты). */
+    static FlexSegmentDesc makeParallelThreeWayMismatchedLatencyDescForTests();
+
+    /** Вложенный split: внутри ветки 0 — 32 сэмпла задержки на одной половине (тесты). */
+    static FlexSegmentDesc makeNestedParallelMismatchedLatencyDescForTests();
+
     static std::unique_ptr<FlexGraphPlan> makePlanFromDesc(const FlexSegmentDesc& desc);
 
     static std::unique_ptr<FlexGraphPlan> makeStartupChainForIndex(int index, double sampleRate);

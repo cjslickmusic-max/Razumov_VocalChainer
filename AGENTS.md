@@ -19,6 +19,7 @@
 | Файл | Суть |
 |------|------|
 | `answer-in-russian.mdc` | Ответы на русском |
+| `response-version-footer.mdc` | В конце ответа — версия из `CMakeLists.txt` (x.y.z, напр. **0.9.3**) |
 | `cross-platform-only.mdc` | Без Win-only / Mac-only в общем коде |
 | `dsp-audio-safety.mdc` | Нет аллокаций/блокировок в audio thread; границы буферов |
 | `vocal-chain-graph-dsp.mdc` | Граф, latency, merge, фаза, отдельные компрессоры |

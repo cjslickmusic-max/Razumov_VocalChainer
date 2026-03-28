@@ -131,4 +131,5 @@
 | 2026-03-28 | `MergePdcTests`: 3-way и вложенный mismatch на merge; синус/импульс = чистая задержка после PDC; детерминизм `SpectralCompressorNode` |
 | 2026-03-28 | `FlexGraphSerializationTests` + `RazumovVocalChainStressTests` (долгий DSP-прогон, `ctest -L stress`); общий список DSP-источников в CMake |
 | 2026-03-28 | v0.9.2: этап G — phase align на split-ветках (сериализация, `GraphEngine`, тесты); `scripts/regression_loop_until_duration.sh` для длительной регрессии |
+| 2026-03-28 | v0.9.3: полоса цепочки по дереву графа (`ChainStripLayout`: split / ветки / merge, провода); компактнее окно и панель модуля; `docs/UI_GRAPHICS_ROADMAP.md` |
 | 2026-03-28 | v0.9.0: per-instance параметры модулей по `slotId` (`ModuleParamsRuntime`), APVTS — chain/mic profile/макросы; инспектор по выбранному слоту; сохранение `ModuleParams` в state; миграция legacy XML |

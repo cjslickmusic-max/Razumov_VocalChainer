@@ -22,7 +22,7 @@ uint32_t referenceSlotForInsert(RazumovVocalChainAudioProcessor& proc, uint32_t 
 void RazumovVocalChainAudioProcessorEditor::styleRotary(juce::Slider& s)
 {
     s.setSliderStyle(juce::Slider::RotaryVerticalDrag);
-    s.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 72, 16);
+    s.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 56, 14);
 }
 
 void RazumovVocalChainAudioProcessorEditor::populateComboBoxes()
@@ -189,9 +189,9 @@ void RazumovVocalChainAudioProcessorEditor::refreshModulePanelVisibility()
 void RazumovVocalChainAudioProcessorEditor::layoutGlobalSection(juce::Rectangle<int> area)
 {
     const int pad = 12;
-    const int kw = 96;
-    const int mkh = 88;
-    const int mlab = 16;
+    const int kw = 80;
+    const int mkh = 72;
+    const int mlab = 14;
     const int colGap = 10;
     const int rowGap = 10;
     int x = area.getX() + pad;
@@ -219,10 +219,10 @@ void RazumovVocalChainAudioProcessorEditor::layoutGlobalSection(juce::Rectangle<
 
 void RazumovVocalChainAudioProcessorEditor::layoutModuleViewport(int viewportWidth)
 {
-    const int W = juce::jmax(820, viewportWidth);
+    const int W = juce::jmax(760, viewportWidth);
     const int pad = 12;
-    const int kw = 96;
-    const int kh = 112;
+    const int kw = 80;
+    const int kh = 100;
     const int gap = 10;
     int x = pad;
     int y = pad;
@@ -291,9 +291,9 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     , processor(p)
     , chainStrip(processor)
 {
-    setSize(920, 960);
+    setSize(860, 820);
     setResizable(true, true);
-    setResizeLimits(680, 720, 2000, 1800);
+    setResizeLimits(640, 640, 2000, 1800);
 
     micProfileLabel.setText("Mic profile", juce::dontSendNotification);
     micProfileLabel.setJustificationType(juce::Justification::centredRight);
@@ -640,7 +640,7 @@ void RazumovVocalChainAudioProcessorEditor::resized()
     micProfileCombo.setBounds(micRow.removeFromRight(320).reduced(4, 4));
     micProfileLabel.setBounds(micRow.removeFromRight(88).reduced(4, 6));
 
-    chainStrip.setBounds(bounds.removeFromTop(100));
+    chainStrip.setBounds(bounds.removeFromTop(132));
 
     auto toolRow = bounds.removeFromTop(32);
     const int tw = 88;
@@ -655,7 +655,7 @@ void RazumovVocalChainAudioProcessorEditor::resized()
     tx += 48;
     addModuleBtn.setBounds(tx, toolRow.getY() + 2, 100, 28);
 
-    auto globalArea = bounds.removeFromTop(260);
+    auto globalArea = bounds.removeFromTop(220);
     layoutGlobalSection(globalArea);
 
     viewport.setBounds(bounds);

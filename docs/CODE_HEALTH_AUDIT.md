@@ -4,6 +4,15 @@
 
 ---
 
+## Quick check — v0.9.3 (2026-03-28) — Chain strip layout + UI compact
+
+- `Source/ui/ChainStripLayout.{h,cpp}`: раскладка по `FlexSegmentDesc` (split, ветки рядом, merge, провода fork/join, scale-to-fit).
+- `ChainStripComponent`: отрисовка и hit-test по layout; `PluginEditor`: компактнее окно/макросы/панель модуля; версия **0.9.3**.
+- `docs/UI_GRAPHICS_ROADMAP.md`: фазы A–D по графике UI.
+- ReadLints (изменённые исходники); Release + `RazumovVocalChainTests`: OK.
+
+---
+
 ## Quick check — v0.9.2 (2026-03-28) — Phase G branch phase align + long regression script
 
 - `FlexSlotDesc` / `FlexSlot`: `branchPhaseAlignSamples`; `FlexGraphSerialization`: свойство `phaseAlign` на `Branch`; `slotLatencySamples` / `GraphEngine::processSplit`: phase pad + PDC pad; пул `phaseAlignPads_`.

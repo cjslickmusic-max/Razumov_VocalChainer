@@ -1,17 +1,17 @@
 #pragma once
 
+#include "ChainStripLayout.h"
 #include "dsp/graph/FlexGraphDesc.h"
 #include <functional>
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_gui_basics/juce_gui_basics.h>
-#include <vector>
 
 class RazumovVocalChainAudioProcessor;
 
 namespace razumov::ui
 {
 
-/** Полоса цепочки: клик по карточке выбирает slotId; подсветка выбранного. */
+/** Полоса цепочки: дерево графа, параллель ветками, fork/join; клик по карточке -> slotId. */
 class ChainStripComponent : public juce::Component,
                             private juce::AudioProcessorValueTreeState::Listener
 {
@@ -36,8 +36,7 @@ private:
     RazumovVocalChainAudioProcessor& processor_;
     juce::AudioProcessorValueTreeState& apvts_;
 
-    std::vector<razumov::graph::ChainStripItem> items_;
-    std::vector<juce::Rectangle<int>> hitRects_;
+    ChainStripLayout layout_;
     uint32_t selectedSlotId_ { 0 };
 };
 

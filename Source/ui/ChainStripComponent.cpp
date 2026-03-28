@@ -1,9 +1,46 @@
 #include "ChainStripComponent.h"
 #include "PluginProcessor.h"
 #include "params/ParamIDs.h"
+#include <cmath>
 
 namespace razumov::ui
 {
+namespace
+{
+void drawWire(juce::Graphics& g, juce::Point<float> a, juce::Point<float> b, juce::Colour c)
+{
+    g.setColour(c);
+    if (std::abs(a.y - b.y) < 2.0f && b.x > a.x + 3.0f)
+        g.drawArrow(juce::Line<float>(a.x, a.y, b.x, b.y), 1.5f, 4.5f, 4.5f);
+    else
+        g.drawLine(juce::Line<float>(a.x, a.y, b.x, b.y), 1.35f);
+}
+
+bool firstSelectableSlot(const ChainStripLayout& layout, uint32_t& outId) noexcept
+{
+    for (const auto& c : layout.cards)
+    {
+        if (c.selectable && c.slotId != 0)
+        {
+            outId = c.slotId;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool containsSlot(const ChainStripLayout& layout, uint32_t id) noexcept
+{
+    if (id == 0)
+        return false;
+    for (const auto& c : layout.cards)
+    {
+        if (c.selectable && c.slotId == id)
+            return true;
+    }
+    return false;
+}
+} // namespace
 
 ChainStripComponent::ChainStripComponent(RazumovVocalChainAudioProcessor& processor)
     : processor_(processor)
@@ -28,24 +65,23 @@ void ChainStripComponent::parameterChanged(const juce::String& parameterID, floa
 
 void ChainStripComponent::syncFromProcessor()
 {
-    items_ = processor_.getChainStripItems();
-    if (selectedSlotId_ == 0 && !items_.empty())
-        selectedSlotId_ = items_.front().slotId;
-    else
-    {
-        bool found = false;
-        for (const auto& it : items_)
-        {
-            if (it.slotId == selectedSlotId_)
-            {
-                found = true;
-                break;
-            }
-        }
-        if (!found && !items_.empty())
-            selectedSlotId_ = items_.front().slotId;
-    }
     rebuildLayout();
+
+    if (selectedSlotId_ == 0)
+    {
+        uint32_t first = 0;
+        if (firstSelectableSlot(layout_, first))
+            selectedSlotId_ = first;
+    }
+    else if (!containsSlot(layout_, selectedSlotId_))
+    {
+        uint32_t first = 0;
+        if (firstSelectableSlot(layout_, first))
+            selectedSlotId_ = first;
+        else
+            selectedSlotId_ = 0;
+    }
+
     repaint();
 }
 
@@ -58,52 +94,19 @@ void ChainStripComponent::setSelectedSlotId(uint32_t id) noexcept
 void ChainStripComponent::resized()
 {
     rebuildLayout();
+    repaint();
 }
 
 void ChainStripComponent::rebuildLayout()
 {
-    hitRects_.clear();
-    if (items_.empty())
-        return;
-
-    auto area = getLocalBounds().reduced(10, 6).withTrimmedTop(14);
-    const int n = (int) items_.size();
-    if (n <= 0)
-        return;
-
-    int maxRow = 0;
-    for (const auto& it : items_)
-        maxRow = juce::jmax(maxRow, it.row);
-
-    const float gap = 10.0f;
-    const float arrowW = 12.0f;
-    const float totalArrows = (float)(n - 1) * arrowW;
-    const float avail = (float) area.getWidth() - totalArrows;
-    float cardW = juce::jmax(48.0f, avail / (float) n);
-    cardW = juce::jmin(cardW, 96.0f);
-
-    float x = (float) area.getX();
-    const float midY = (float) area.getCentreY() + 4.0f;
-    const float cardH = 40.0f;
-    const float rowPitch = 44.0f;
-    const float centerOffset = -0.5f * (float) maxRow * rowPitch;
-
-    for (int i = 0; i < n; ++i)
-    {
-        const int r = juce::jlimit(0, maxRow, items_[(size_t) i].row);
-        const float yTop = midY + centerOffset + (float) r * rowPitch - cardH * 0.5f;
-        auto card = juce::Rectangle<float>(x, yTop, cardW, cardH);
-        hitRects_.push_back(card.toNearestInt());
-        x = card.getRight();
-        if (i < n - 1)
-            x += arrowW;
-    }
+    layout_ = computeChainStripLayout(processor_.getGraphDesc(), (float) getWidth(), (float) getHeight());
 }
 
 void ChainStripComponent::paint(juce::Graphics& g)
 {
     const juce::Colour panelBg(0xff252830);
     const juce::Colour cardFill(0xff1e2229);
+    const juce::Colour mergeFill(0xff222630);
     const juce::Colour accent(0xff6c9fd2);
     const juce::Colour textPri(0xffe8eaed);
     const juce::Colour textSec(0xff8892a0);
@@ -111,42 +114,26 @@ void ChainStripComponent::paint(juce::Graphics& g)
 
     g.fillAll(panelBg);
 
-    auto area = getLocalBounds().reduced(10, 6);
+    auto header = getLocalBounds().reduced(10, 6);
     g.setColour(textSec);
     g.setFont(juce::FontOptions(11.0f));
-    g.drawText("Signal path", area.removeFromTop(14), juce::Justification::centredLeft);
+    g.drawText("Signal path", header.removeFromTop(14), juce::Justification::centredLeft);
 
-    const int n = (int) items_.size();
-    if (n <= 0)
+    if (layout_.cards.empty())
         return;
 
-    int maxRow = 0;
-    for (const auto& it : items_)
-        maxRow = juce::jmax(maxRow, it.row);
+    const juce::Colour wireCol = accent.withAlpha(0.72f);
+    for (const auto& w : layout_.wires)
+        drawWire(g, w.a, w.b, wireCol);
 
-    const float gap = 10.0f;
-    const float arrowW = 12.0f;
-    const float totalArrows = (float)(n - 1) * arrowW;
-    const float avail = (float) area.getWidth() - totalArrows;
-    float cardW = juce::jmax(48.0f, avail / (float) n);
-    cardW = juce::jmin(cardW, 96.0f);
-
-    float x = (float) area.getX();
-    const float midY = (float) area.getCentreY() + 4.0f;
-    const float cardH = 40.0f;
-    const float rowPitch = 44.0f;
-    const float centerOffset = -0.5f * (float) maxRow * rowPitch;
     const float corner = 6.0f;
 
-    for (int i = 0; i < n; ++i)
+    for (const auto& c : layout_.cards)
     {
-        const int r = juce::jlimit(0, maxRow, items_[(size_t) i].row);
-        const float yTop = midY + centerOffset + (float) r * rowPitch - cardH * 0.5f;
-        auto card = juce::Rectangle<float>(x, yTop, cardW, cardH);
-        const bool sel = (items_[(size_t) i].slotId == selectedSlotId_);
-        const bool byp = items_[(size_t) i].bypassed;
+        const bool sel = (c.slotId != 0 && c.slotId == selectedSlotId_);
+        const juce::Rectangle<float> card = c.bounds;
 
-        g.setColour(byp ? cardFill.brighter(0.08f) : cardFill);
+        g.setColour(c.isMergeNode ? mergeFill : (c.bypassed ? cardFill.brighter(0.08f) : cardFill));
         g.fillRoundedRectangle(card, corner);
 
         if (sel)
@@ -160,29 +147,23 @@ void ChainStripComponent::paint(juce::Graphics& g)
             g.drawRoundedRectangle(card.reduced(0.5f), corner, 1.0f);
         }
 
-        g.setColour(byp ? textSec : textPri);
-        g.setFont(juce::FontOptions(juce::jmin(13.0f, cardW * 0.22f), juce::Font::bold));
-        g.drawText(items_[(size_t) i].label, card.reduced(4.0f), juce::Justification::centred);
-
-        x = card.getRight();
-
-        if (i < n - 1)
-        {
-            g.setColour(accent.withAlpha(0.75f));
-            g.drawArrow(juce::Line<float>(x + 4.0f, midY, x + arrowW - 2.0f, midY), 2.2f, 5.0f, 5.0f);
-            x += arrowW;
-        }
+        g.setColour(c.bypassed ? textSec : textPri);
+        const float fs = juce::jmin(12.5f, juce::jmax(8.5f, card.getWidth() * 0.18f));
+        g.setFont(juce::FontOptions(fs, juce::Font::bold));
+        g.drawText(c.label, card.reduced(3.0f), juce::Justification::centred);
     }
 }
 
 void ChainStripComponent::mouseDown(const juce::MouseEvent& e)
 {
-    const juce::Point<int> p = e.getPosition();
-    for (int i = 0; i < (int) hitRects_.size(); ++i)
+    const auto p = e.position;
+    for (const auto& c : layout_.cards)
     {
-        if (hitRects_[(size_t) i].contains(p) && i < (int) items_.size())
+        if (!c.selectable || c.slotId == 0)
+            continue;
+        if (c.bounds.expanded(1.0f).contains(p))
         {
-            selectedSlotId_ = items_[(size_t) i].slotId;
+            selectedSlotId_ = c.slotId;
             if (onSlotSelected)
                 onSlotSelected(selectedSlotId_);
             repaint();

@@ -15,4 +15,10 @@ void drawEditorCornerAccents(juce::Graphics& g, juce::Rectangle<int> fullEditorB
 void drawRoundedRectGlow(juce::Graphics& g, juce::Rectangle<float> card, float cornerRadius,
                          juce::Colour glowColour, int numLayers = 5);
 
+/**
+ * Gaussian-blurred drop shadow under a rotary knob (cached raster, tinted via design tokens).
+ * alphaMul scales both layers (e.g. disabled state).
+ */
+void drawKnobSoftShadowStack(juce::Graphics& g, juce::Point<float> centre, float radius, float alphaMul);
+
 } // namespace razumov::ui

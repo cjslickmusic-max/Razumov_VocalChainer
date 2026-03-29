@@ -4,6 +4,14 @@
 
 ---
 
+## Quick check — v0.9.14 (2026-03-29) — Gaussian-blurred knob shadows (cached rasters)
+
+- `EditorVisualAssets::drawKnobSoftShadowStack`: два кэшируемых ARGB-слоя (ImageConvolutionKernel Gaussian 9.5 / 4.2), тинт через токены `shadowRotaryAmbient` / `shadowRotaryContact`, `highResamplingQuality` при масштабе.
+- `VocalChainerLookAndFeel::drawRotarySlider`: вместо трёх эллипсов — вызов стека теней.
+- `cmake --build` `RazumovVocalChain_VST3`: OK.
+
+---
+
 ## Quick check — v0.9.13 (2026-03-29) — Preset header strip + rotary hover + ComboBox chrome
 
 - Шапка: градиент + тень под полосой пресета; заголовок слева / версия справа / Combo по центру; `paint`/`resized` с `scaled(16)`.

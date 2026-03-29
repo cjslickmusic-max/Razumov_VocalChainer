@@ -1,4 +1,6 @@
 #include "EditorVisualAssets.h"
+#include "DesignTokens.h"
+#include <juce_graphics/juce_graphics.h>
 
 #if JUCE_TARGET_HAS_BINARY_DATA
 #include <BinaryData.h>
@@ -81,6 +83,107 @@ void drawRoundedRectGlow(juce::Graphics& g, juce::Rectangle<float> card, float c
         g.setColour(glowColour.withAlpha(juce::jlimit(0.0f, 1.0f, alpha)));
         g.drawRoundedRectangle(card.expanded(expand), cornerRadius + expand * 0.15f, 1.0f + (float) i * 0.4f);
     }
+}
+
+namespace
+{
+struct KnobShadowRasters
+{
+    juce::Image ambient;
+    juce::Image contact;
+};
+
+/** One-time Gaussian blur maps (white blob -> alpha); tinted at draw time. */
+const KnobShadowRasters& getKnobShadowRasters()
+{
+    static const KnobShadowRasters maps = [] {
+        KnobShadowRasters m;
+        constexpr int W = 200;
+        constexpr int H = 200;
+
+        {
+            juce::Image img(juce::Image::ARGB, W, H, true);
+            juce::Graphics g2(img);
+            g2.fillAll(juce::Colours::transparentBlack);
+            g2.setColour(juce::Colours::white);
+            g2.fillEllipse(48.0f, 36.0f, 104.0f, 90.0f);
+            juce::ImageConvolutionKernel kernel(31);
+            kernel.createGaussianBlur(9.5f);
+            juce::Image out = img.createCopy();
+            kernel.applyToImage(out, img, img.getBounds());
+            m.ambient = std::move(out);
+        }
+        {
+            juce::Image img(juce::Image::ARGB, W, H, true);
+            juce::Graphics g2(img);
+            g2.fillAll(juce::Colours::transparentBlack);
+            g2.setColour(juce::Colours::white);
+            g2.fillEllipse(70.0f, 92.0f, 60.0f, 30.0f);
+            juce::ImageConvolutionKernel kernel(17);
+            kernel.createGaussianBlur(4.2f);
+            juce::Image out = img.createCopy();
+            kernel.applyToImage(out, img, img.getBounds());
+            m.contact = std::move(out);
+        }
+        return m;
+    }();
+    return maps;
+}
+
+/** Ellipse centers before blur (maps are 200x200). */
+constexpr float kAmbientRefX = 100.0f;
+constexpr float kAmbientRefY = 81.0f;
+constexpr float kContactRefX = 100.0f;
+constexpr float kContactRefY = 107.0f;
+} // namespace
+
+void drawKnobSoftShadowStack(juce::Graphics& g, juce::Point<float> centre, float radius, float alphaMul)
+{
+    const auto& maps = getKnobShadowRasters();
+    const float squash = 0.88f;
+    const float yBias = 7.0f;
+
+    g.setImageResamplingQuality(juce::Graphics::highResamplingQuality);
+
+    const float ambS = (radius + 5.5f) / 52.0f;
+    {
+        const float w = (float) maps.ambient.getWidth() * ambS;
+        const float h = (float) maps.ambient.getHeight() * ambS * squash;
+        const float dx = centre.x - kAmbientRefX * ambS;
+        const float dy = centre.y + yBias - kAmbientRefY * ambS * squash;
+        g.setColour(juce::Colour(razumov::ui::tokens::argb::shadowRotaryAmbient).withMultipliedAlpha(0.58f * alphaMul));
+        g.drawImage(maps.ambient,
+                    (int) std::floor(dx),
+                    (int) std::floor(dy),
+                    (int) std::ceil(w),
+                    (int) std::ceil(h),
+                    0,
+                    0,
+                    maps.ambient.getWidth(),
+                    maps.ambient.getHeight(),
+                    true);
+    }
+
+    const float ctS = (radius + 4.0f) / 52.0f;
+    {
+        const float w = (float) maps.contact.getWidth() * ctS;
+        const float h = (float) maps.contact.getHeight() * ctS * 0.82f;
+        const float dx = centre.x - kContactRefX * ctS;
+        const float dy = centre.y + 4.0f - kContactRefY * ctS * 0.82f;
+        g.setColour(juce::Colour(razumov::ui::tokens::argb::shadowRotaryContact).withMultipliedAlpha(0.72f * alphaMul));
+        g.drawImage(maps.contact,
+                    (int) std::floor(dx),
+                    (int) std::floor(dy),
+                    (int) std::ceil(w),
+                    (int) std::ceil(h),
+                    0,
+                    0,
+                    maps.contact.getWidth(),
+                    maps.contact.getHeight(),
+                    true);
+    }
+
+    g.setImageResamplingQuality(juce::Graphics::mediumResamplingQuality);
 }
 
 } // namespace razumov::ui

@@ -34,18 +34,7 @@ struct VocalChainerLookAndFeel : juce::LookAndFeel_V4
             return dis ? c.withMultipliedAlpha(0.52f) : c;
         };
 
-        // Layered drop shadows (broad ambient -> mid -> tight contact), offset downward.
-        const auto amb = juce::Colour(tkn::argb::shadowRotaryAmbient);
-        const auto mid = juce::Colour(tkn::argb::shadowRotaryMid);
-        const auto contact = juce::Colour(tkn::argb::shadowRotaryContact);
-        const float w1 = (radius + 4.0f) * 2.1f;
-        const float h1 = (radius + 2.0f) * 1.15f;
-        g.setColour(applyDis(amb.withAlpha(0.38f)));
-        g.fillEllipse(centre.x - w1 * 0.5f, centre.y - radius + 7.0f, w1, h1);
-        g.setColour(applyDis(mid.withAlpha(0.42f)));
-        g.fillEllipse(centre.x - (radius + 3.0f), centre.y - radius + 5.0f, (radius + 3.0f) * 2.0f, (radius + 1.8f) * 2.0f);
-        g.setColour(applyDis(contact.withAlpha(0.55f)));
-        g.fillEllipse(centre.x - (radius + 1.2f), centre.y - radius + 3.2f, (radius + 1.2f) * 2.0f, (radius + 0.6f) * 2.0f);
+        razumov::ui::drawKnobSoftShadowStack(g, centre, radius, dis ? 0.55f : 1.f);
 
         // Knob face: radial gradient (soft top highlight, bottom shade).
         juce::ColourGradient faceGrad(

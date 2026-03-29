@@ -50,6 +50,8 @@ inline constexpr uint32_t shadowRotaryMid = 0x42000000;
 inline constexpr uint32_t shadowRotaryContact = 0x62000000;
 /** Inactive arc / track background (near-black for contrast with accent). */
 inline constexpr uint32_t rotaryTrackInactive = 0xff1e222a;
+/** Hover overlay on knob body (soft UI). */
+inline constexpr uint32_t rotaryHoverLighten = 0x1effffff;
 } // namespace argb
 
 /** Macro row: fixed accent hues (readable on light panels). */

@@ -4,6 +4,14 @@
 
 ---
 
+## Quick check — v0.9.13 (2026-03-29) — Preset header strip + rotary hover + ComboBox chrome
+
+- Шапка: градиент + тень под полосой пресета; заголовок слева / версия справа / Combo по центру; `paint`/`resized` с `scaled(16)`.
+- `VocalChainerLookAndFeel`: ручка — hover x1.4 на активной дуге, disabled alpha; ComboBox — тень + hover border; кнопки — hover border accent.
+- ReadLints: OK; `cmake --build` `RazumovVocalChain_VST3`: по плану.
+
+---
+
 ## Quick check — v0.9.12 (2026-03-29) — Rotary soft-UI shadows + inactive track
 
 - `DesignTokens.h`: `shadowRotaryAmbient`, `shadowRotaryMid`, `shadowRotaryContact`, `rotaryTrackInactive`.

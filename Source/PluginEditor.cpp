@@ -9,10 +9,13 @@ namespace tkn = razumov::ui::tokens;
 
 struct VocalChainerLookAndFeel : juce::LookAndFeel_V4
 {
+    /**
+     * Rotary paint order follows Vital-style layering (see Ultimate Sampler docs/vital_design_reference.md):
+     * shadow stack -> body -> inactive arc -> active arc (hover: thickness x1.4) -> thumb.
+     */
     void drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height, float sliderPos,
                           float rotaryStartAngle, float rotaryEndAngle, juce::Slider& slider) override
     {
-        juce::ignoreUnused(slider);
         auto bounds = juce::Rectangle<int>(x, y, width, height).toFloat().reduced(5.0f);
         const float radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.5f - 2.0f;
         const auto centre = bounds.getCentre();
@@ -21,6 +24,15 @@ struct VocalChainerLookAndFeel : juce::LookAndFeel_V4
         const float aVal = a0 + sliderPos * (a1 - a0);
         const float trackW = 4.35f;
         const float bodyR = juce::jmax(2.0f, radius - trackW - 0.75f);
+        const bool dis = !slider.isEnabled();
+        const bool hover = slider.isEnabled() && (slider.isMouseOverOrDragging() || slider.isMouseButtonDown());
+        const float hoverBoost = hover ? 1.4f : 1.0f;
+        const float activeStroke = juce::jmin(6.2f, (trackW + 0.15f) * hoverBoost);
+        const float inactiveStroke = trackW * (hover ? 1.08f : 1.0f);
+
+        const auto applyDis = [dis](juce::Colour c) {
+            return dis ? c.withMultipliedAlpha(0.52f) : c;
+        };
 
         // Layered drop shadows (broad ambient -> mid -> tight contact), offset downward.
         const auto amb = juce::Colour(tkn::argb::shadowRotaryAmbient);
@@ -28,41 +40,46 @@ struct VocalChainerLookAndFeel : juce::LookAndFeel_V4
         const auto contact = juce::Colour(tkn::argb::shadowRotaryContact);
         const float w1 = (radius + 4.0f) * 2.1f;
         const float h1 = (radius + 2.0f) * 1.15f;
-        g.setColour(amb.withAlpha(0.38f));
+        g.setColour(applyDis(amb.withAlpha(0.38f)));
         g.fillEllipse(centre.x - w1 * 0.5f, centre.y - radius + 7.0f, w1, h1);
-        g.setColour(mid.withAlpha(0.42f));
+        g.setColour(applyDis(mid.withAlpha(0.42f)));
         g.fillEllipse(centre.x - (radius + 3.0f), centre.y - radius + 5.0f, (radius + 3.0f) * 2.0f, (radius + 1.8f) * 2.0f);
-        g.setColour(contact.withAlpha(0.55f));
+        g.setColour(applyDis(contact.withAlpha(0.55f)));
         g.fillEllipse(centre.x - (radius + 1.2f), centre.y - radius + 3.2f, (radius + 1.2f) * 2.0f, (radius + 0.6f) * 2.0f);
 
         // Knob face: radial gradient (soft top highlight, bottom shade).
         juce::ColourGradient faceGrad(
-            juce::Colour(tkn::argb::backgroundNode).brighter(0.07f),
+            applyDis(juce::Colour(tkn::argb::backgroundNode).brighter(0.07f)),
             centre.x,
             centre.y - bodyR * 0.35f,
-            juce::Colour(tkn::argb::backgroundNode).darker(0.14f),
+            applyDis(juce::Colour(tkn::argb::backgroundNode).darker(0.14f)),
             centre.x,
             centre.y + bodyR * 0.55f,
             true);
         g.setGradientFill(faceGrad);
         g.fillEllipse(centre.x - bodyR, centre.y - bodyR, bodyR * 2.0f, bodyR * 2.0f);
-        g.setColour(juce::Colour(0x28ffffff));
+        if (hover && !dis)
+        {
+            g.setColour(juce::Colour(tkn::argb::rotaryHoverLighten));
+            g.fillEllipse(centre.x - bodyR * 0.92f, centre.y - bodyR * 0.95f, bodyR * 1.84f, bodyR * 0.55f);
+        }
+        g.setColour(applyDis(juce::Colour(0x28ffffff)));
         g.drawEllipse(centre.x - bodyR + 0.75f, centre.y - bodyR + 0.75f, (bodyR - 0.75f) * 2.0f, (bodyR - 0.75f) * 2.0f, 1.0f);
-        g.setColour(juce::Colour(0x22000000));
+        g.setColour(applyDis(juce::Colour(0x22000000)));
         g.drawEllipse(centre.x - bodyR + 0.5f, centre.y - bodyR + 0.5f, (bodyR - 0.5f) * 2.0f, (bodyR - 0.5f) * 2.0f, 1.0f);
 
-        const juce::Colour inactiveTrack { tkn::argb::rotaryTrackInactive };
+        const juce::Colour inactiveTrack = applyDis(juce::Colour(tkn::argb::rotaryTrackInactive));
         juce::Path trackBg;
         trackBg.addCentredArc(centre.x, centre.y, radius, radius, 0.0f, a0, a1, true);
         g.setColour(inactiveTrack);
-        g.strokePath(trackBg, juce::PathStrokeType(trackW, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+        g.strokePath(trackBg, juce::PathStrokeType(inactiveStroke, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 
         juce::Path val;
         val.addCentredArc(centre.x, centre.y, radius, radius, 0.0f, a0, aVal, true);
-        const juce::Colour accent = slider.findColour(juce::Slider::rotarySliderFillColourId);
+        const juce::Colour accent = applyDis(slider.findColour(juce::Slider::rotarySliderFillColourId));
         g.setColour(accent);
-        g.strokePath(val, juce::PathStrokeType(trackW + 0.15f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
-        g.setColour(accent.brighter(0.35f).withAlpha(0.45f));
+        g.strokePath(val, juce::PathStrokeType(activeStroke, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+        g.setColour(accent.brighter(0.35f).withAlpha(dis ? 0.22f : 0.45f));
         g.strokePath(val, juce::PathStrokeType(1.1f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 
         const float dotR = 4.0f;
@@ -71,24 +88,68 @@ struct VocalChainerLookAndFeel : juce::LookAndFeel_V4
         g.fillEllipse(thumb.x - dotR - 0.35f, thumb.y - dotR - 0.35f, (dotR + 0.35f) * 2.0f, (dotR + 0.35f) * 2.0f);
         g.setColour(accent.brighter(0.12f));
         g.fillEllipse(thumb.x - dotR, thumb.y - dotR, dotR * 2.0f, dotR * 2.0f);
-        g.setColour(juce::Colour(0x78000000));
+        g.setColour(juce::Colour(0x78000000).withMultipliedAlpha(dis ? 0.45f : 1.0f));
         g.drawEllipse(thumb.x - dotR, thumb.y - dotR, dotR * 2.0f, dotR * 2.0f, 1.05f);
+    }
+
+    void drawComboBox(juce::Graphics& g, int width, int height, bool isButtonDown, int, int, int, int,
+                      juce::ComboBox& box) override
+    {
+        const float corner = box.findParentComponentOfClass<juce::ChoicePropertyComponent>() != nullptr ? 0.0f : 7.0f;
+        auto boxBounds = juce::Rectangle<int>(0, 0, width, height);
+        auto f = boxBounds.toFloat().reduced(0.5f);
+        const bool hover = box.isEnabled() && (box.isMouseOver() || box.isMouseButtonDown());
+        const bool dis = !box.isEnabled();
+
+        if (corner > 0.5f && !isButtonDown)
+        {
+            g.setColour(juce::Colour(tkn::argb::shadowElevated));
+            g.fillRoundedRectangle(f.translated(0.0f, 3.0f), corner + 1.0f);
+        }
+
+        juce::Colour fill = juce::Colour(tkn::argb::backgroundNode);
+        if (dis)
+            fill = fill.withMultipliedAlpha(0.65f);
+        else if (isButtonDown)
+            fill = fill.darker(0.08f);
+        else if (hover)
+            fill = fill.brighter(0.07f);
+        g.setColour(fill);
+        g.fillRoundedRectangle(f, corner);
+
+        juce::Colour outline = juce::Colour(tkn::argb::borderModulePanel);
+        if (hover && !dis)
+            outline = juce::Colour(tkn::argb::accentSignal).withAlpha(0.55f);
+        g.setColour(outline);
+        g.drawRoundedRectangle(f.reduced(0.5f), corner, dis ? 0.9f : 1.15f);
+
+        juce::Rectangle<int> arrowZone(width - 30, 0, 20, height);
+        juce::Path path;
+        path.startNewSubPath((float) arrowZone.getX() + 3.0f, (float) arrowZone.getCentreY() - 2.0f);
+        path.lineTo((float) arrowZone.getCentreX(), (float) arrowZone.getCentreY() + 3.0f);
+        path.lineTo((float) arrowZone.getRight() - 3.0f, (float) arrowZone.getCentreY() - 2.0f);
+        g.setColour(box.findColour(juce::ComboBox::arrowColourId).withAlpha(dis ? 0.25f : (hover ? 1.0f : 0.9f)));
+        g.strokePath(path, juce::PathStrokeType(2.0f));
     }
 
     void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::Colour&,
                               bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override
     {
         auto r = button.getLocalBounds().toFloat().reduced(1.0f);
+        const bool hover = button.isOver();
         juce::Colour top = juce::Colour(tkn::argb::controlButtonFace);
         if (shouldDrawButtonAsDown)
             top = top.darker(0.14f);
-        else if (shouldDrawButtonAsHighlighted)
-            top = top.brighter(0.05f);
+        else if (shouldDrawButtonAsHighlighted || hover)
+            top = top.brighter(0.06f);
         const juce::Colour bottom = top.darker(0.2f);
         juce::ColourGradient cg(top, r.getX(), r.getY(), bottom, r.getX(), r.getBottom(), false);
         g.setGradientFill(cg);
         g.fillRoundedRectangle(r, 6.0f);
-        g.setColour(juce::Colour(tkn::argb::controlButtonBorder));
+        juce::Colour border = juce::Colour(tkn::argb::controlButtonBorder);
+        if (hover && !shouldDrawButtonAsDown)
+            border = juce::Colour(tkn::argb::accentSignal).withAlpha(0.42f);
+        g.setColour(border);
         g.drawRoundedRectangle(r.reduced(0.5f), 6.0f, 1.0f);
         if (!shouldDrawButtonAsDown)
         {
@@ -803,20 +864,41 @@ void RazumovVocalChainAudioProcessorEditor::paint(juce::Graphics& g)
     g.fillAll(juce::Colour(tkn::argb::backgroundEditor));
     razumov::ui::drawEditorBackgroundLayer(g, getLocalBounds());
     razumov::ui::drawEditorCornerAccents(g, getLocalBounds());
-    auto r = getLocalBounds().reduced(16);
-    auto titleRow = r.removeFromTop(40);
+    const int m = scaled(16);
+    auto r = getLocalBounds().reduced(m);
+    const int headerH = scaled(68);
+    auto headerBg = r.removeFromTop(headerH);
+
+    g.setColour(juce::Colour(tkn::argb::shadowElevated));
+    g.fillRoundedRectangle(headerBg.translated(0, 3).toFloat(), 10.0f);
+
+    juce::ColourGradient hg(
+        juce::Colour(tkn::argb::backgroundNode).brighter(0.03f),
+        (float) headerBg.getX(),
+        (float) headerBg.getY(),
+        juce::Colour(tkn::argb::backgroundChainStrip).brighter(0.02f),
+        (float) headerBg.getX(),
+        (float) headerBg.getBottom(),
+        false);
+    g.setGradientFill(hg);
+    g.fillRoundedRectangle(headerBg.toFloat(), 10.0f);
+    g.setColour(juce::Colour(tkn::argb::borderModulePanel));
+    g.drawRoundedRectangle(headerBg.toFloat().reduced(0.5f), 10.0f, 1.0f);
+
+    auto headerInner = headerBg.reduced(scaled(12), scaled(10));
+    auto titleArea = headerInner.removeFromLeft(scaled(260));
+    auto versionBlock = headerInner.removeFromRight(scaled(170));
+
     g.setColour(juce::Colour(tkn::argb::textTitle));
-    g.setFont(juce::FontOptions(18.0f, juce::Font::bold));
-    auto titleLeft = titleRow;
-    auto versionBlock = titleRow.removeFromRight(300);
-    g.drawText("Razumov VocalChainer", titleLeft, juce::Justification::centredLeft);
+    g.setFont(juce::FontOptions(17.0f, juce::Font::bold));
+    g.drawText("Razumov VocalChainer", titleArea, juce::Justification::centredLeft);
 
     const juce::String versionLine = juce::String("v") + JucePlugin_VersionString;
     const juce::String buildLine = juce::String("build ") + kBuildDateTime;
 
     g.setFont(juce::FontOptions(12.0f));
     g.setColour(juce::Colour(tkn::argb::textLabel));
-    auto v1 = versionBlock.removeFromTop(17);
+    auto v1 = versionBlock.removeFromTop(18);
     g.drawText(versionLine, v1, juce::Justification::centredRight);
     g.setFont(juce::FontOptions(10.0f));
     g.setColour(juce::Colour(tkn::argb::textTertiary));
@@ -828,14 +910,15 @@ void RazumovVocalChainAudioProcessorEditor::resized()
     uiScale_ = juce::jlimit(0.88f, 1.5f, (float) getWidth() / 1280.f);
 
     auto bounds = getLocalBounds().reduced(scaled(16));
-    bounds.removeFromTop(scaled(40));
-
-    const int presetRowH = scaled(52);
-    auto presetRow = bounds.removeFromTop(presetRowH);
-    const int pw = juce::jmin(scaled(440), presetRow.getWidth() - scaled(40));
-    auto presetBox = presetRow.withSizeKeepingCentre(pw, presetRowH);
-    presetLabel.setBounds(presetBox.removeFromTop(scaled(14)));
-    presetCombo.setBounds(presetBox.removeFromTop(scaled(32)).reduced(0, 2));
+    const int headerH = scaled(68);
+    auto headerRow = bounds.removeFromTop(headerH);
+    {
+        auto h = headerRow.reduced(scaled(12), scaled(8));
+        h.removeFromLeft(scaled(260));
+        h.removeFromRight(scaled(170));
+        presetLabel.setBounds(h.removeFromTop(scaled(14)));
+        presetCombo.setBounds(h.removeFromTop(scaled(36)).reduced(0, 2));
+    }
 
     const int macroBlockH = scaled(178);
     layoutMacroHeroRow(bounds.removeFromTop(macroBlockH));

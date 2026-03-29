@@ -68,6 +68,8 @@ public:
     /** Swap two direct root-level modules (not inside split); Mic/Room fixed. */
     void swapDirectRootModules(uint32_t slotIdA, uint32_t slotIdB);
     void insertPaletteModuleAfterSlot(uint32_t referenceSlotId, razumov::graph::AudioNodeKind kind);
+    /** Split x2: dry 0.5 + (0.5 -> module); UI picks module instead of abstract "Split x2". */
+    void insertParallelModuleAfterSlot(uint32_t referenceSlotId, razumov::graph::AudioNodeKind kind);
     void insertSplitAfterSlot(uint32_t referenceSlotId, int numBranches);
 
     /** Direct root module only (not Mic/Room, not inside split). */

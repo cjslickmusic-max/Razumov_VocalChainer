@@ -391,6 +391,25 @@ void RazumovVocalChainAudioProcessor::insertPaletteModuleAfterSlot(uint32_t refe
     commitGraphMutation();
 }
 
+void RazumovVocalChainAudioProcessor::insertParallelModuleAfterSlot(uint32_t referenceSlotId,
+                                                                    razumov::graph::AudioNodeKind kind)
+{
+    if (!canInsertParallelSplitAfterSlot(referenceSlotId))
+        return;
+    razumov::graph::FlexSlotDesc sp = razumov::graph::GraphPlanFactory::makeSplitDryBranchAndParallelModule(kind);
+    uint32_t n = nextSlotCounter_;
+    razumov::graph::assignSlotIdsForSubtree(sp, n);
+    nextSlotCounter_ = n;
+
+    const int ri = razumov::graph::findRootSlotIndexContainingId(graphDesc_, referenceSlotId);
+    if (ri < 0)
+        graphDesc_.push_back(std::move(sp));
+    else
+        graphDesc_.insert(graphDesc_.begin() + ri + 1, std::move(sp));
+
+    commitGraphMutation();
+}
+
 void RazumovVocalChainAudioProcessor::insertSplitAfterSlot(uint32_t referenceSlotId, int numBranches)
 {
     if (!canInsertParallelSplitAfterSlot(referenceSlotId))

@@ -310,6 +310,17 @@ FlexSlotDesc GraphPlanFactory::makeSplitWithUnityBranches(int numBranches)
     return sp;
 }
 
+FlexSlotDesc GraphPlanFactory::makeSplitDryBranchAndParallelModule(AudioNodeKind parallelKind)
+{
+    FlexSlotDesc sp;
+    sp.descType = FlexSlotDescType::Split;
+    sp.branches.resize(2);
+    sp.branches[0].push_back(gainModule(0.5f));
+    sp.branches[1].push_back(gainModule(0.5f));
+    sp.branches[1].push_back(makeModulePaletteSlot(parallelKind));
+    return sp;
+}
+
 std::unique_ptr<FlexGraphPlan> GraphPlanFactory::makePlanFromDesc(const FlexSegmentDesc& desc)
 {
     return std::make_unique<FlexGraphPlan>(FlexGraphPlan::buildFromDesc(desc));

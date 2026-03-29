@@ -4,6 +4,15 @@
 
 ---
 
+## Quick check — v0.9.19 (2026-03-29) — Parallel + opens module palette (not Split x2/x3)
+
+- `GraphPlanFactory::makeSplitDryBranchAndParallelModule`: 2-way split, dry 0.5 + (0.5 -> chosen module); `insertParallelModuleAfterSlot`.
+- `PluginEditor`: `showParallelModuleMenuForSlot` replaces split count menu; context labels "Parallel module...".
+- `docs/ARCHITECTURE.md`: parallel UX note.
+- ReadLints scoped; `cmake --build` VST3 + `RazumovVocalChainTests`: OK.
+
+---
+
 ## Quick check — v0.9.18 (2026-03-29) — Warm neutral theme + atmosphere gradient + mic/room architecture note
 
 - `DesignTokens.h`: warm stone backgrounds, borders, rotary ambient; accentSignal slightly warmer; `backgroundAtmosphereBottom` vignette.

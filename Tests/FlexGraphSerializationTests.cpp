@@ -105,6 +105,15 @@ void testGraphContainsAnySplit()
     assert(graphContainsAnySplit(par));
 }
 
+void testParallelModuleSplitShape()
+{
+    const auto sp = GraphPlanFactory::makeSplitDryBranchAndParallelModule(AudioNodeKind::OptoCompressor);
+    assert(sp.descType == FlexSlotDescType::Split);
+    assert(sp.branches.size() == 2u);
+    assert(sp.branches[0].size() == 1u);
+    assert(sp.branches[1].size() == 2u);
+}
+
 } // namespace
 
 void runFlexGraphSerializationTests()
@@ -116,4 +125,5 @@ void runFlexGraphSerializationTests()
     testSwapDirectRootModulesSwapsBeyondProtectedSlots();
     testSwapDirectRootModulesRejectsMicOrRoom();
     testGraphContainsAnySplit();
+    testParallelModuleSplitShape();
 }

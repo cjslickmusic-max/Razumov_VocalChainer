@@ -56,6 +56,12 @@ public:
 
     /** Split с N ветками, в каждой Gain(1) как заглушка прохода. */
     static FlexSlotDesc makeSplitWithUnityBranches(int numBranches);
+
+    /**
+     * Двухветочный split: сухая ветка + ветка с выбранным модулем.
+     * Gain 0.5 на каждой ветке перед суммированием (как makeParallelHalvesDesc).
+     */
+    static FlexSlotDesc makeSplitDryBranchAndParallelModule(AudioNodeKind parallelKind);
 };
 
 } // namespace razumov::graph

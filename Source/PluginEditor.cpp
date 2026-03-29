@@ -289,26 +289,56 @@ void RazumovVocalChainAudioProcessorEditor::showAddModuleMenuForSlot(uint32_t re
                     });
 }
 
-void RazumovVocalChainAudioProcessorEditor::showParallelSplitMenuForSlot(uint32_t referenceSlotId)
+void RazumovVocalChainAudioProcessorEditor::showParallelModuleMenuForSlot(uint32_t referenceSlotId)
 {
     if (!processor.canInsertParallelSplitAfterSlot(referenceSlotId))
         return;
     juce::PopupMenu m;
-    m.addItem(20, "Split x2");
-    m.addItem(21, "Split x3");
+    m.addItem(1, "Gain");
+    m.addItem(2, "Lowpass");
+    m.addItem(3, "De-esser");
+    m.addItem(4, "Opto");
+    m.addItem(5, "FET");
+    m.addItem(6, "VCA");
+    m.addItem(7, "Exciter");
+    m.addItem(8, "Spectral");
     m.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&chainStrip),
                     [this, referenceSlotId](int r) {
-                        if (r == 20)
-                        {
-                            processor.insertSplitAfterSlot(referenceSlotId, 2);
-                            syncChainStripAfterGraphEdit();
+                        if (r <= 0)
                             return;
-                        }
-                        if (r == 21)
+                        using AK = razumov::graph::AudioNodeKind;
+                        AK k = AK::Gain;
+                        switch (r)
                         {
-                            processor.insertSplitAfterSlot(referenceSlotId, 3);
-                            syncChainStripAfterGraphEdit();
+                            case 1:
+                                k = AK::Gain;
+                                break;
+                            case 2:
+                                k = AK::Filter;
+                                break;
+                            case 3:
+                                k = AK::Deesser;
+                                break;
+                            case 4:
+                                k = AK::OptoCompressor;
+                                break;
+                            case 5:
+                                k = AK::FetCompressor;
+                                break;
+                            case 6:
+                                k = AK::VcaCompressor;
+                                break;
+                            case 7:
+                                k = AK::Exciter;
+                                break;
+                            case 8:
+                                k = AK::SpectralCompressor;
+                                break;
+                            default:
+                                return;
                         }
+                        processor.insertParallelModuleAfterSlot(referenceSlotId, k);
+                        syncChainStripAfterGraphEdit();
                     });
 }
 
@@ -325,19 +355,19 @@ void RazumovVocalChainAudioProcessorEditor::showChainContextMenu(razumov::ui::Ch
         juce::PopupMenu m;
         m.addItem(100, "Add module...");
         if (processor.canInsertParallelSplitAfterSlot(slotId))
-            m.addItem(101, "Parallel split...");
+            m.addItem(101, "Parallel module...");
         m.showMenuAsync(opts, [this, slotId](int r) {
             if (r == 100)
                 showAddModuleMenuForSlot(slotId);
             else if (r == 101)
-                showParallelSplitMenuForSlot(slotId);
+                showParallelModuleMenuForSlot(slotId);
         });
         return;
     }
     if (target == razumov::ui::ChainContextTarget::ParallelPlus)
     {
         if (processor.canInsertParallelSplitAfterSlot(slotId))
-            showParallelSplitMenuForSlot(slotId);
+            showParallelModuleMenuForSlot(slotId);
         return;
     }
 
@@ -363,7 +393,7 @@ void RazumovVocalChainAudioProcessorEditor::showChainContextMenu(razumov::ui::Ch
     m.addSeparator();
     m.addItem(16, "Add module after...");
     if (processor.canInsertParallelSplitAfterSlot(slotId))
-        m.addItem(17, "Parallel split...");
+        m.addItem(17, "Parallel module...");
     m.showMenuAsync(opts, [this, slotId, bypassed, found](int r) {
         if (r <= 0)
             return;
@@ -400,7 +430,7 @@ void RazumovVocalChainAudioProcessorEditor::showChainContextMenu(razumov::ui::Ch
         if (r == 16)
             showAddModuleMenuForSlot(slotId);
         else if (r == 17)
-            showParallelSplitMenuForSlot(slotId);
+            showParallelModuleMenuForSlot(slotId);
     });
 }
 
@@ -457,8 +487,9 @@ void RazumovVocalChainAudioProcessorEditor::refreshModulePanelVisibility()
 
     if (isSplit)
     {
-        moduleTitleLabel.setText("Parallel split", juce::dontSendNotification);
-        moduleHintLabel.setText("Parallel branches use the lower row in the strip.", juce::dontSendNotification);
+        moduleTitleLabel.setText("Parallel", juce::dontSendNotification);
+        moduleHintLabel.setText("Dry + wet paths merge at the end. Use + under a node to add a parallel module.",
+                                 juce::dontSendNotification);
         moduleHintLabel.setVisible(true);
     }
     else if (kind.has_value())
@@ -729,7 +760,7 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
         refreshModulePanelVisibility();
     };
     chainStrip.onRequestAddSerialAfter = [this](uint32_t id) { showAddModuleMenuForSlot(id); };
-    chainStrip.onRequestParallelBranch = [this](uint32_t id) { showParallelSplitMenuForSlot(id); };
+    chainStrip.onRequestParallelBranch = [this](uint32_t id) { showParallelModuleMenuForSlot(id); };
     chainStrip.onRequestSwapRootModules = [this](uint32_t a, uint32_t b) {
         processor.swapDirectRootModules(a, b);
         syncChainStripAfterGraphEdit();

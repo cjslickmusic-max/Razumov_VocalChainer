@@ -30,7 +30,7 @@ private:
 
     void populateComboBoxes();
     void showAddModuleMenuForSlot(uint32_t referenceSlotId);
-    void showParallelSplitMenuForSlot(uint32_t referenceSlotId);
+    void showParallelModuleMenuForSlot(uint32_t referenceSlotId);
     void showChainContextMenu(razumov::ui::ChainContextTarget target, uint32_t slotId, juce::Point<int> screenPos);
     void refreshModulePanelVisibility();
     void reloadModuleParamsFromProcessor();

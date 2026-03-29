@@ -31,6 +31,7 @@ private:
     void populateComboBoxes();
     void showAddModuleMenuForSlot(uint32_t referenceSlotId);
     void showParallelSplitMenuForSlot(uint32_t referenceSlotId);
+    void showChainContextMenu(razumov::ui::ChainContextTarget target, uint32_t slotId, juce::Point<int> screenPos);
     void refreshModulePanelVisibility();
     void reloadModuleParamsFromProcessor();
     void syncChainStripAfterGraphEdit();
@@ -47,12 +48,6 @@ private:
     juce::Label presetLabel;
     juce::ComboBox presetCombo;
     juce::Label macroSectionLabel;
-
-    juce::TextButton bypassSlotBtn { {}, "Bypass" };
-    juce::TextButton removeSlotBtn { {}, "Remove" };
-    juce::TextButton moveLeftBtn { {}, "<" };
-    juce::TextButton moveRightBtn { {}, ">" };
-    juce::TextButton addModuleBtn { {}, "Add..." };
 
     juce::Label moduleTitleLabel;
     juce::Label moduleHintLabel;
@@ -119,7 +114,6 @@ private:
 
     /** Section backgrounds (updated in resized; used in paint for hierarchy). */
     juce::Rectangle<int> sectionMacro_;
-    juce::Rectangle<int> sectionTools_;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RazumovVocalChainAudioProcessorEditor)
 };

@@ -309,6 +309,98 @@ void RazumovVocalChainAudioProcessorEditor::showParallelSplitMenuForSlot(uint32_
                     });
 }
 
+void RazumovVocalChainAudioProcessorEditor::showChainContextMenu(razumov::ui::ChainContextTarget target,
+                                                                 uint32_t slotId,
+                                                                 juce::Point<int> screenPos)
+{
+    const auto opts = juce::PopupMenu::Options()
+                          .withTargetScreenArea(juce::Rectangle<int>(screenPos.x, screenPos.y, 1, 1))
+                          .withParentComponent(this);
+
+    if (target == razumov::ui::ChainContextTarget::SerialPlus)
+    {
+        juce::PopupMenu m;
+        m.addItem(100, "Add module...");
+        if (processor.canInsertParallelSplitAfterSlot(slotId))
+            m.addItem(101, "Parallel split...");
+        m.showMenuAsync(opts, [this, slotId](int r) {
+            if (r == 100)
+                showAddModuleMenuForSlot(slotId);
+            else if (r == 101)
+                showParallelSplitMenuForSlot(slotId);
+        });
+        return;
+    }
+    if (target == razumov::ui::ChainContextTarget::ParallelPlus)
+    {
+        if (processor.canInsertParallelSplitAfterSlot(slotId))
+            showParallelSplitMenuForSlot(slotId);
+        return;
+    }
+
+    bool bypassed = false;
+    bool found = false;
+    for (const auto& it : processor.getChainStripItems())
+    {
+        if (it.slotId == slotId)
+        {
+            found = true;
+            bypassed = it.bypassed;
+            break;
+        }
+    }
+    const bool canEdit = slotId != 0
+                         && !razumov::graph::isProtectedFrontRootModuleSlot(processor.getGraphDesc(), slotId);
+    juce::PopupMenu m;
+    m.addItem(10, bypassed ? "Unbypass" : "Bypass", true, false);
+    m.addItem(11, "Remove", canEdit, false);
+    m.addItem(12, "Move earlier", canEdit, false);
+    m.addItem(13, "Move later", canEdit, false);
+    m.addItem(14, "Duplicate", processor.canDuplicateRootModuleSlot(slotId), false);
+    m.addSeparator();
+    m.addItem(16, "Add module after...");
+    if (processor.canInsertParallelSplitAfterSlot(slotId))
+        m.addItem(17, "Parallel split...");
+    m.showMenuAsync(opts, [this, slotId, bypassed, found](int r) {
+        if (r <= 0)
+            return;
+        if (r == 10 && found)
+        {
+            processor.setSlotBypassForId(slotId, !bypassed);
+            syncChainStripAfterGraphEdit();
+            return;
+        }
+        if (r == 11)
+        {
+            processor.removeGraphSlotById(slotId);
+            syncChainStripAfterGraphEdit();
+            return;
+        }
+        if (r == 12)
+        {
+            processor.moveRootSlotContainingId(slotId, -1);
+            syncChainStripAfterGraphEdit();
+            return;
+        }
+        if (r == 13)
+        {
+            processor.moveRootSlotContainingId(slotId, 1);
+            syncChainStripAfterGraphEdit();
+            return;
+        }
+        if (r == 14)
+        {
+            processor.duplicateRootModuleAfter(slotId);
+            syncChainStripAfterGraphEdit();
+            return;
+        }
+        if (r == 16)
+            showAddModuleMenuForSlot(slotId);
+        else if (r == 17)
+            showParallelSplitMenuForSlot(slotId);
+    });
+}
+
 void RazumovVocalChainAudioProcessorEditor::syncChainStripAfterGraphEdit()
 {
     chainStrip.syncFromProcessor();
@@ -476,13 +568,6 @@ void RazumovVocalChainAudioProcessorEditor::refreshModulePanelVisibility()
 
     lowpassSlider.setVisible(showLp);
 
-    const bool canRemoveOrMove = selectedSlotId_ != 0
-                                 && !razumov::graph::isProtectedFrontRootModuleSlot(processor.getGraphDesc(),
-                                                                                     selectedSlotId_);
-    removeSlotBtn.setEnabled(canRemoveOrMove);
-    moveLeftBtn.setEnabled(canRemoveOrMove);
-    moveRightBtn.setEnabled(canRemoveOrMove);
-
     reloadModuleParamsFromProcessor();
     resized();
 }
@@ -597,12 +682,6 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
 {
     setLookAndFeel(laf.get());
 
-    bypassSlotBtn.setButtonText("Bypass slot");
-    removeSlotBtn.setButtonText("Remove");
-    moveLeftBtn.setButtonText("Left");
-    moveRightBtn.setButtonText("Right");
-    addModuleBtn.setButtonText("Add module");
-
     setSize(1280, 920);
     setResizable(true, true);
     setResizeLimits(1180, 780, 2800, 2200);
@@ -652,58 +731,8 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
         processor.swapDirectRootModules(a, b);
         syncChainStripAfterGraphEdit();
     };
-
-    addAndMakeVisible(bypassSlotBtn);
-    addAndMakeVisible(removeSlotBtn);
-    addAndMakeVisible(moveLeftBtn);
-    addAndMakeVisible(moveRightBtn);
-    addAndMakeVisible(addModuleBtn);
-    bypassSlotBtn.setTooltip("Bypass the selected module in the strip (or double-click a module).");
-    removeSlotBtn.setTooltip("Remove the selected module from the graph.");
-    moveLeftBtn.setTooltip("Move the root segment left.");
-    moveRightBtn.setTooltip("Move the root segment right.");
-    addModuleBtn.setTooltip("Insert a module after the selected block (same as + between blocks).");
-
-    bypassSlotBtn.onClick = [this] {
-        const auto items = processor.getChainStripItems();
-        bool bypass = false;
-        bool found = false;
-        for (const auto& it : items)
-        {
-            if (it.slotId == selectedSlotId_)
-            {
-                found = true;
-                bypass = it.bypassed;
-                break;
-            }
-        }
-        if (found)
-            processor.setSlotBypassForId(selectedSlotId_, !bypass);
-        syncChainStripAfterGraphEdit();
-    };
-
-    removeSlotBtn.onClick = [this] {
-        if (selectedSlotId_ != 0)
-            processor.removeGraphSlotById(selectedSlotId_);
-        syncChainStripAfterGraphEdit();
-    };
-
-    moveLeftBtn.onClick = [this] {
-        if (selectedSlotId_ != 0)
-            processor.moveRootSlotContainingId(selectedSlotId_, -1);
-        syncChainStripAfterGraphEdit();
-    };
-
-    moveRightBtn.onClick = [this] {
-        if (selectedSlotId_ != 0)
-            processor.moveRootSlotContainingId(selectedSlotId_, 1);
-        syncChainStripAfterGraphEdit();
-    };
-
-    addModuleBtn.onClick = [this] {
-        const uint32_t ref = referenceSlotForInsert(processor, selectedSlotId_);
-        if (ref != 0)
-            showAddModuleMenuForSlot(ref);
+    chainStrip.onChainContextMenu = [this](razumov::ui::ChainContextTarget t, uint32_t id, juce::Point<int> pos) {
+        showChainContextMenu(t, id, pos);
     };
 
     content.addAndMakeVisible(moduleSectionBackdrop);
@@ -882,14 +911,6 @@ void RazumovVocalChainAudioProcessorEditor::paint(juce::Graphics& g)
         g.setColour(juce::Colour(tkn::argb::borderModulePanel).withAlpha(0.55f));
         g.drawRoundedRectangle(sectionMacro_.toFloat().reduced(0.5f), 10.0f, 1.0f);
     }
-    if (sectionTools_.getWidth() > 0)
-    {
-        g.setColour(juce::Colour(tkn::argb::backgroundNode).withAlpha(0.85f));
-        g.fillRoundedRectangle(sectionTools_.toFloat(), 6.0f);
-        g.setColour(juce::Colour(tkn::argb::borderModulePanel).withAlpha(0.45f));
-        g.drawRoundedRectangle(sectionTools_.toFloat().reduced(0.5f), 6.0f, 1.0f);
-    }
-
     const int m = scaled(16);
     auto r = getLocalBounds().reduced(m);
     const int headerH = scaled(68);
@@ -952,20 +973,6 @@ void RazumovVocalChainAudioProcessorEditor::resized()
 
     const int chainH = scaled(248);
     chainStrip.setBounds(bounds.removeFromTop(chainH));
-
-    auto toolRow = bounds.removeFromTop(scaled(34));
-    sectionTools_ = toolRow;
-    const int tw = scaled(100);
-    int tx = toolRow.getX() + scaled(10);
-    bypassSlotBtn.setBounds(tx, toolRow.getY() + 2, tw, scaled(28));
-    tx += tw + scaled(6);
-    removeSlotBtn.setBounds(tx, toolRow.getY() + 2, tw, scaled(28));
-    tx += tw + scaled(6);
-    moveLeftBtn.setBounds(tx, toolRow.getY() + 2, scaled(44), scaled(28));
-    tx += scaled(50);
-    moveRightBtn.setBounds(tx, toolRow.getY() + 2, scaled(44), scaled(28));
-    tx += scaled(52);
-    addModuleBtn.setBounds(tx, toolRow.getY() + 2, scaled(112), scaled(28));
 
     viewport.setBounds(bounds);
     layoutModuleViewport(viewport.getWidth());

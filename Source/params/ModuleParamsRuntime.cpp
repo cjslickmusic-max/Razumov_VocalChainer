@@ -36,6 +36,32 @@ struct ModuleSlotBlock
     std::atomic<float> spectralRatio { 3.0f };
 };
 
+inline void copyModuleSlotBlockState(const ModuleSlotBlock& src, ModuleSlotBlock& dst)
+{
+    dst.micBypass.store(src.micBypass.load());
+    dst.micAmount.store(src.micAmount.load());
+    dst.gainDb.store(src.gainDb.load());
+    dst.lowpassHz.store(src.lowpassHz.load());
+    dst.deessCrossoverHz.store(src.deessCrossoverHz.load());
+    dst.deessThresholdDb.store(src.deessThresholdDb.load());
+    dst.deessRatio.store(src.deessRatio.load());
+    dst.optoThresholdDb.store(src.optoThresholdDb.load());
+    dst.optoRatio.store(src.optoRatio.load());
+    dst.optoMakeupDb.store(src.optoMakeupDb.load());
+    dst.fetThresholdDb.store(src.fetThresholdDb.load());
+    dst.fetRatio.store(src.fetRatio.load());
+    dst.fetMakeupDb.store(src.fetMakeupDb.load());
+    dst.vcaThresholdDb.store(src.vcaThresholdDb.load());
+    dst.vcaRatio.store(src.vcaRatio.load());
+    dst.vcaMakeupDb.store(src.vcaMakeupDb.load());
+    dst.exciterDrive.store(src.exciterDrive.load());
+    dst.exciterMix.store(src.exciterMix.load());
+    dst.spectralBypass.store(src.spectralBypass.load());
+    dst.spectralMix.store(src.spectralMix.load());
+    dst.spectralThresholdDb.store(src.spectralThresholdDb.load());
+    dst.spectralRatio.store(src.spectralRatio.load());
+}
+
 } // namespace detail
 
 namespace
@@ -313,6 +339,18 @@ void ModuleParamsRuntime::seedAllSlotsWithSameParams(const Phase3RealtimeParams&
     for (size_t i = 0; i < blocks_.size(); ++i)
         if (blocks_[i] != nullptr)
             storeFromPhase3(*blocks_[i], p);
+}
+
+void ModuleParamsRuntime::copySlotParamsFromTo(uint32_t fromSlotId, uint32_t toSlotId)
+{
+    const detail::ModuleSlotBlock* src = findOrNull(fromSlotId);
+    if (src == nullptr)
+        return;
+    ensureSlotWithDefaults(toSlotId);
+    detail::ModuleSlotBlock* dst = findOrNull(toSlotId);
+    if (dst == nullptr)
+        return;
+    detail::copyModuleSlotBlockState(*src, *dst);
 }
 
 juce::ValueTree ModuleParamsRuntime::toValueTree() const

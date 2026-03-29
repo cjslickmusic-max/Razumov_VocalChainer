@@ -70,6 +70,10 @@ public:
     void insertPaletteModuleAfterSlot(uint32_t referenceSlotId, razumov::graph::AudioNodeKind kind);
     void insertSplitAfterSlot(uint32_t referenceSlotId, int numBranches);
 
+    /** Direct root module only (not Mic/Room, not inside split). */
+    bool canDuplicateRootModuleSlot(uint32_t slotId) const;
+    void duplicateRootModuleAfter(uint32_t slotId);
+
 private:
     void submitGraphPlanFromCurrentDesc();
     void applyChainProfileTemplate();

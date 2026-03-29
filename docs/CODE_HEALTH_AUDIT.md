@@ -4,6 +4,15 @@
 
 ---
 
+## Quick check — v0.9.16 (2026-03-29) — Chain toolbar -> RMB menu + knob drop shadow + duplicate
+
+- `PluginEditor`: removed Bypass/Remove/Left/Right/Add toolbar row; graph actions on right-click (`showChainContextMenu`: Bypass, Remove, Move, Duplicate, Add after, Parallel split); `+` RMB: Add / Parallel.
+- `RazumovVocalChainAudioProcessor`: `duplicateRootModuleAfter`, `canDuplicateRootModuleSlot`; `ModuleParamsRuntime::copySlotParamsFromTo`.
+- `EditorVisualAssets::drawKnobSoftShadowStack`: extra dark contact layer shifted down (shadow toward value box).
+- ReadLints scoped; `cmake --build` VST3 + `RazumovVocalChainTests`: OK.
+
+---
+
 ## Quick check — v0.9.15 (2026-03-29) — Chain UI polish + swap test + button shadow rect
 
 - `PluginEditor` `VocalChainerLookAndFeel::drawButtonBackground`: тень снизу рисуется с копией `fullRect`, верхний highlight по полной ширине кнопки (не после `removeFromBottom`).

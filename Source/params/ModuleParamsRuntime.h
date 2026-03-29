@@ -49,6 +49,9 @@ public:
 
     void seedAllSlotsWithSameParams(const Phase3RealtimeParams& raw);
 
+    /** Copy per-slot DSP/UI values (used after duplicating a graph module). */
+    void copySlotParamsFromTo(uint32_t fromSlotId, uint32_t toSlotId);
+
     juce::ValueTree toValueTree() const;
     void fromValueTree(const juce::ValueTree& v);
 

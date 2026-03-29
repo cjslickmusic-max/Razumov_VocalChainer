@@ -341,6 +341,38 @@ void RazumovVocalChainAudioProcessor::swapDirectRootModules(uint32_t slotIdA, ui
         commitGraphMutation();
 }
 
+bool RazumovVocalChainAudioProcessor::canDuplicateRootModuleSlot(uint32_t slotId) const
+{
+    const int idx = razumov::graph::findRootSlotIndexContainingId(graphDesc_, slotId);
+    if (idx < 0)
+        return false;
+    const auto& s = graphDesc_[(size_t) idx];
+    if (s.descType != razumov::graph::FlexSlotDescType::Module || s.slotId != slotId)
+        return false;
+    return !razumov::graph::isProtectedFrontRootModuleSlot(graphDesc_, slotId);
+}
+
+void RazumovVocalChainAudioProcessor::duplicateRootModuleAfter(uint32_t slotId)
+{
+    if (!canDuplicateRootModuleSlot(slotId))
+        return;
+    const int idx = razumov::graph::findRootSlotIndexContainingId(graphDesc_, slotId);
+    if (idx < 0)
+        return;
+    const auto& src = graphDesc_[(size_t) idx];
+    const uint32_t oldId = src.slotId;
+    razumov::graph::FlexSlotDesc copy = src;
+    uint32_t n = nextSlotCounter_;
+    razumov::graph::assignSlotIdsForSubtree(copy, n);
+    nextSlotCounter_ = n;
+    const uint32_t newId = copy.slotId;
+    graphDesc_.insert(graphDesc_.begin() + idx + 1, std::move(copy));
+    syncModuleParamsWithGraph();
+    moduleParams_.copySlotParamsFromTo(oldId, newId);
+    persistEmbeddedStateToApvts();
+    submitGraphPlanFromCurrentDesc();
+}
+
 void RazumovVocalChainAudioProcessor::insertPaletteModuleAfterSlot(uint32_t referenceSlotId,
                                                                   razumov::graph::AudioNodeKind kind)
 {

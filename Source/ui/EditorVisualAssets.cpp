@@ -183,6 +183,26 @@ void drawKnobSoftShadowStack(juce::Graphics& g, juce::Point<float> centre, float
                     true);
     }
 
+    /** Drop shadow under the knob bottom (falls toward text/value box below); darker than ambient. */
+    {
+        const float dropS = (radius + 5.5f) / 52.0f;
+        const float w = (float) maps.contact.getWidth() * dropS;
+        const float h = (float) maps.contact.getHeight() * dropS * 1.05f;
+        const float dx = centre.x - kContactRefX * dropS;
+        const float dy = centre.y + 11.0f - kContactRefY * dropS * 0.82f;
+        g.setColour(juce::Colour(0x9a000000).withMultipliedAlpha(0.92f * alphaMul));
+        g.drawImage(maps.contact,
+                    (int) std::floor(dx),
+                    (int) std::floor(dy),
+                    (int) std::ceil(w),
+                    (int) std::ceil(h),
+                    0,
+                    0,
+                    maps.contact.getWidth(),
+                    maps.contact.getHeight(),
+                    true);
+    }
+
     g.setImageResamplingQuality(juce::Graphics::mediumResamplingQuality);
 }
 

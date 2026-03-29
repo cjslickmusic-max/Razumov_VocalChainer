@@ -11,6 +11,14 @@ class RazumovVocalChainAudioProcessor;
 namespace razumov::ui
 {
 
+/** Что под курсором при вызове контекстного меню (ПКМ). */
+enum class ChainContextTarget : uint8_t
+{
+    ModuleCard = 0,
+    SerialPlus,
+    ParallelPlus
+};
+
 /** Полоса цепочки: дерево графа, параллель ветками, fork/join; клик по карточке -> slotId. */
 class ChainStripComponent : public juce::Component
 {
@@ -34,6 +42,9 @@ public:
     std::function<void(uint32_t slotId)> onRequestParallelBranch;
     /** Swap order of two root-level modules (strip UI); host validates. */
     std::function<void(uint32_t slotIdA, uint32_t slotIdB)> onRequestSwapRootModules;
+
+    /** Right-click: add/remove/duplicate live in the menu instead of a toolbar row. */
+    std::function<void(ChainContextTarget target, uint32_t slotId, juce::Point<int> screenPosition)> onChainContextMenu;
 
 private:
     void rebuildLayout();

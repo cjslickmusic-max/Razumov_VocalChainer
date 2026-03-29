@@ -282,6 +282,42 @@ void ChainStripComponent::mouseDown(const juce::MouseEvent& e)
     dragging_ = false;
     dragSlotId_ = 0;
 
+    if (e.mods.isPopupMenu())
+    {
+        const auto screen = e.getScreenPosition();
+        for (auto it = layout_.cards.rbegin(); it != layout_.cards.rend(); ++it)
+        {
+            const auto& c = *it;
+            if (c.slotId == 0)
+                continue;
+            if (c.showSerialPlus && c.serialPlusBounds.getWidth() > 0.5f && c.serialPlusBounds.contains(p))
+            {
+                if (onChainContextMenu)
+                    onChainContextMenu(ChainContextTarget::SerialPlus, c.slotId, screen);
+                return;
+            }
+            if (c.showParallelPlus && c.parallelPlusBounds.getWidth() > 0.5f && c.parallelPlusBounds.contains(p))
+            {
+                if (onChainContextMenu)
+                    onChainContextMenu(ChainContextTarget::ParallelPlus, c.slotId, screen);
+                return;
+            }
+        }
+        for (auto it = layout_.cards.rbegin(); it != layout_.cards.rend(); ++it)
+        {
+            const auto& c = *it;
+            if (!c.selectable || c.slotId == 0)
+                continue;
+            if (c.bounds.expanded(1.0f).contains(p))
+            {
+                if (onChainContextMenu)
+                    onChainContextMenu(ChainContextTarget::ModuleCard, c.slotId, screen);
+                return;
+            }
+        }
+        return;
+    }
+
     for (auto it = layout_.cards.rbegin(); it != layout_.cards.rend(); ++it)
     {
         const auto& c = *it;

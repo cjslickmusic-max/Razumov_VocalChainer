@@ -17,6 +17,42 @@
   --color-text-muted: #94a3b8;
   --color-text-label: #aab4c0;
   --color-text-inverse: #f8fafc;
+  --color-text-tertiary: #7a8490;
+  --color-text-caption: #6a7480;
+  --color-text-title: #ffffff;
+
+  /* Surfaces (editor panels) */
+  --color-surface-mic-preview-inner: #252b34;
+  --color-surface-module-backdrop: #1e2229;
+
+  /* Border — JUCE panels */
+  --color-border-mic-preview: #4a5568;
+  --color-border-module-panel: #353d4a;
+
+  /* Controls */
+  --color-control-rotary-outline: #353d48;
+
+  /* Macros (per-macro accent for rotary fill) */
+  --color-macro-section-label: #c8d0dc;
+  --color-macro-glue: #c080a0;
+  --color-macro-air: #80c0c8;
+  --color-macro-sibilance: #d0a868;
+  --color-macro-presence: #a8d080;
+  --color-macro-punch: #e88860;
+  --color-macro-body: #b89870;
+  --color-macro-smooth: #8898d0;
+  --color-macro-density: #78b0a0;
+
+  /* Module knob group accents */
+  --color-knob-mic-amount: #9a86d4;
+  --color-knob-gain: #6c9fd2;
+  --color-knob-lowpass: #8fd28c;
+  --color-knob-deess: #d2a86c;
+  --color-knob-opto: #6cb8d2;
+  --color-knob-fet: #d26c8c;
+  --color-knob-vca: #b8d26c;
+  --color-knob-exciter: #e0c080;
+  --color-knob-spectral: #9a9ae0;
 
   /* Color — accent */
   --color-accent-signal: #6c9fd2;

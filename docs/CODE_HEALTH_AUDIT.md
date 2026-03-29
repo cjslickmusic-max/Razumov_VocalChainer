@@ -4,6 +4,14 @@
 
 ---
 
+## Quick check — v0.9.8 (2026-03-29) — PluginEditor full token rollout
+
+- `tokens.json` / `tokens.css`: surface, border, text, control, macro, knob; `DesignTokens.h`: `argb`, `macro`, `knob`; `PluginEditor.cpp` без цветовых литералов `0xff…`.
+- `docs/design/DESIGN_SYSTEM.md`: таблица расширена; версия **0.9.8**.
+- `cmake --build` `RazumovVocalChain_VST3`: OK.
+
+---
+
 ## Quick check — v0.9.7 (2026-03-29) — Design tokens + DESIGN_SYSTEM.md
 
 - `resources/design/tokens/tokens.json`, `tokens.css`; `docs/design/DESIGN_SYSTEM.md`; `Source/ui/DesignTokens.h`; `chain-graph-prototype.html` подключает `tokens.css`.

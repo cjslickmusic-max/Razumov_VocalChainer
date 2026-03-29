@@ -5,6 +5,8 @@
 #include "ui/DesignTokens.h"
 #include "ui/EditorVisualAssets.h"
 
+namespace tkn = razumov::ui::tokens;
+
 struct VocalChainLookAndFeel : juce::LookAndFeel_V4
 {
     void drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height, float sliderPos,
@@ -44,18 +46,18 @@ void MicProfilePanel::resized()
 
 void MicProfilePanel::paint(juce::Graphics& g)
 {
-    g.fillAll(juce::Colour(0xff1e2229));
+    g.fillAll(juce::Colour(tkn::argb::backgroundNode));
     auto frame = previewBounds_.toFloat();
-    g.setColour(juce::Colour(0xff252b34));
+    g.setColour(juce::Colour(tkn::argb::surfaceMicPreviewInner));
     g.fillRoundedRectangle(frame, 7.0f);
-    g.setColour(juce::Colour(0xff4a5568));
+    g.setColour(juce::Colour(tkn::argb::borderMicPreview));
     g.drawRoundedRectangle(frame.reduced(0.5f), 7.0f, 1.0f);
     auto caption = frame.removeFromBottom(20.0f);
-    g.setColour(juce::Colour(0xff8892a0));
+    g.setColour(juce::Colour(tkn::argb::textSecondary));
     g.setFont(juce::FontOptions(22.0f, juce::Font::bold));
     g.drawText("Mic", frame, juce::Justification::centred);
     g.setFont(juce::FontOptions(10.0f));
-    g.setColour(juce::Colour(0xff6a7480));
+    g.setColour(juce::Colour(tkn::argb::textCaption));
     g.drawText("Tap to choose profile", caption, juce::Justification::centred);
 }
 
@@ -68,9 +70,9 @@ void MicProfilePanel::mouseDown(const juce::MouseEvent& e)
 void ModuleSectionBackdrop::paint(juce::Graphics& g)
 {
     auto r = getLocalBounds().toFloat().reduced(1.0f);
-    g.setColour(juce::Colour(0xff1e2229));
+    g.setColour(juce::Colour(tkn::argb::surfaceModuleBackdrop));
     g.fillRoundedRectangle(r, 8.0f);
-    g.setColour(juce::Colour(0xff353d4a));
+    g.setColour(juce::Colour(tkn::argb::borderModulePanel));
     g.drawRoundedRectangle(r, 8.0f, 1.0f);
 }
 
@@ -94,8 +96,8 @@ void RazumovVocalChainAudioProcessorEditor::styleRotary(juce::Slider& s)
 {
     s.setSliderStyle(juce::Slider::RotaryVerticalDrag);
     s.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 58, 16);
-    s.setColour(juce::Slider::rotarySliderOutlineColourId, juce::Colour(0xff353d48));
-    s.setColour(juce::Slider::thumbColourId, juce::Colour(0xffe8eaed));
+    s.setColour(juce::Slider::rotarySliderOutlineColourId, juce::Colour(tkn::argb::controlRotaryOutline));
+    s.setColour(juce::Slider::thumbColourId, juce::Colour(tkn::argb::textPrimary));
 }
 
 void RazumovVocalChainAudioProcessorEditor::populateComboBoxes()
@@ -381,7 +383,7 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
 
     presetLabel.setText("Factory preset", juce::dontSendNotification);
     presetLabel.setJustificationType(juce::Justification::centredLeft);
-    presetLabel.setColour(juce::Label::textColourId, juce::Colour(0xffaab4c0));
+    presetLabel.setColour(juce::Label::textColourId, juce::Colour(tkn::argb::textLabel));
     addAndMakeVisible(presetLabel);
 
     for (int i = 0; i < processor.getNumPrograms(); ++i)
@@ -400,7 +402,7 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
 
     chainLabel.setText("Graph template", juce::dontSendNotification);
     chainLabel.setJustificationType(juce::Justification::centredLeft);
-    chainLabel.setColour(juce::Label::textColourId, juce::Colour(0xffaab4c0));
+    chainLabel.setColour(juce::Label::textColourId, juce::Colour(tkn::argb::textLabel));
     addAndMakeVisible(chainLabel);
     addAndMakeVisible(chainCombo);
 
@@ -532,12 +534,12 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
 
     content.addAndMakeVisible(moduleSectionBackdrop);
     moduleTitleLabel.setJustificationType(juce::Justification::centredLeft);
-    moduleTitleLabel.setColour(juce::Label::textColourId, juce::Colours::white);
+    moduleTitleLabel.setColour(juce::Label::textColourId, juce::Colour(tkn::argb::textTitle));
     moduleTitleLabel.setFont(juce::FontOptions(15.0f, juce::Font::bold));
     content.addAndMakeVisible(moduleTitleLabel);
 
     moduleHintLabel.setJustificationType(juce::Justification::centredLeft);
-    moduleHintLabel.setColour(juce::Label::textColourId, juce::Colour(0xff8892a0));
+    moduleHintLabel.setColour(juce::Label::textColourId, juce::Colour(tkn::argb::textSecondary));
     moduleHintLabel.setFont(juce::FontOptions(12.0f));
     content.addAndMakeVisible(moduleHintLabel);
 
@@ -561,7 +563,7 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     auto setupMacro = [&](juce::Slider& s, juce::Label& lbl, const char* name, juce::Colour c) {
         lbl.setText(name, juce::dontSendNotification);
         lbl.setJustificationType(juce::Justification::centred);
-        lbl.setColour(juce::Label::textColourId, juce::Colour(0xffaab4c0));
+        lbl.setColour(juce::Label::textColourId, juce::Colour(tkn::argb::textLabel));
         addAndMakeVisible(lbl);
         styleRotary(s);
         s.setColour(juce::Slider::rotarySliderFillColourId, c);
@@ -570,18 +572,18 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
 
     macroSectionLabel.setText("Macros", juce::dontSendNotification);
     macroSectionLabel.setJustificationType(juce::Justification::centredLeft);
-    macroSectionLabel.setColour(juce::Label::textColourId, juce::Colour(0xffc8d0dc));
+    macroSectionLabel.setColour(juce::Label::textColourId, juce::Colour(tkn::macro::sectionLabel));
     macroSectionLabel.setFont(juce::FontOptions(13.0f, juce::Font::bold));
     addAndMakeVisible(macroSectionLabel);
 
-    setupMacro(macroGlueSlider, macroGlueLabel, "Glue", juce::Colour(0xffc080a0));
-    setupMacro(macroAirSlider, macroAirLabel, "Air", juce::Colour(0xff80c0c8));
-    setupMacro(macroSibilanceSlider, macroSibilanceLabel, "Sibil", juce::Colour(0xffd0a868));
-    setupMacro(macroPresenceSlider, macroPresenceLabel, "Presence", juce::Colour(0xffa8d080));
-    setupMacro(macroPunchSlider, macroPunchLabel, "Punch", juce::Colour(0xffe88860));
-    setupMacro(macroBodySlider, macroBodyLabel, "Body", juce::Colour(0xffb89870));
-    setupMacro(macroSmoothSlider, macroSmoothLabel, "Smooth", juce::Colour(0xff8898d0));
-    setupMacro(macroDensitySlider, macroDensityLabel, "Density", juce::Colour(0xff78b0a0));
+    setupMacro(macroGlueSlider, macroGlueLabel, "Glue", juce::Colour(tkn::macro::glue));
+    setupMacro(macroAirSlider, macroAirLabel, "Air", juce::Colour(tkn::macro::air));
+    setupMacro(macroSibilanceSlider, macroSibilanceLabel, "Sibil", juce::Colour(tkn::macro::sibilance));
+    setupMacro(macroPresenceSlider, macroPresenceLabel, "Presence", juce::Colour(tkn::macro::presence));
+    setupMacro(macroPunchSlider, macroPunchLabel, "Punch", juce::Colour(tkn::macro::punch));
+    setupMacro(macroBodySlider, macroBodyLabel, "Body", juce::Colour(tkn::macro::body));
+    setupMacro(macroSmoothSlider, macroSmoothLabel, "Smooth", juce::Colour(tkn::macro::smooth));
+    setupMacro(macroDensitySlider, macroDensityLabel, "Density", juce::Colour(tkn::macro::density));
 
     macroGlueAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
         apvts, razumov::params::macroGlue, macroGlueSlider);
@@ -608,26 +610,26 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     spectralBypassBtn.setClickingTogglesState(true);
     content.addAndMakeVisible(spectralBypassBtn);
 
-    addKnob(micAmountSlider, juce::Colour(0xff9a86d4));
-    addKnob(gainSlider, juce::Colour(0xff6c9fd2));
-    addKnob(lowpassSlider, juce::Colour(0xff8fd28c));
-    addKnob(deessCrossSlider, juce::Colour(0xffd2a86c));
-    addKnob(deessThreshSlider, juce::Colour(0xffd2a86c));
-    addKnob(deessRatioSlider, juce::Colour(0xffd2a86c));
-    addKnob(optoThreshSlider, juce::Colour(0xff6cb8d2));
-    addKnob(optoRatioSlider, juce::Colour(0xff6cb8d2));
-    addKnob(optoMakeupSlider, juce::Colour(0xff6cb8d2));
-    addKnob(fetThreshSlider, juce::Colour(0xffd26c8c));
-    addKnob(fetRatioSlider, juce::Colour(0xffd26c8c));
-    addKnob(fetMakeupSlider, juce::Colour(0xffd26c8c));
-    addKnob(vcaThreshSlider, juce::Colour(0xffb8d26c));
-    addKnob(vcaRatioSlider, juce::Colour(0xffb8d26c));
-    addKnob(vcaMakeupSlider, juce::Colour(0xffb8d26c));
-    addKnob(exciterDriveSlider, juce::Colour(0xffe0c080));
-    addKnob(exciterMixSlider, juce::Colour(0xffe0c080));
-    addKnob(spectralMixSlider, juce::Colour(0xff9a9ae0));
-    addKnob(spectralThreshSlider, juce::Colour(0xff9a9ae0));
-    addKnob(spectralRatioSlider, juce::Colour(0xff9a9ae0));
+    addKnob(micAmountSlider, juce::Colour(tkn::knob::micAmount));
+    addKnob(gainSlider, juce::Colour(tkn::knob::gain));
+    addKnob(lowpassSlider, juce::Colour(tkn::knob::lowpass));
+    addKnob(deessCrossSlider, juce::Colour(tkn::knob::deess));
+    addKnob(deessThreshSlider, juce::Colour(tkn::knob::deess));
+    addKnob(deessRatioSlider, juce::Colour(tkn::knob::deess));
+    addKnob(optoThreshSlider, juce::Colour(tkn::knob::opto));
+    addKnob(optoRatioSlider, juce::Colour(tkn::knob::opto));
+    addKnob(optoMakeupSlider, juce::Colour(tkn::knob::opto));
+    addKnob(fetThreshSlider, juce::Colour(tkn::knob::fet));
+    addKnob(fetRatioSlider, juce::Colour(tkn::knob::fet));
+    addKnob(fetMakeupSlider, juce::Colour(tkn::knob::fet));
+    addKnob(vcaThreshSlider, juce::Colour(tkn::knob::vca));
+    addKnob(vcaRatioSlider, juce::Colour(tkn::knob::vca));
+    addKnob(vcaMakeupSlider, juce::Colour(tkn::knob::vca));
+    addKnob(exciterDriveSlider, juce::Colour(tkn::knob::exciter));
+    addKnob(exciterMixSlider, juce::Colour(tkn::knob::exciter));
+    addKnob(spectralMixSlider, juce::Colour(tkn::knob::spectral));
+    addKnob(spectralThreshSlider, juce::Colour(tkn::knob::spectral));
+    addKnob(spectralRatioSlider, juce::Colour(tkn::knob::spectral));
 
     micAmountSlider.setRange(0.0, 1.0, 0.01);
     gainSlider.setRange(-24.0, 12.0, 0.1);
@@ -697,12 +699,12 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
 
 void RazumovVocalChainAudioProcessorEditor::paint(juce::Graphics& g)
 {
-    g.fillAll(juce::Colour(razumov::ui::tokens::argb::backgroundEditor));
+    g.fillAll(juce::Colour(tkn::argb::backgroundEditor));
     razumov::ui::drawEditorBackgroundLayer(g, getLocalBounds());
     razumov::ui::drawEditorCornerAccents(g, getLocalBounds());
     auto r = getLocalBounds().reduced(16);
     auto titleRow = r.removeFromTop(40);
-    g.setColour(juce::Colours::white);
+    g.setColour(juce::Colour(tkn::argb::textTitle));
     g.setFont(juce::FontOptions(18.0f, juce::Font::bold));
     auto titleLeft = titleRow;
     auto versionBlock = titleRow.removeFromRight(300);
@@ -712,11 +714,11 @@ void RazumovVocalChainAudioProcessorEditor::paint(juce::Graphics& g)
     const juce::String buildLine = juce::String("build ") + kBuildDateTime;
 
     g.setFont(juce::FontOptions(12.0f));
-    g.setColour(juce::Colour(0xffaab4c0));
+    g.setColour(juce::Colour(tkn::argb::textLabel));
     auto v1 = versionBlock.removeFromTop(17);
     g.drawText(versionLine, v1, juce::Justification::centredRight);
     g.setFont(juce::FontOptions(10.0f));
-    g.setColour(juce::Colour(0xff7a8490));
+    g.setColour(juce::Colour(tkn::argb::textTertiary));
     g.drawText(buildLine, versionBlock, juce::Justification::centredRight);
 }
 

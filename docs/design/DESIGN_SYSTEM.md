@@ -18,7 +18,7 @@
 |------|------|
 | `resources/design/tokens/tokens.json` | **Канон**: описание токенов, комментарии, типы. Менять **сначала** здесь. |
 | `resources/design/tokens/tokens.css` | CSS-переменные для прототипов (`:root`). Держать в **соответствии** с JSON. |
-| `Source/ui/DesignTokens.h` | **JUCE**: непрозрачные цвета `0xAARRGGBB` в `namespace razumov::ui::tokens::argb`. Синхронизировать с JSON при смене палитры. |
+| `Source/ui/DesignTokens.h` | **JUCE**: `0xAARRGGBB` в `tokens::argb` (фон, текст, бордеры, ротори), `tokens::macro` (восемь макросов + секция), `tokens::knob` (акценты групп модулей). Синхронизировать с JSON при смене палитры. |
 | `resources/design/chain-graph-prototype.html` | Пример использования `tokens.css` (цепочка, glass, адаптив). |
 
 Прозрачности и градиенты, которые нужны только в вебе, живут в `tokens.css` и в `tokens.json` (где уместно); в `DesignTokens.h` — только **opaque** цвета для `juce::Colour(uint32_t)`.
@@ -45,15 +45,23 @@
 | `color.accent.selection` | Выбранный слот. |
 | `color.accent.cta` | Продуктовый акцент (оранжевый). |
 | `color.accent.bypass` | Состояние BYP. |
+| `color.surface.micPreviewInner` / `moduleBackdrop` | Превью микрофона, подложка панели модуля. |
+| `color.border.micPreview` / `modulePanel` | Обводка превью и секции модуля. |
+| `color.text.tertiary` / `caption` / `title` | Строка сборки, подпись под превью, заголовок окна. |
+| `color.control.rotaryOutline` | Дефолтный контур ротори (`styleRotary`). |
+| `color.macro.*` | Секция «Macros» и заливка каждого из восьми макросов (Glue, Air, …). |
+| `color.knob.*` | Акцент заливки ротори по типу модуля (micAmount, deess, opto, …). |
 
 Новые экраны и компоненты должны **брать цвета по семантике**, а не вводить новый hex без записи в `tokens.json`.
+
+**Нативный редактор:** основной файл `PluginEditor.cpp` использует токены (псевдоним `tkn`); литералов `0xff…` в нём для цветов быть не должно.
 
 ## 5. Как править палитру (чеклист)
 
 1. Отредактировать `tokens.json` (и при необходимости описание в этом файле).
 2. Обновить `tokens.css` (те же значения).
 3. Обновить `DesignTokens.h` для всех непрозрачных цветов, которые используются в C++.
-4. Заменить литералы в коде на `juce::Colour(razumov::ui::tokens::argb::...)` по мере касания файлов.
+4. Заменить литералы в коде на `juce::Colour(tkn::argb::...)` / `tkn::macro::...` / `tkn::knob::...` (или полное имя `razumov::ui::tokens::`) по мере касания файлов.
 5. Сборка Release и быстрая проверка в хосте (см. `.cursor/rules/agent-build-after-changes.mdc`).
 
 Опционально в будущем: скрипт генерации `tokens.css` / заголовка из JSON (сейчас синхронизация вручную, явно зафиксирована).

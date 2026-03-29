@@ -58,6 +58,11 @@ void pushSerialWire(ChainStripLayout& out, juce::Point<float> from, juce::Point<
         out.wires.push_back({ from, to });
 }
 
+struct RootModuleCounter
+{
+    int nextRootModuleIndex { 0 };
+};
+
 SegmentBounds layoutSegment(
     const FlexSegmentDesc& seg,
     float x,
@@ -67,7 +72,8 @@ SegmentBounds layoutSegment(
     float cardH,
     float hGap,
     float branchGap,
-    ChainStripLayout& out)
+    ChainStripLayout& out,
+    RootModuleCounter* rootCounter)
 {
     if (seg.empty())
     {
@@ -93,9 +99,37 @@ SegmentBounds layoutSegment(
             c.label = slot.uiLabel.isNotEmpty() ? slot.uiLabel : juce::String(shortNameForKind(slot.kind));
             c.selectable = true;
             c.isMergeNode = false;
-            out.cards.push_back(c);
-
+            if (rootCounter != nullptr)
+            {
+                const float p = 15.0f;
+                if (yLine == 0.0f)
+                {
+                    const int ridx = rootCounter->nextRootModuleIndex++;
+                    c.showSerialPlus = (ridx >= 1);
+                    c.showParallelPlus = (ridx >= 2);
+                }
+                else
+                {
+                    c.showSerialPlus = true;
+                    c.showParallelPlus = true;
+                }
+                if (c.showSerialPlus)
+                {
+                    c.serialPlusBounds = { c.bounds.getRight() + hGap * 0.5f - p * 0.5f,
+                                            c.bounds.getCentreY() - p * 0.5f,
+                                            p,
+                                            p };
+                }
+                if (c.showParallelPlus)
+                {
+                    c.parallelPlusBounds = { c.bounds.getCentreX() - p * 0.5f,
+                                              c.bounds.getBottom() + 6.0f,
+                                              p,
+                                              p };
+                }
+            }
             const auto curCenter = centerOf(c.bounds);
+            out.cards.push_back(c);
             if (haveLast)
                 pushSerialWire(out, lastCenter, curCenter);
 
@@ -141,7 +175,7 @@ SegmentBounds layoutSegment(
 
         for (const auto& br : slot.branches)
         {
-            const auto bb = layoutSegment(br, branchX, branchY, rowPitch, cardW, cardH, hGap, branchGap, out);
+            const auto bb = layoutSegment(br, branchX, branchY, rowPitch, cardW, cardH, hGap, branchGap, out, rootCounter);
             branchInfo.push_back(bb);
             maxBranchEnd = juce::jmax(maxBranchEnd, bb.endX);
             branchX = bb.endX + branchGap;
@@ -187,6 +221,22 @@ void scaleLayout(ChainStripLayout& layout, float originX, float originY, float s
             c.bounds.getY() * scale + originY,
             c.bounds.getWidth() * scale,
             c.bounds.getHeight() * scale);
+        if (c.serialPlusBounds.getWidth() > 0.5f)
+        {
+            c.serialPlusBounds = juce::Rectangle<float>(
+                c.serialPlusBounds.getX() * scale + originX,
+                c.serialPlusBounds.getY() * scale + originY,
+                c.serialPlusBounds.getWidth() * scale,
+                c.serialPlusBounds.getHeight() * scale);
+        }
+        if (c.parallelPlusBounds.getWidth() > 0.5f)
+        {
+            c.parallelPlusBounds = juce::Rectangle<float>(
+                c.parallelPlusBounds.getX() * scale + originX,
+                c.parallelPlusBounds.getY() * scale + originY,
+                c.parallelPlusBounds.getWidth() * scale,
+                c.parallelPlusBounds.getHeight() * scale);
+        }
     }
     for (auto& w : layout.wires)
     {
@@ -201,7 +251,11 @@ float computeMaxBottom(const ChainStripLayout& layout) noexcept
 {
     float m = 0;
     for (const auto& c : layout.cards)
+    {
         m = juce::jmax(m, c.bounds.getBottom());
+        if (c.parallelPlusBounds.getWidth() > 0.5f)
+            m = juce::jmax(m, c.parallelPlusBounds.getBottom());
+    }
     return m;
 }
 
@@ -224,17 +278,18 @@ ChainStripLayout computeChainStripLayout(const razumov::graph::FlexSegmentDesc& 
         return layout;
 
     const float padX = 10.f;
-    const float padY = 14.f;
-    const float rowPitch = 46.f;
-    const float cardH = 34.f;
-    const float cardW = 72.f;
-    const float hGap = 10.f;
-    const float branchGap = 12.f;
+    const float padY = 16.f;
+    const float rowPitch = 56.f;
+    const float cardH = 46.f;
+    const float cardW = 104.f;
+    const float hGap = 14.f;
+    const float branchGap = 14.f;
 
     const float innerW = juce::jmax(80.f, availableWidth - 2.f * padX);
     const float yLine = 0.f;
 
-    layoutSegment(root, 0.f, yLine, rowPitch, cardW, cardH, hGap, branchGap, layout);
+    RootModuleCounter rootCounter;
+    layoutSegment(root, 0.f, yLine, rowPitch, cardW, cardH, hGap, branchGap, layout, &rootCounter);
 
     const float maxR = computeMaxRight(layout);
     const float maxB = computeMaxBottom(layout);

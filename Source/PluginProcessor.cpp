@@ -105,16 +105,12 @@ RazumovVocalChainAudioProcessor::RazumovVocalChainAudioProcessor()
     , apvts(*this, nullptr, "PARAMS", razumov::params::createParameterLayout())
 {
     graphEngine_.setLatencyCallback([this](int latency) { setLatencySamples(latency); });
-    apvts.addParameterListener(razumov::params::chainProfile, this);
     graphDesc_ = razumov::graph::GraphPlanFactory::makeStartupDescForIndex(getStartupChainIndex(apvts), 44100.0);
     nextSlotCounter_ = juce::jmax(1u, razumov::graph::maxSlotIdInSegment(graphDesc_) + 1);
     syncModuleParamsWithGraph();
 }
 
-RazumovVocalChainAudioProcessor::~RazumovVocalChainAudioProcessor()
-{
-    apvts.removeParameterListener(razumov::params::chainProfile, this);
-}
+RazumovVocalChainAudioProcessor::~RazumovVocalChainAudioProcessor() = default;
 
 void RazumovVocalChainAudioProcessor::syncModuleParamsWithGraph()
 {
@@ -286,12 +282,22 @@ void RazumovVocalChainAudioProcessor::applyFactoryPreset(int index)
     moduleParams_.seedAllSlotsWithSameParams(p);
 }
 
-void RazumovVocalChainAudioProcessor::parameterChanged(const juce::String& parameterID, float newValue)
+uint32_t RazumovVocalChainAudioProcessor::resolveSerialInsertReferenceSlot(uint32_t referenceSlotId) const
 {
-    juce::ignoreUnused(newValue);
-    if (parameterID != razumov::params::chainProfile)
-        return;
-    juce::MessageManager::callAsync([this]() { applyChainProfileTemplate(); });
+    if (auto mic = razumov::graph::getRootModuleSlotIdAtIndex(graphDesc_, 0))
+    {
+        if (referenceSlotId == *mic)
+        {
+            if (auto room = razumov::graph::getRootModuleSlotIdAtIndex(graphDesc_, 1))
+                return *room;
+        }
+    }
+    return referenceSlotId;
+}
+
+bool RazumovVocalChainAudioProcessor::canInsertParallelSplitAfterSlot(uint32_t referenceSlotId) const
+{
+    return !razumov::graph::isProtectedFrontRootModuleSlot(graphDesc_, referenceSlotId);
 }
 
 void RazumovVocalChainAudioProcessor::commitGraphMutation()
@@ -309,6 +315,8 @@ void RazumovVocalChainAudioProcessor::setSlotBypassForId(uint32_t slotId, bool b
 
 void RazumovVocalChainAudioProcessor::removeGraphSlotById(uint32_t slotId)
 {
+    if (razumov::graph::isProtectedFrontRootModuleSlot(graphDesc_, slotId))
+        return;
     if (razumov::graph::removeSlotById(graphDesc_, slotId))
         commitGraphMutation();
 }
@@ -321,6 +329,8 @@ void RazumovVocalChainAudioProcessor::moveRootSlotContainingId(uint32_t slotId, 
     const int ni = idx + delta;
     if (ni < 0 || ni >= (int) graphDesc_.size())
         return;
+    if (idx <= 1 || ni <= 1)
+        return;
     std::swap(graphDesc_[(size_t) idx], graphDesc_[(size_t) ni]);
     commitGraphMutation();
 }
@@ -328,12 +338,13 @@ void RazumovVocalChainAudioProcessor::moveRootSlotContainingId(uint32_t slotId, 
 void RazumovVocalChainAudioProcessor::insertPaletteModuleAfterSlot(uint32_t referenceSlotId,
                                                                   razumov::graph::AudioNodeKind kind)
 {
+    const uint32_t ref = resolveSerialInsertReferenceSlot(referenceSlotId);
     razumov::graph::FlexSlotDesc ns = razumov::graph::GraphPlanFactory::makeModulePaletteSlot(kind);
     uint32_t n = nextSlotCounter_;
     razumov::graph::assignSlotIdsForSubtree(ns, n);
     nextSlotCounter_ = n;
 
-    const int ri = razumov::graph::findRootSlotIndexContainingId(graphDesc_, referenceSlotId);
+    const int ri = razumov::graph::findRootSlotIndexContainingId(graphDesc_, ref);
     if (ri < 0)
         graphDesc_.push_back(std::move(ns));
     else
@@ -344,6 +355,8 @@ void RazumovVocalChainAudioProcessor::insertPaletteModuleAfterSlot(uint32_t refe
 
 void RazumovVocalChainAudioProcessor::insertSplitAfterSlot(uint32_t referenceSlotId, int numBranches)
 {
+    if (!canInsertParallelSplitAfterSlot(referenceSlotId))
+        return;
     razumov::graph::FlexSlotDesc sp = razumov::graph::GraphPlanFactory::makeSplitWithUnityBranches(numBranches);
     uint32_t n = nextSlotCounter_;
     razumov::graph::assignSlotIdsForSubtree(sp, n);

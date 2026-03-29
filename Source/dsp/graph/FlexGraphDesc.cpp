@@ -217,4 +217,32 @@ std::vector<uint32_t> collectModuleSlotIds(const FlexSegmentDesc& root)
     return out;
 }
 
+std::optional<uint32_t> getRootModuleSlotIdAtIndex(const FlexSegmentDesc& root, int moduleIndex) noexcept
+{
+    int mi = 0;
+    for (const auto& s : root)
+    {
+        if (s.descType != FlexSlotDescType::Module)
+            continue;
+        if (mi == moduleIndex)
+            return s.slotId;
+        ++mi;
+    }
+    return std::nullopt;
+}
+
+bool isProtectedFrontRootModuleSlot(const FlexSegmentDesc& root, uint32_t slotId) noexcept
+{
+    int mi = 0;
+    for (const auto& s : root)
+    {
+        if (s.descType != FlexSlotDescType::Module)
+            continue;
+        if (s.slotId == slotId)
+            return mi < 2;
+        ++mi;
+    }
+    return false;
+}
+
 } // namespace razumov::graph

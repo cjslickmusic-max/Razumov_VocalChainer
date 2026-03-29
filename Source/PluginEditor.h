@@ -41,6 +41,8 @@ private:
     static void styleRotary(juce::Slider&);
 
     void populateComboBoxes();
+    void showAddModuleMenuForSlot(uint32_t referenceSlotId);
+    void showParallelSplitMenuForSlot(uint32_t referenceSlotId);
     void refreshModulePanelVisibility();
     void reloadModuleParamsFromProcessor();
     void syncChainStripAfterGraphEdit();
@@ -54,8 +56,6 @@ private:
     juce::ComboBox micProfileCombo;
     juce::Label presetLabel;
     juce::ComboBox presetCombo;
-    juce::Label chainLabel;
-    juce::ComboBox chainCombo;
     juce::Label macroSectionLabel;
 
     juce::TextButton bypassSlotBtn { {}, "Bypass" };
@@ -113,7 +113,6 @@ private:
     juce::Slider spectralRatioSlider;
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> micProfileAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> chainAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroGlueAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroAirAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroSibilanceAttachment;

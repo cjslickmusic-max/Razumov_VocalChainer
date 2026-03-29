@@ -15,10 +15,25 @@ FlexSlotDesc module(AudioNodeKind kind)
     return d;
 }
 
+FlexSlotDesc micCorrectionSlot()
+{
+    auto d = module(AudioNodeKind::MicCorrection);
+    d.uiLabel = "Mic correction";
+    return d;
+}
+
 FlexSlotDesc gainModule(float linear)
 {
     auto d = module(AudioNodeKind::Gain);
     d.gainLinear = linear;
+    return d;
+}
+
+/** Placeholder until dedicated room DSP; unity gain, label in UI. */
+FlexSlotDesc roomCorrectionPassSlot()
+{
+    auto d = gainModule(1.0f);
+    d.uiLabel = "Room correction";
     return d;
 }
 
@@ -77,7 +92,8 @@ FlexSegmentDesc GraphPlanFactory::makeDefaultVocalChainPhase3Desc(double sampleR
 {
     (void) sampleRate;
     FlexSegmentDesc d;
-    d.push_back(module(AudioNodeKind::MicCorrection));
+    d.push_back(micCorrectionSlot());
+    d.push_back(roomCorrectionPassSlot());
     d.push_back(gainModule(1.0f));
     d.push_back(filterModule(20000.0f));
     d.push_back(module(AudioNodeKind::Deesser));
@@ -93,7 +109,8 @@ FlexSegmentDesc GraphPlanFactory::makeCompactVocalChainPhase3Desc(double sampleR
 {
     (void) sampleRate;
     FlexSegmentDesc d;
-    d.push_back(module(AudioNodeKind::MicCorrection));
+    d.push_back(micCorrectionSlot());
+    d.push_back(roomCorrectionPassSlot());
     d.push_back(gainModule(1.0f));
     d.push_back(filterModule(20000.0f));
     d.push_back(compressorModule(CompressorArchetypeNode::Archetype::Opto));
@@ -106,7 +123,8 @@ FlexSegmentDesc GraphPlanFactory::makeFetForwardVocalChainPhase3Desc(double samp
 {
     (void) sampleRate;
     FlexSegmentDesc d;
-    d.push_back(module(AudioNodeKind::MicCorrection));
+    d.push_back(micCorrectionSlot());
+    d.push_back(roomCorrectionPassSlot());
     d.push_back(gainModule(1.0f));
     d.push_back(filterModule(20000.0f));
     d.push_back(module(AudioNodeKind::Deesser));

@@ -17,6 +17,10 @@ struct ChainStripLayoutCard
     juce::String label;
     bool selectable { true };
     bool isMergeNode { false };
+    bool showSerialPlus { false };
+    bool showParallelPlus { false };
+    juce::Rectangle<float> serialPlusBounds;
+    juce::Rectangle<float> parallelPlusBounds;
 };
 
 /** Соединительная линия (серийная стрелка или fork/join). */

@@ -103,10 +103,84 @@ void RazumovVocalChainAudioProcessorEditor::styleRotary(juce::Slider& s)
 void RazumovVocalChainAudioProcessorEditor::populateComboBoxes()
 {
     auto& apvts = processor.getAPVTS();
-    if (auto* p = dynamic_cast<juce::AudioParameterChoice*>(apvts.getParameter(razumov::params::chainProfile)))
-        chainCombo.addItemList(p->choices, 1);
     if (auto* p = dynamic_cast<juce::AudioParameterChoice*>(apvts.getParameter(razumov::params::micProfile)))
         micProfileCombo.addItemList(p->choices, 1);
+}
+
+void RazumovVocalChainAudioProcessorEditor::showAddModuleMenuForSlot(uint32_t referenceSlotId)
+{
+    juce::PopupMenu m;
+    using AK = razumov::graph::AudioNodeKind;
+    m.addItem(1, "Gain");
+    m.addItem(2, "Lowpass");
+    m.addItem(3, "De-esser");
+    m.addItem(4, "Opto");
+    m.addItem(5, "FET");
+    m.addItem(6, "VCA");
+    m.addItem(7, "Exciter");
+    m.addItem(8, "Spectral");
+
+    m.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&chainStrip),
+                    [this, referenceSlotId](int r) {
+                        if (r <= 0)
+                            return;
+                        using AK = razumov::graph::AudioNodeKind;
+                        AK k = AK::Gain;
+                        switch (r)
+                        {
+                            case 1:
+                                k = AK::Gain;
+                                break;
+                            case 2:
+                                k = AK::Filter;
+                                break;
+                            case 3:
+                                k = AK::Deesser;
+                                break;
+                            case 4:
+                                k = AK::OptoCompressor;
+                                break;
+                            case 5:
+                                k = AK::FetCompressor;
+                                break;
+                            case 6:
+                                k = AK::VcaCompressor;
+                                break;
+                            case 7:
+                                k = AK::Exciter;
+                                break;
+                            case 8:
+                                k = AK::SpectralCompressor;
+                                break;
+                            default:
+                                return;
+                        }
+                        processor.insertPaletteModuleAfterSlot(referenceSlotId, k);
+                        syncChainStripAfterGraphEdit();
+                    });
+}
+
+void RazumovVocalChainAudioProcessorEditor::showParallelSplitMenuForSlot(uint32_t referenceSlotId)
+{
+    if (!processor.canInsertParallelSplitAfterSlot(referenceSlotId))
+        return;
+    juce::PopupMenu m;
+    m.addItem(20, "Split x2");
+    m.addItem(21, "Split x3");
+    m.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&chainStrip),
+                    [this, referenceSlotId](int r) {
+                        if (r == 20)
+                        {
+                            processor.insertSplitAfterSlot(referenceSlotId, 2);
+                            syncChainStripAfterGraphEdit();
+                            return;
+                        }
+                        if (r == 21)
+                        {
+                            processor.insertSplitAfterSlot(referenceSlotId, 3);
+                            syncChainStripAfterGraphEdit();
+                        }
+                    });
 }
 
 void RazumovVocalChainAudioProcessorEditor::syncChainStripAfterGraphEdit()
@@ -176,8 +250,26 @@ void RazumovVocalChainAudioProcessorEditor::refreshModulePanelVisibility()
                 moduleHintLabel.setVisible(true);
                 break;
             case AK::Gain:
-                moduleTitleLabel.setText("Gain", juce::dontSendNotification);
+            {
+                bool isRoomSlot = false;
+                for (const auto& it : processor.getChainStripItems())
+                {
+                    if (it.slotId == selectedSlotId_ && it.label.containsIgnoreCase("Room"))
+                    {
+                        isRoomSlot = true;
+                        break;
+                    }
+                }
+                if (isRoomSlot)
+                {
+                    moduleTitleLabel.setText("Room correction", juce::dontSendNotification);
+                    moduleHintLabel.setText("Pass-through when no room profile is active.", juce::dontSendNotification);
+                    moduleHintLabel.setVisible(true);
+                }
+                else
+                    moduleTitleLabel.setText("Gain", juce::dontSendNotification);
                 break;
+            }
             case AK::Filter:
                 moduleTitleLabel.setText("Lowpass", juce::dontSendNotification);
                 break;
@@ -256,6 +348,13 @@ void RazumovVocalChainAudioProcessorEditor::refreshModulePanelVisibility()
     spectralRatioSlider.setVisible(showSpec);
 
     lowpassSlider.setVisible(showLp);
+
+    const bool canRemoveOrMove = selectedSlotId_ != 0
+                                 && !razumov::graph::isProtectedFrontRootModuleSlot(processor.getGraphDesc(),
+                                                                                     selectedSlotId_);
+    removeSlotBtn.setEnabled(canRemoveOrMove);
+    moveLeftBtn.setEnabled(canRemoveOrMove);
+    moveRightBtn.setEnabled(canRemoveOrMove);
 
     reloadModuleParamsFromProcessor();
     resized();
@@ -372,17 +471,17 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
 {
     setLookAndFeel(laf.get());
 
-    setSize(1000, 900);
+    setSize(1280, 920);
     setResizable(true, true);
-    setResizeLimits(720, 680, 2000, 1800);
+    setResizeLimits(900, 620, 2600, 2000);
 
     addAndMakeVisible(micProfilePanel);
     addAndMakeVisible(micProfileCombo);
     micProfilePanel.onPreviewClicked = [this] { micProfileCombo.showPopup(); };
     micProfileCombo.setTooltip("Mic correction profile. Per-slot amount and bypass are in the Mic module below.");
 
-    presetLabel.setText("Factory preset", juce::dontSendNotification);
-    presetLabel.setJustificationType(juce::Justification::centredLeft);
+    presetLabel.setText("Preset", juce::dontSendNotification);
+    presetLabel.setJustificationType(juce::Justification::centred);
     presetLabel.setColour(juce::Label::textColourId, juce::Colour(tkn::argb::textLabel));
     addAndMakeVisible(presetLabel);
 
@@ -398,22 +497,17 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
         }
     };
     addAndMakeVisible(presetCombo);
-    presetCombo.setTooltip("Built-in factory presets (macros and defaults). The graph is edited separately.");
-
-    chainLabel.setText("Graph template", juce::dontSendNotification);
-    chainLabel.setJustificationType(juce::Justification::centredLeft);
-    chainLabel.setColour(juce::Label::textColourId, juce::Colour(tkn::argb::textLabel));
-    addAndMakeVisible(chainLabel);
-    addAndMakeVisible(chainCombo);
+    presetCombo.setTooltip("Built-in factory presets (macros and defaults). The graph is edited in the strip.");
 
     populateComboBoxes();
-    chainCombo.setTooltip("Starting module order and routing. Use Add / Split and the strip below to change the path.");
 
     addAndMakeVisible(chainStrip);
     chainStrip.onSlotSelected = [this](uint32_t id) {
         selectedSlotId_ = id;
         refreshModulePanelVisibility();
     };
+    chainStrip.onRequestAddSerialAfter = [this](uint32_t id) { showAddModuleMenuForSlot(id); };
+    chainStrip.onRequestParallelBranch = [this](uint32_t id) { showParallelSplitMenuForSlot(id); };
 
     addAndMakeVisible(bypassSlotBtn);
     addAndMakeVisible(removeSlotBtn);
@@ -424,7 +518,7 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     removeSlotBtn.setTooltip("Remove the selected module from the graph.");
     moveLeftBtn.setTooltip("Move the root segment left.");
     moveRightBtn.setTooltip("Move the root segment right.");
-    addModuleBtn.setTooltip("Insert a module or a parallel split after the selection.");
+    addModuleBtn.setTooltip("Insert a module after the selected block (same as + between blocks).");
 
     bypassSlotBtn.onClick = [this] {
         const auto items = processor.getChainStripItems();
@@ -463,73 +557,9 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     };
 
     addModuleBtn.onClick = [this] {
-        juce::PopupMenu m;
-        using AK = razumov::graph::AudioNodeKind;
-        m.addItem(1, "Gain");
-        m.addItem(2, "Lowpass");
-        m.addItem(3, "De-esser");
-        m.addItem(4, "Opto");
-        m.addItem(5, "FET");
-        m.addItem(6, "VCA");
-        m.addItem(7, "Exciter");
-        m.addItem(8, "Spectral");
-        m.addSeparator();
-        m.addItem(20, "Split x2");
-        m.addItem(21, "Split x3");
-
-        m.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&addModuleBtn),
-                        [this](int r) {
-                            if (r <= 0)
-                                return;
-                            const uint32_t ref = referenceSlotForInsert(processor, selectedSlotId_);
-                            if (ref == 0)
-                                return;
-                            if (r == 20)
-                            {
-                                processor.insertSplitAfterSlot(ref, 2);
-                                syncChainStripAfterGraphEdit();
-                                return;
-                            }
-                            if (r == 21)
-                            {
-                                processor.insertSplitAfterSlot(ref, 3);
-                                syncChainStripAfterGraphEdit();
-                                return;
-                            }
-                            using AK = razumov::graph::AudioNodeKind;
-                            AK k = AK::Gain;
-                            switch (r)
-                            {
-                                case 1:
-                                    k = AK::Gain;
-                                    break;
-                                case 2:
-                                    k = AK::Filter;
-                                    break;
-                                case 3:
-                                    k = AK::Deesser;
-                                    break;
-                                case 4:
-                                    k = AK::OptoCompressor;
-                                    break;
-                                case 5:
-                                    k = AK::FetCompressor;
-                                    break;
-                                case 6:
-                                    k = AK::VcaCompressor;
-                                    break;
-                                case 7:
-                                    k = AK::Exciter;
-                                    break;
-                                case 8:
-                                    k = AK::SpectralCompressor;
-                                    break;
-                                default:
-                                    return;
-                            }
-                            processor.insertPaletteModuleAfterSlot(ref, k);
-                            syncChainStripAfterGraphEdit();
-                        });
+        const uint32_t ref = referenceSlotForInsert(processor, selectedSlotId_);
+        if (ref != 0)
+            showAddModuleMenuForSlot(ref);
     };
 
     content.addAndMakeVisible(moduleSectionBackdrop);
@@ -550,9 +580,6 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
 
     micProfileAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(
         apvts, razumov::params::micProfile, micProfileCombo);
-
-    chainAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(
-        apvts, razumov::params::chainProfile, chainCombo);
 
     auto addKnob = [this](juce::Slider& s, juce::Colour c) {
         styleRotary(s);
@@ -727,29 +754,23 @@ void RazumovVocalChainAudioProcessorEditor::resized()
     auto bounds = getLocalBounds().reduced(16);
     bounds.removeFromTop(40);
 
-    const int ctrlRowH = 56;
-    auto ctrlRow = bounds.removeFromTop(ctrlRowH);
-    const int colGap = 14;
-    const int colW = (ctrlRow.getWidth() - colGap) / 2;
-    auto leftPreset = ctrlRow.removeFromLeft(colW);
-    auto rightChain = ctrlRow;
+    const int presetRowH = 52;
+    auto presetRow = bounds.removeFromTop(presetRowH);
+    const int pw = juce::jmin(440, presetRow.getWidth() - 40);
+    auto presetBox = presetRow.withSizeKeepingCentre(pw, presetRowH);
+    presetLabel.setBounds(presetBox.removeFromTop(14));
+    presetCombo.setBounds(presetBox.removeFromTop(32).reduced(0, 2));
 
-    presetLabel.setBounds(leftPreset.removeFromTop(14));
-    presetCombo.setBounds(leftPreset.removeFromTop(32).reduced(0, 2));
-
-    chainLabel.setBounds(rightChain.removeFromTop(14));
-    chainCombo.setBounds(rightChain.removeFromTop(32).reduced(0, 2));
-
-    const int micH = 112;
+    const int micH = 100;
     auto micRow = bounds.removeFromTop(micH);
-    micProfilePanel.setBounds(micRow.removeFromLeft(112));
+    micProfilePanel.setBounds(micRow.removeFromLeft(100));
     {
         auto comboArea = micRow.reduced(8, 8);
         const int ch = 30;
         micProfileCombo.setBounds(comboArea.withHeight(ch).withY(comboArea.getCentreY() - ch / 2));
     }
 
-    chainStrip.setBounds(bounds.removeFromTop(132));
+    chainStrip.setBounds(bounds.removeFromTop(210));
 
     auto toolRow = bounds.removeFromTop(32);
     const int tw = 88;

@@ -73,4 +73,10 @@ int findRootSlotIndexContainingId(const FlexSegmentDesc& root, uint32_t slotId) 
 /** Все slotId узлов Module (без split-карточек), DFS по порядку сегмента. */
 std::vector<uint32_t> collectModuleSlotIds(const FlexSegmentDesc& root);
 
+/** N-й root-модуль (только прямые дети корня, без обхода split). */
+std::optional<uint32_t> getRootModuleSlotIdAtIndex(const FlexSegmentDesc& root, int moduleIndex) noexcept;
+
+/** Первые два root-модуля (Mic + Room) нельзя удалять и менять местами с соседями. */
+bool isProtectedFrontRootModuleSlot(const FlexSegmentDesc& root, uint32_t slotId) noexcept;
+
 } // namespace razumov::graph

@@ -6,8 +6,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <vector>
 
-class RazumovVocalChainAudioProcessor : public juce::AudioProcessor,
-                                          public juce::AudioProcessorValueTreeState::Listener
+class RazumovVocalChainAudioProcessor : public juce::AudioProcessor
 {
 public:
     RazumovVocalChainAudioProcessor();
@@ -59,7 +58,9 @@ public:
 
     void applyFactoryPreset(int index);
 
-    void parameterChanged(const juce::String& parameterID, float newValue) override;
+    /** Serial insert after Mic maps to after Room so Mic/Room stay adjacent. */
+    uint32_t resolveSerialInsertReferenceSlot(uint32_t referenceSlotId) const;
+    bool canInsertParallelSplitAfterSlot(uint32_t referenceSlotId) const;
 
     void setSlotBypassForId(uint32_t slotId, bool bypassed);
     void removeGraphSlotById(uint32_t slotId);

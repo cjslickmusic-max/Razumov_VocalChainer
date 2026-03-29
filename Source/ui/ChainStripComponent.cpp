@@ -2,7 +2,6 @@
 #include "DesignTokens.h"
 #include "EditorVisualAssets.h"
 #include "PluginProcessor.h"
-#include "params/ParamIDs.h"
 #include <cmath>
 
 namespace razumov::ui
@@ -16,6 +15,19 @@ void drawWire(juce::Graphics& g, juce::Point<float> a, juce::Point<float> b, juc
         g.drawArrow(juce::Line<float>(a.x, a.y, b.x, b.y), 1.5f, 4.5f, 4.5f);
     else
         g.drawLine(juce::Line<float>(a.x, a.y, b.x, b.y), 1.35f);
+}
+
+void drawPlusAffordance(juce::Graphics& g, juce::Rectangle<float> r, juce::Colour rim, juce::Colour fill)
+{
+    g.setColour(fill);
+    g.fillRoundedRectangle(r, 4.5f);
+    g.setColour(rim);
+    g.drawRoundedRectangle(r.reduced(0.5f), 4.5f, 1.0f);
+    g.setColour(rim.brighter(0.25f));
+    const auto c = r.getCentre();
+    const float half = 4.2f;
+    g.drawLine(c.x - half, c.y, c.x + half, c.y, 1.65f);
+    g.drawLine(c.x, c.y - half, c.x, c.y + half, 1.65f);
 }
 
 bool firstSelectableSlot(const ChainStripLayout& layout, uint32_t& outId) noexcept
@@ -46,24 +58,12 @@ bool containsSlot(const ChainStripLayout& layout, uint32_t id) noexcept
 
 ChainStripComponent::ChainStripComponent(RazumovVocalChainAudioProcessor& processor)
     : processor_(processor)
-    , apvts_(processor.getAPVTS())
 {
-    apvts_.addParameterListener(razumov::params::chainProfile, this);
     setInterceptsMouseClicks(true, true);
     syncFromProcessor();
 }
 
-ChainStripComponent::~ChainStripComponent()
-{
-    apvts_.removeParameterListener(razumov::params::chainProfile, this);
-}
-
-void ChainStripComponent::parameterChanged(const juce::String& parameterID, float newValue)
-{
-    juce::ignoreUnused(newValue);
-    if (parameterID == razumov::params::chainProfile)
-        syncFromProcessor();
-}
+ChainStripComponent::~ChainStripComponent() = default;
 
 void ChainStripComponent::syncFromProcessor()
 {
@@ -117,7 +117,7 @@ void ChainStripComponent::paint(juce::Graphics& g)
 
     g.fillAll(panelBg);
 
-    auto header = getLocalBounds().reduced(10, 6);
+    auto header = getLocalBounds().reduced(12, 8);
     g.setColour(textSec);
     g.setFont(juce::FontOptions(11.0f));
     g.drawText("Signal path", header.removeFromTop(14), juce::Justification::centredLeft);
@@ -129,7 +129,7 @@ void ChainStripComponent::paint(juce::Graphics& g)
     for (const auto& w : layout_.wires)
         drawWire(g, w.a, w.b, wireCol);
 
-    const float corner = 6.0f;
+    const float corner = 8.0f;
 
     for (const auto& c : layout_.cards)
     {
@@ -153,14 +153,14 @@ void ChainStripComponent::paint(juce::Graphics& g)
         }
         else
         {
-            g.setColour(accent.withAlpha(0.55f));
+            g.setColour(accent.withAlpha(0.45f));
             g.drawRoundedRectangle(card.reduced(0.5f), corner, 1.0f);
         }
 
         g.setColour(c.bypassed ? textSec : textPri);
-        const float fs = juce::jmin(12.5f, juce::jmax(8.5f, card.getWidth() * 0.18f));
+        const float fs = juce::jmin(11.5f, juce::jmax(8.5f, card.getWidth() * 0.11f));
         g.setFont(juce::FontOptions(fs, juce::Font::bold));
-        g.drawText(c.label, card.reduced(3.0f), juce::Justification::centred);
+        g.drawText(c.label, card.reduced(4.0f), juce::Justification::centred);
 
         if (c.bypassed)
         {
@@ -169,11 +169,41 @@ void ChainStripComponent::paint(juce::Graphics& g)
             g.drawText("BYP", card.reduced(4.0f).removeFromBottom(11.0f), juce::Justification::bottomRight);
         }
     }
+
+    const juce::Colour plusFill = juce::Colour(backgroundNode).brighter(0.12f);
+    const juce::Colour plusRim = accent.withAlpha(0.75f);
+    for (const auto& c : layout_.cards)
+    {
+        if (c.showSerialPlus && c.serialPlusBounds.getWidth() > 0.5f)
+            drawPlusAffordance(g, c.serialPlusBounds, plusRim, plusFill.withAlpha(0.92f));
+        if (c.showParallelPlus && c.parallelPlusBounds.getWidth() > 0.5f)
+            drawPlusAffordance(g, c.parallelPlusBounds, plusRim, plusFill.withAlpha(0.85f));
+    }
 }
 
 void ChainStripComponent::mouseDown(const juce::MouseEvent& e)
 {
     const auto p = e.position;
+
+    for (auto it = layout_.cards.rbegin(); it != layout_.cards.rend(); ++it)
+    {
+        const auto& c = *it;
+        if (c.slotId == 0)
+            continue;
+        if (c.showParallelPlus && c.parallelPlusBounds.getWidth() > 0.5f && c.parallelPlusBounds.contains(p))
+        {
+            if (onRequestParallelBranch)
+                onRequestParallelBranch(c.slotId);
+            return;
+        }
+        if (c.showSerialPlus && c.serialPlusBounds.getWidth() > 0.5f && c.serialPlusBounds.contains(p))
+        {
+            if (onRequestAddSerialAfter)
+                onRequestAddSerialAfter(c.slotId);
+            return;
+        }
+    }
+
     for (const auto& c : layout_.cards)
     {
         if (!c.selectable || c.slotId == 0)

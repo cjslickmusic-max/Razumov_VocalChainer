@@ -60,12 +60,16 @@ struct VocalChainerLookAndFeel : juce::LookAndFeel_V4
         const juce::Colour inactiveTrack = applyDis(juce::Colour(tkn::argb::rotaryTrackInactive));
         juce::Path trackBg;
         trackBg.addCentredArc(centre.x, centre.y, radius, radius, 0.0f, a0, a1, true);
+        g.setColour(inactiveTrack.withMultipliedAlpha(0.28f));
+        g.strokePath(trackBg, juce::PathStrokeType(inactiveStroke + 2.4f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
         g.setColour(inactiveTrack);
         g.strokePath(trackBg, juce::PathStrokeType(inactiveStroke, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 
         juce::Path val;
         val.addCentredArc(centre.x, centre.y, radius, radius, 0.0f, a0, aVal, true);
         const juce::Colour accent = applyDis(slider.findColour(juce::Slider::rotarySliderFillColourId));
+        g.setColour(accent.withMultipliedAlpha(0.35f));
+        g.strokePath(val, juce::PathStrokeType(activeStroke + 2.4f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
         g.setColour(accent);
         g.strokePath(val, juce::PathStrokeType(activeStroke, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
         g.setColour(accent.brighter(0.35f).withAlpha(dis ? 0.22f : 0.45f));
@@ -125,6 +129,7 @@ struct VocalChainerLookAndFeel : juce::LookAndFeel_V4
                               bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override
     {
         auto r = button.getLocalBounds().toFloat().reduced(1.0f);
+        const auto fullRect = r;
         const bool hover = button.isOver();
         juce::Colour top = juce::Colour(tkn::argb::controlButtonFace);
         if (shouldDrawButtonAsDown)
@@ -142,9 +147,14 @@ struct VocalChainerLookAndFeel : juce::LookAndFeel_V4
         g.drawRoundedRectangle(r.reduced(0.5f), 6.0f, 1.0f);
         if (!shouldDrawButtonAsDown)
         {
+            auto shadowBody = fullRect;
+            g.setColour(juce::Colour(0x5c000000));
+            g.fillRoundedRectangle(shadowBody.removeFromBottom(3.0f), 4.0f);
             g.setColour(juce::Colour(tkn::argb::shadowElevated));
-            g.fillRoundedRectangle(r.removeFromBottom(2.0f), 4.0f);
+            g.fillRoundedRectangle(shadowBody.removeFromBottom(1.5f), 4.0f);
         }
+        g.setColour(juce::Colour(0x18ffffff));
+        g.drawLine(fullRect.getX() + 1.5f, fullRect.getY() + 1.0f, fullRect.getRight() - 1.5f, fullRect.getY() + 1.0f, 1.0f);
     }
 };
 
@@ -587,6 +597,12 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
 {
     setLookAndFeel(laf.get());
 
+    bypassSlotBtn.setButtonText("Bypass slot");
+    removeSlotBtn.setButtonText("Remove");
+    moveLeftBtn.setButtonText("Left");
+    moveRightBtn.setButtonText("Right");
+    addModuleBtn.setButtonText("Add module");
+
     setSize(1280, 920);
     setResizable(true, true);
     setResizeLimits(1180, 780, 2800, 2200);
@@ -632,6 +648,10 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     };
     chainStrip.onRequestAddSerialAfter = [this](uint32_t id) { showAddModuleMenuForSlot(id); };
     chainStrip.onRequestParallelBranch = [this](uint32_t id) { showParallelSplitMenuForSlot(id); };
+    chainStrip.onRequestSwapRootModules = [this](uint32_t a, uint32_t b) {
+        processor.swapDirectRootModules(a, b);
+        syncChainStripAfterGraphEdit();
+    };
 
     addAndMakeVisible(bypassSlotBtn);
     addAndMakeVisible(removeSlotBtn);
@@ -841,6 +861,7 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     };
 
     viewport.setViewedComponent(&content, false);
+    viewport.setScrollBarsShown(false, false);
 
     chainStrip.syncFromProcessor();
     selectedSlotId_ = chainStrip.getSelectedSlotId();
@@ -853,6 +874,22 @@ void RazumovVocalChainAudioProcessorEditor::paint(juce::Graphics& g)
     g.fillAll(juce::Colour(tkn::argb::backgroundEditor));
     razumov::ui::drawEditorBackgroundLayer(g, getLocalBounds());
     razumov::ui::drawEditorCornerAccents(g, getLocalBounds());
+
+    if (sectionMacro_.getWidth() > 0)
+    {
+        g.setColour(juce::Colour(tkn::argb::surfaceModuleBackdrop));
+        g.fillRoundedRectangle(sectionMacro_.toFloat(), 10.0f);
+        g.setColour(juce::Colour(tkn::argb::borderModulePanel).withAlpha(0.55f));
+        g.drawRoundedRectangle(sectionMacro_.toFloat().reduced(0.5f), 10.0f, 1.0f);
+    }
+    if (sectionTools_.getWidth() > 0)
+    {
+        g.setColour(juce::Colour(tkn::argb::backgroundNode).withAlpha(0.85f));
+        g.fillRoundedRectangle(sectionTools_.toFloat(), 6.0f);
+        g.setColour(juce::Colour(tkn::argb::borderModulePanel).withAlpha(0.45f));
+        g.drawRoundedRectangle(sectionTools_.toFloat().reduced(0.5f), 6.0f, 1.0f);
+    }
+
     const int m = scaled(16);
     auto r = getLocalBounds().reduced(m);
     const int headerH = scaled(68);
@@ -910,22 +947,25 @@ void RazumovVocalChainAudioProcessorEditor::resized()
     }
 
     const int macroBlockH = scaled(178);
+    sectionMacro_ = juce::Rectangle<int>(bounds.getX(), bounds.getY(), bounds.getWidth(), macroBlockH);
     layoutMacroHeroRow(bounds.removeFromTop(macroBlockH));
 
-    chainStrip.setBounds(bounds.removeFromTop(scaled(248)));
+    const int chainH = scaled(248);
+    chainStrip.setBounds(bounds.removeFromTop(chainH));
 
     auto toolRow = bounds.removeFromTop(scaled(34));
-    const int tw = scaled(88);
+    sectionTools_ = toolRow;
+    const int tw = scaled(100);
     int tx = toolRow.getX() + scaled(10);
     bypassSlotBtn.setBounds(tx, toolRow.getY() + 2, tw, scaled(28));
     tx += tw + scaled(6);
     removeSlotBtn.setBounds(tx, toolRow.getY() + 2, tw, scaled(28));
     tx += tw + scaled(6);
-    moveLeftBtn.setBounds(tx, toolRow.getY() + 2, scaled(36), scaled(28));
-    tx += scaled(42);
-    moveRightBtn.setBounds(tx, toolRow.getY() + 2, scaled(36), scaled(28));
-    tx += scaled(48);
-    addModuleBtn.setBounds(tx, toolRow.getY() + 2, scaled(100), scaled(28));
+    moveLeftBtn.setBounds(tx, toolRow.getY() + 2, scaled(44), scaled(28));
+    tx += scaled(50);
+    moveRightBtn.setBounds(tx, toolRow.getY() + 2, scaled(44), scaled(28));
+    tx += scaled(52);
+    addModuleBtn.setBounds(tx, toolRow.getY() + 2, scaled(112), scaled(28));
 
     viewport.setBounds(bounds);
     layoutModuleViewport(viewport.getWidth());

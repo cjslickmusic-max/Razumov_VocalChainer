@@ -4,6 +4,14 @@
 
 ---
 
+## Quick check — v0.9.15 (2026-03-29) — Chain UI polish + swap test + button shadow rect
+
+- `PluginEditor` `VocalChainerLookAndFeel::drawButtonBackground`: тень снизу рисуется с копией `fullRect`, верхний highlight по полной ширине кнопки (не после `removeFromBottom`).
+- `Tests/FlexGraphSerializationTests.cpp`: `trySwapDirectRootModuleSlots` — успех для слотов 2/3, отказ для Mic+Gain.
+- ReadLints: OK; `cmake --build` `RazumovVocalChain_VST3` + `RazumovVocalChainTests`; `./build/RazumovVocalChainTests`: OK.
+
+---
+
 ## Quick check — v0.9.14 (2026-03-29) — Gaussian-blurred knob shadows (cached rasters)
 
 - `EditorVisualAssets::drawKnobSoftShadowStack`: два кэшируемых ARGB-слоя (ImageConvolutionKernel Gaussian 9.5 / 4.2), тинт через токены `shadowRotaryAmbient` / `shadowRotaryContact`, `highResamplingQuality` при масштабе.

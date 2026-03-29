@@ -117,5 +117,9 @@ private:
     float uiScale_ { 1.f };
     uint32_t selectedSlotId_ { 0 };
 
+    /** Section backgrounds (updated in resized; used in paint for hierarchy). */
+    juce::Rectangle<int> sectionMacro_;
+    juce::Rectangle<int> sectionTools_;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RazumovVocalChainAudioProcessorEditor)
 };

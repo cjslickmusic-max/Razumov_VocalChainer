@@ -79,4 +79,10 @@ std::optional<uint32_t> getRootModuleSlotIdAtIndex(const FlexSegmentDesc& root, 
 /** Первые два root-модуля (Mic + Room) нельзя удалять и менять местами с соседями. */
 bool isProtectedFrontRootModuleSlot(const FlexSegmentDesc& root, uint32_t slotId) noexcept;
 
+/**
+ * Поменять местами два **прямых** root-модуля (не внутри split). Mic/Room (индексы 0,1) не трогаем.
+ * Split-узлы и вложенные модули не участвуют.
+ */
+bool trySwapDirectRootModuleSlots(FlexSegmentDesc& root, uint32_t slotIdA, uint32_t slotIdB) noexcept;
+
 } // namespace razumov::graph

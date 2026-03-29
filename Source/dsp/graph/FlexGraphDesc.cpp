@@ -245,4 +245,28 @@ bool isProtectedFrontRootModuleSlot(const FlexSegmentDesc& root, uint32_t slotId
     return false;
 }
 
+bool trySwapDirectRootModuleSlots(FlexSegmentDesc& root, uint32_t slotIdA, uint32_t slotIdB) noexcept
+{
+    if (slotIdA == 0 || slotIdB == 0 || slotIdA == slotIdB)
+        return false;
+    int ia = -1;
+    int ib = -1;
+    for (int i = 0; i < (int) root.size(); ++i)
+    {
+        const auto& s = root[(size_t) i];
+        if (s.descType != FlexSlotDescType::Module)
+            continue;
+        if (s.slotId == slotIdA)
+            ia = i;
+        if (s.slotId == slotIdB)
+            ib = i;
+    }
+    if (ia < 0 || ib < 0)
+        return false;
+    if (ia <= 1 || ib <= 1)
+        return false;
+    std::swap(root[(size_t) ia], root[(size_t) ib]);
+    return true;
+}
+
 } // namespace razumov::graph

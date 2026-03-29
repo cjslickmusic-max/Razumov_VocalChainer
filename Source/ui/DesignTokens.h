@@ -41,7 +41,7 @@ inline constexpr uint32_t controlButtonFaceOver = 0xffffffff;
 inline constexpr uint32_t controlButtonBorder = 0xffb0b8c8;
 inline constexpr uint32_t controlButtonShadow = 0x40000000;
 /** Drop shadow under elevated controls (cards, knobs) — visible on light panels. */
-inline constexpr uint32_t shadowElevated = 0x5a000000;
+inline constexpr uint32_t shadowElevated = 0x6e000000;
 /** Broad diffuse shadow under rotary (cool grey-blue, soft UI). */
 inline constexpr uint32_t shadowRotaryAmbient = 0x45607080;
 /** Mid layer under rotary (neutral). */

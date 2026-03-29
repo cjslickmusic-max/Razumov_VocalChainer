@@ -30,7 +30,6 @@ void drawPlusAffordance(juce::Graphics& g, juce::Rectangle<float> r, juce::Colou
     g.drawLine(ctr.x, ctr.y - half, ctr.x, ctr.y + half, 1.65f);
 }
 
-/** Simple mic glyph for Mic correction slot (profile-specific art can replace later). */
 void drawSimpleMicIcon(juce::Graphics& g, juce::Rectangle<float> r, juce::Colour ink)
 {
     const float cx = r.getCentreX();
@@ -51,6 +50,29 @@ void drawSimpleMicIcon(juce::Graphics& g, juce::Rectangle<float> r, juce::Colour
     g.drawLine(cx - w * 0.48f, uY, cx - w * 0.48f, uY + w * 0.32f, 2.0f);
     g.drawLine(cx + w * 0.48f, uY, cx + w * 0.48f, uY + w * 0.32f, 2.0f);
     g.drawLine(cx - w * 0.58f, uY + w * 0.32f, cx + w * 0.58f, uY + w * 0.32f, 2.0f);
+}
+
+void drawBypassPill(juce::Graphics& g, juce::Rectangle<float> pill, bool bypassed, bool accentGlow,
+                    juce::Colour accent, juce::Colour textPri, juce::Colour textSec)
+{
+    const auto ctr = pill.getCentre();
+    const float r = pill.getWidth() * 0.5f;
+    if (!bypassed && accentGlow)
+    {
+        for (int i = 4; i >= 1; --i)
+        {
+            g.setColour(accent.withAlpha(0.045f + 0.028f * (float) i));
+            g.fillEllipse(ctr.x - r - (float) i * 1.5f, ctr.y - r - (float) i * 1.5f,
+                          (r + (float) i * 1.5f) * 2.0f, (r + (float) i * 1.5f) * 2.0f);
+        }
+    }
+    g.setColour(bypassed ? juce::Colour(0x28000000) : juce::Colour(0x14000000));
+    g.fillEllipse(pill);
+    g.setColour(bypassed ? textSec.withAlpha(0.55f) : textPri.withAlpha(0.85f));
+    g.setFont(juce::FontOptions(8.5f, juce::Font::bold));
+    g.drawText("b", pill, juce::Justification::centred);
+    g.setColour(bypassed ? textSec.withAlpha(0.55f) : accent.withAlpha(0.85f));
+    g.drawEllipse(pill.reduced(0.5f), 1.0f);
 }
 
 bool firstSelectableSlot(const ChainStripLayout& layout, uint32_t& outId) noexcept
@@ -87,6 +109,25 @@ ChainStripComponent::ChainStripComponent(RazumovVocalChainAudioProcessor& proces
 }
 
 ChainStripComponent::~ChainStripComponent() = default;
+
+juce::Rectangle<float> ChainStripComponent::bypassPillBounds(juce::Rectangle<float> card) noexcept
+{
+    const float s = 13.f;
+    return { card.getX() + 4.f, card.getBottom() - s - 4.f, s, s };
+}
+
+uint32_t ChainStripComponent::hitTestCardSlotAt(juce::Point<float> p) const noexcept
+{
+    for (auto it = layout_.cards.rbegin(); it != layout_.cards.rend(); ++it)
+    {
+        const auto& c = *it;
+        if (!c.selectable || c.slotId == 0)
+            continue;
+        if (c.bounds.expanded(1.0f).contains(p))
+            return c.slotId;
+    }
+    return 0;
+}
 
 void ChainStripComponent::syncFromProcessor()
 {
@@ -139,13 +180,16 @@ void ChainStripComponent::paint(juce::Graphics& g)
 
     g.fillAll(panelBg);
 
-    auto header = getLocalBounds().reduced(12, 8);
-    g.setColour(textSec);
-    g.setFont(juce::FontOptions(11.0f));
-    g.drawText("Signal path", header.removeFromTop(14), juce::Justification::centredLeft);
-
     if (layout_.cards.empty())
+    {
+        auto titleBar = getLocalBounds().reduced(12, 8).removeFromTop(18);
+        g.setColour(juce::Colour(backgroundNode).withAlpha(0.92f));
+        g.fillRoundedRectangle(titleBar.toFloat(), 4.f);
+        g.setColour(textSec);
+        g.setFont(juce::FontOptions(11.5f, juce::Font::bold));
+        g.drawText("Signal path", titleBar, juce::Justification::centredLeft);
         return;
+    }
 
     const juce::Colour wireCol = accent.withAlpha(0.88f);
     for (const auto& w : layout_.wires)
@@ -167,6 +211,8 @@ void ChainStripComponent::paint(juce::Graphics& g)
 
         g.setColour(juce::Colour(shadowElevated));
         g.fillRoundedRectangle(card.translated(0.0f, 3.0f), corner + 1.0f);
+        g.setColour(juce::Colour(0x42000000));
+        g.fillRoundedRectangle(card.translated(0.0f, 2.0f).reduced(0.5f), corner);
 
         g.setColour(c.bypassed ? cardFill.brighter(0.08f) : cardFill);
         g.fillRoundedRectangle(card, corner);
@@ -185,9 +231,11 @@ void ChainStripComponent::paint(juce::Graphics& g)
         g.setColour(c.bypassed ? textSec : textPri);
         const float fs = juce::jmin(11.5f, juce::jmax(8.5f, card.getWidth() * 0.09f));
         const bool micCard = (!c.isMergeNode && c.label.containsIgnoreCase("Mic correction"));
+        auto labelArea = card.reduced(5.0f);
+        labelArea.removeFromBottom(16.f);
         if (micCard)
         {
-            auto inner = card.reduced(5.0f);
+            auto inner = labelArea;
             const float iconH = inner.getHeight() * 0.58f;
             auto iconR = inner.withHeight(iconH);
             drawSimpleMicIcon(g, iconR, c.bypassed ? textSec : textPri);
@@ -198,14 +246,13 @@ void ChainStripComponent::paint(juce::Graphics& g)
         else
         {
             g.setFont(juce::FontOptions(fs, juce::Font::bold));
-            g.drawText(c.label, card.reduced(5.0f), juce::Justification::centred);
+            g.drawText(c.label, labelArea, juce::Justification::centred);
         }
 
-        if (c.bypassed)
+        if (c.slotId != 0 && c.selectable)
         {
-            g.setColour(juce::Colour(accentBypass));
-            g.setFont(juce::FontOptions(9.0f, juce::Font::bold));
-            g.drawText("BYP", card.reduced(4.0f).removeFromBottom(11.0f), juce::Justification::bottomRight);
+            const auto pill = bypassPillBounds(card);
+            drawBypassPill(g, pill, c.bypassed, true, accent, textPri, textSec);
         }
     }
 
@@ -218,11 +265,37 @@ void ChainStripComponent::paint(juce::Graphics& g)
         if (c.showParallelPlus && c.parallelPlusBounds.getWidth() > 0.5f)
             drawPlusAffordance(g, c.parallelPlusBounds, plusRim, plusFill.withAlpha(0.85f));
     }
+
+    auto titleBar = getLocalBounds().reduced(12, 8).removeFromTop(18);
+    g.setColour(juce::Colour(backgroundNode).withAlpha(0.94f));
+    g.fillRoundedRectangle(titleBar.toFloat(), 5.f);
+    g.setColour(juce::Colour(borderModulePanel).withAlpha(0.65f));
+    g.drawRoundedRectangle(titleBar.toFloat().reduced(0.5f), 5.f, 1.0f);
+    g.setColour(textSec);
+    g.setFont(juce::FontOptions(11.5f, juce::Font::bold));
+    g.drawText("Signal path", titleBar.reduced(6, 0), juce::Justification::centredLeft);
 }
 
 void ChainStripComponent::mouseDown(const juce::MouseEvent& e)
 {
     const auto p = e.position;
+    dragging_ = false;
+    dragSlotId_ = 0;
+
+    for (auto it = layout_.cards.rbegin(); it != layout_.cards.rend(); ++it)
+    {
+        const auto& c = *it;
+        if (c.slotId == 0 || !c.selectable)
+            continue;
+        if (bypassPillBounds(c.bounds).contains(p))
+        {
+            processor_.setSlotBypassForId(c.slotId, !c.bypassed);
+            syncFromProcessor();
+            if (onSlotSelected)
+                onSlotSelected(c.slotId);
+            return;
+        }
+    }
 
     for (auto it = layout_.cards.rbegin(); it != layout_.cards.rend(); ++it)
     {
@@ -249,13 +322,8 @@ void ChainStripComponent::mouseDown(const juce::MouseEvent& e)
             continue;
         if (c.bounds.expanded(1.0f).contains(p))
         {
-            if (e.getNumberOfClicks() == 2)
-            {
-                processor_.setSlotBypassForId(c.slotId, !c.bypassed);
-                syncFromProcessor();
-                repaint();
-                return;
-            }
+            dragSlotId_ = c.slotId;
+            dragStart_ = p;
             selectedSlotId_ = c.slotId;
             if (onSlotSelected)
                 onSlotSelected(selectedSlotId_);
@@ -263,6 +331,58 @@ void ChainStripComponent::mouseDown(const juce::MouseEvent& e)
             return;
         }
     }
+}
+
+void ChainStripComponent::mouseDrag(const juce::MouseEvent& e)
+{
+    if (dragSlotId_ == 0)
+        return;
+    if (dragStart_.getDistanceFrom(e.position) > 6.f)
+        dragging_ = true;
+}
+
+void ChainStripComponent::mouseUp(const juce::MouseEvent& e)
+{
+    if (dragging_ && dragSlotId_ != 0 && onRequestSwapRootModules)
+    {
+        const uint32_t target = hitTestCardSlotAt(e.position);
+        if (target != 0 && target != dragSlotId_)
+            onRequestSwapRootModules(dragSlotId_, target);
+    }
+    dragging_ = false;
+    dragSlotId_ = 0;
+    syncFromProcessor();
+}
+
+void ChainStripComponent::mouseMove(const juce::MouseEvent& e)
+{
+    const auto p = e.position;
+    for (const auto& c : layout_.cards)
+    {
+        if (c.slotId == 0)
+            continue;
+        if (bypassPillBounds(c.bounds).contains(p))
+        {
+            setMouseCursor(juce::MouseCursor::PointingHandCursor);
+            return;
+        }
+        if (c.showParallelPlus && c.parallelPlusBounds.contains(p))
+        {
+            setMouseCursor(juce::MouseCursor::PointingHandCursor);
+            return;
+        }
+        if (c.showSerialPlus && c.serialPlusBounds.contains(p))
+        {
+            setMouseCursor(juce::MouseCursor::PointingHandCursor);
+            return;
+        }
+        if (c.selectable && c.bounds.contains(p))
+        {
+            setMouseCursor(juce::MouseCursor::PointingHandCursor);
+            return;
+        }
+    }
+    setMouseCursor(juce::MouseCursor::NormalCursor);
 }
 
 } // namespace razumov::ui

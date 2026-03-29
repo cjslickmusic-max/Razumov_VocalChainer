@@ -335,6 +335,12 @@ void RazumovVocalChainAudioProcessor::moveRootSlotContainingId(uint32_t slotId, 
     commitGraphMutation();
 }
 
+void RazumovVocalChainAudioProcessor::swapDirectRootModules(uint32_t slotIdA, uint32_t slotIdB)
+{
+    if (razumov::graph::trySwapDirectRootModuleSlots(graphDesc_, slotIdA, slotIdB))
+        commitGraphMutation();
+}
+
 void RazumovVocalChainAudioProcessor::insertPaletteModuleAfterSlot(uint32_t referenceSlotId,
                                                                   razumov::graph::AudioNodeKind kind)
 {

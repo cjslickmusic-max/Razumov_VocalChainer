@@ -321,7 +321,7 @@ ChainStripLayout computeChainStripLayout(const razumov::graph::FlexSegmentDesc& 
         return layout;
 
     const float padX = 10.f;
-    const float padY = 18.f;
+    const float padY = 30.f;
     const float rowPitch = 68.f;
     const float cardH = 56.f;
     const float cardW = 124.f;

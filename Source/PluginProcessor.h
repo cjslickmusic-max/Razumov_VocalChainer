@@ -65,6 +65,8 @@ public:
     void setSlotBypassForId(uint32_t slotId, bool bypassed);
     void removeGraphSlotById(uint32_t slotId);
     void moveRootSlotContainingId(uint32_t slotId, int delta);
+    /** Swap two direct root-level modules (not inside split); Mic/Room fixed. */
+    void swapDirectRootModules(uint32_t slotIdA, uint32_t slotIdB);
     void insertPaletteModuleAfterSlot(uint32_t referenceSlotId, razumov::graph::AudioNodeKind kind);
     void insertSplitAfterSlot(uint32_t referenceSlotId, int numBranches);
 

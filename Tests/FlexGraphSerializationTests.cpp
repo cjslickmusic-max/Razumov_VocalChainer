@@ -1,4 +1,5 @@
 #include <dsp/graph/AudioNode.h>
+#include <dsp/graph/FlexGraphDesc.h>
 #include <dsp/graph/FlexGraphSerialization.h>
 #include <dsp/graph/GraphPlanFactory.h>
 
@@ -70,6 +71,30 @@ void testMaxSlotIdMatchesAfterAssign()
     assert(maxSlotIdInSegment(desc) >= m);
 }
 
+void testSwapDirectRootModulesSwapsBeyondProtectedSlots()
+{
+    auto d = GraphPlanFactory::makeDefaultVocalChainPhase3Desc(48000.0);
+    uint32_t next = 1;
+    assignUniqueSlotIds(d, next);
+    const auto kGain = d[2].slotId;
+    const auto kFilter = d[3].slotId;
+    const auto kindAt2 = d[2].kind;
+    const auto kindAt3 = d[3].kind;
+    assert(trySwapDirectRootModuleSlots(d, kGain, kFilter));
+    assert(d[2].kind == kindAt3);
+    assert(d[3].kind == kindAt2);
+}
+
+void testSwapDirectRootModulesRejectsMicOrRoom()
+{
+    auto d = GraphPlanFactory::makeDefaultVocalChainPhase3Desc(48000.0);
+    uint32_t next = 1;
+    assignUniqueSlotIds(d, next);
+    const auto kMic = d[0].slotId;
+    const auto kGain = d[2].slotId;
+    assert(!trySwapDirectRootModuleSlots(d, kMic, kGain));
+}
+
 } // namespace
 
 void runFlexGraphSerializationTests()
@@ -78,4 +103,6 @@ void runFlexGraphSerializationTests()
     testRoundTripPassthroughEmpty();
     testRoundTripPhaseAlignHalves();
     testMaxSlotIdMatchesAfterAssign();
+    testSwapDirectRootModulesSwapsBeyondProtectedSlots();
+    testSwapDirectRootModulesRejectsMicOrRoom();
 }

@@ -151,7 +151,7 @@ void drawKnobSoftShadowStack(juce::Graphics& g, juce::Point<float> centre, float
         const float h = (float) maps.ambient.getHeight() * ambS * squash;
         const float dx = centre.x - kAmbientRefX * ambS;
         const float dy = centre.y + yBias - kAmbientRefY * ambS * squash;
-        g.setColour(juce::Colour(razumov::ui::tokens::argb::shadowRotaryAmbient).withMultipliedAlpha(0.58f * alphaMul));
+        g.setColour(juce::Colour(razumov::ui::tokens::argb::shadowRotaryAmbient).withMultipliedAlpha(0.72f * alphaMul));
         g.drawImage(maps.ambient,
                     (int) std::floor(dx),
                     (int) std::floor(dy),
@@ -170,7 +170,7 @@ void drawKnobSoftShadowStack(juce::Graphics& g, juce::Point<float> centre, float
         const float h = (float) maps.contact.getHeight() * ctS * 0.82f;
         const float dx = centre.x - kContactRefX * ctS;
         const float dy = centre.y + 4.0f - kContactRefY * ctS * 0.82f;
-        g.setColour(juce::Colour(razumov::ui::tokens::argb::shadowRotaryContact).withMultipliedAlpha(0.72f * alphaMul));
+        g.setColour(juce::Colour(razumov::ui::tokens::argb::shadowRotaryContact).withMultipliedAlpha(0.88f * alphaMul));
         g.drawImage(maps.contact,
                     (int) std::floor(dx),
                     (int) std::floor(dy),

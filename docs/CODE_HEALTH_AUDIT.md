@@ -4,6 +4,14 @@
 
 ---
 
+## Quick check — v0.9.9 (2026-03-29) — Product name VocalChainer + VERSIONING.md
+
+- Отображаемое имя плагина: **Razumov VocalChainer** (`PRODUCT_NAME`, заголовок UI); артефакт VST3: `Artifacts/Razumov VocalChainer.vst3`; `BUNDLE_ID` `com.razumov.vocalchainer`; `VocalChainerLookAndFeel`.
+- `docs/VERSIONING.md`: линия 0.9.x до **1.0.0**; документы и правила обновлены под новое имя бандла.
+- `cmake --build` `RazumovVocalChain_VST3`: по плану после правок.
+
+---
+
 ## Quick check — v0.9.8 (2026-03-29) — PluginEditor full token rollout
 
 - `tokens.json` / `tokens.css`: surface, border, text, control, macro, knob; `DesignTokens.h`: `argb`, `macro`, `knob`; `PluginEditor.cpp` без цветовых литералов `0xff…`.
@@ -29,7 +37,7 @@
 
 ## Quick check — v0.9.4 (2026-03-28) — Canonical VST3 in Artifacts/ via POST_BUILD
 
-- `CMakeLists.txt`: `POST_BUILD` на `RazumovVocalChain_VST3` -> `Artifacts/Razumov Vocal Chain.vst3`; `README.md`, `Artifacts/README.md`, `agent-build-after-changes.mdc` (сборка `RazumovVocalChain_VST3`).
+- `CMakeLists.txt`: `POST_BUILD` на `RazumovVocalChain_VST3` -> `Artifacts/Razumov VocalChainer.vst3`; `README.md`, `Artifacts/README.md`, `agent-build-after-changes.mdc` (сборка `RazumovVocalChain_VST3`).
 - Версия **0.9.4**; Release + `RazumovVocalChain_VST3`: OK.
 
 ---

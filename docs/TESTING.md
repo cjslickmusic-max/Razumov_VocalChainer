@@ -1,4 +1,4 @@
-# Тесты Razumov Vocal Chain
+# Тесты Razumov VocalChainer
 
 ## Сборка и запуск
 

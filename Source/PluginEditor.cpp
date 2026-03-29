@@ -7,7 +7,7 @@
 
 namespace tkn = razumov::ui::tokens;
 
-struct VocalChainLookAndFeel : juce::LookAndFeel_V4
+struct VocalChainerLookAndFeel : juce::LookAndFeel_V4
 {
     void drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height, float sliderPos,
                           float rotaryStartAngle, float rotaryEndAngle, juce::Slider& slider) override
@@ -368,7 +368,7 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     : AudioProcessorEditor(&p)
     , processor(p)
     , chainStrip(processor)
-    , laf(std::make_unique<VocalChainLookAndFeel>())
+    , laf(std::make_unique<VocalChainerLookAndFeel>())
 {
     setLookAndFeel(laf.get());
 
@@ -708,7 +708,7 @@ void RazumovVocalChainAudioProcessorEditor::paint(juce::Graphics& g)
     g.setFont(juce::FontOptions(18.0f, juce::Font::bold));
     auto titleLeft = titleRow;
     auto versionBlock = titleRow.removeFromRight(300);
-    g.drawText("Razumov Vocal Chain", titleLeft, juce::Justification::centredLeft);
+    g.drawText("Razumov VocalChainer", titleLeft, juce::Justification::centredLeft);
 
     const juce::String versionLine = juce::String("v") + JucePlugin_VersionString;
     const juce::String buildLine = juce::String("build ") + kBuildDateTime;

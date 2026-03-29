@@ -9,7 +9,7 @@
 
 class RazumovVocalChainAudioProcessor;
 
-struct VocalChainLookAndFeel;
+struct VocalChainerLookAndFeel;
 
 /** Область под будущую графику микрофона; клик по превью открывает список профиля. */
 struct MicProfilePanel : juce::Component
@@ -123,7 +123,7 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroSmoothAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroDensityAttachment;
 
-    std::unique_ptr<VocalChainLookAndFeel> laf;
+    std::unique_ptr<VocalChainerLookAndFeel> laf;
 
     uint32_t selectedSlotId_ { 0 };
 

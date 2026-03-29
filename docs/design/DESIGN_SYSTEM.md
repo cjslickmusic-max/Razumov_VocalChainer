@@ -1,4 +1,4 @@
-# Razumov Vocal Chain — design system
+# Razumov VocalChainer — design system
 
 Документ для людей и агентов: **принципы**, **токены**, **связь веб/HTML и JUCE**, **правила изменений**.
 

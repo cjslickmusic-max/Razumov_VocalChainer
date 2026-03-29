@@ -1,5 +1,5 @@
 ---
-description: Безопасный DSP и аудиопоток для Razumov Vocal Chain
+description: Безопасный DSP и аудиопоток для Razumov VocalChainer
 globs: ["**/dsp/**/*", "**/PluginProcessor*.cpp", "**/PluginProcessor*.h", "**/Graph*.cpp", "**/Graph*.h", "**/Node*.cpp", "**/Node*.h"]
 alwaysApply: true
 ---

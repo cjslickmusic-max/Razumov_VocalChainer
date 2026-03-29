@@ -1,4 +1,4 @@
-# Razumov Vocal Chain — гид для агентов Cursor
+# Razumov VocalChainer — гид для агентов Cursor
 
 **Читать в начале нетривиальной задачи** (DSP, граф узлов, UI, сборка, пресеты).
 
@@ -40,13 +40,14 @@
 - **`docs/ROADMAP.md`** — пошаговая дорожная карта; **следовать порядку фаз**.
 - `docs/ARCHITECTURE.md` — граф, поток аудио, пресеты (после появления кода).
 - `docs/design/DESIGN_SYSTEM.md` — дизайн-система и **токены** (`resources/design/tokens/tokens.json`, `tokens.css`, `Source/ui/DesignTokens.h`).
+- `docs/VERSIONING.md` — политика версий до **1.0** (линия 0.9.x).
 - `docs/CODE_HEALTH_AUDIT.md` — журнал аудитов.
 - `docs/PERF_CHECKPOINTS.md` — замеры CPU.
 - `docs/REFACTOR_SUSPICIOUS_LOG.md` — отложенные риски.
 
 ## Отличия от Razumov Ultimate Sampler
 
-Исходный пак правил: `CursorRules_RazumovSampler_SourcePack`. Оттуда перенесены **переносимые** идеи; **выкинуты** привязки к сэмплеру (9 каналов микшера, SawOsc, скины, Home VFX, Serum и т.д.). Для Vocal Chain добавлены правила **графа, latency и типов компрессоров**.
+Исходный пак правил: `CursorRules_RazumovSampler_SourcePack`. Оттуда перенесены **переносимые** идеи; **выкинуты** привязки к сэмплеру (9 каналов микшера, SawOsc, скины, Home VFX, Serum и т.д.). Для VocalChainer добавлены правила **графа, latency и типов компрессоров**.
 
 ## Сборка и артефакты
 
@@ -59,9 +60,9 @@ cmake --build build --parallel
 
 JUCE **8.0.12** подтягивается через `FetchContent` при первом `cmake`. Подробности и пути к VST3/AU — в **`README.md`**.
 
-**Цели CMake:** `RazumovVocalChain` — общий код; для **готового VST3** и копии в `Artifacts/` собирать **`RazumovVocalChain_VST3`** (после `POST_BUILD` плагин лежит в `Artifacts/Razumov Vocal Chain.vst3`).
+**Цели CMake:** `RazumovVocalChain` — общий код; для **готового VST3** и копии в `Artifacts/` собирать **`RazumovVocalChain_VST3`** (после `POST_BUILD` плагин лежит в `Artifacts/Razumov VocalChainer.vst3`).
 
-**Версия:** `project(... VERSION x.y.z)` и `VERSION` внутри `juce_add_plugin` — держать синхронно в `CMakeLists.txt` (сейчас **0.9.8**: `COPY_PLUGIN_AFTER_BUILD` OFF — без копии в `~/Library/...`; VST3 в `Artifacts/` + `build/.../artefacts/`; цепочка в UI по дереву графа + fork/merge; phase align на split-ветках + PDC; макросы x8; per-slot модули + chain/mic profile).
+**Версия:** `project(... VERSION x.y.z)` и `VERSION` внутри `juce_add_plugin` — держать синхронно в `CMakeLists.txt` (сейчас **0.9.9**: `COPY_PLUGIN_AFTER_BUILD` OFF — без копии в `~/Library/...`; VST3 в `Artifacts/` + `build/.../artefacts/`; цепочка в UI по дереву графа + fork/merge; phase align на split-ветках + PDC; макросы x8; per-slot модули + chain/mic profile).
 
 **UI ресурсы:** `juce_add_binary_data` (`RazumovVocalChainBinaryData`), PNG/SVG в `resources/ui/`, см. `docs/design/UI_ASSETS.md`.
 

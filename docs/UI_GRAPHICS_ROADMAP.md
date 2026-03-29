@@ -1,4 +1,4 @@
-# Roadmap: UI / graphics (Vocal Chain)
+# Roadmap: UI / graphics (VocalChainer)
 
 Roadmap for editor visuals and interaction. Order is approximate; adjust as product priorities change.
 

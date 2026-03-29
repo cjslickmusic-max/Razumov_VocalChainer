@@ -1,4 +1,4 @@
-# Handoff для следующего агента — Razumov Vocal Chain
+# Handoff для следующего агента — Razumov VocalChainer
 
 **Дата:** 2026-03-28  
 **Состояние репозитория:** `main`, версия продукта **0.9.2** (`CMakeLists.txt`, строка версии в `PluginEditor::paint`).

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(RazumovVocalChain VERSION 0.9.8 LANGUAGES C CXX)
+project(RazumovVocalChain VERSION 0.9.9 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -29,7 +29,7 @@ juce_add_binary_data(
 juce_add_plugin(
     RazumovVocalChain
     COMPANY_NAME "Razumov"
-    BUNDLE_ID com.razumov.vocalchain
+    BUNDLE_ID com.razumov.vocalchainer
     IS_SYNTH FALSE
     NEEDS_MIDI_INPUT FALSE
     NEEDS_MIDI_OUTPUT FALSE
@@ -39,7 +39,7 @@ juce_add_plugin(
     PLUGIN_MANUFACTURER_CODE Razu
     PLUGIN_CODE Rvch
     FORMATS AU VST3 Standalone
-    PRODUCT_NAME "Razumov Vocal Chain"
+    PRODUCT_NAME "Razumov VocalChainer"
     VERSION ${PROJECT_VERSION}
 )
 
@@ -98,7 +98,7 @@ target_link_libraries(
 
 # Always refresh the same repo path after VST3 build (REAPER: one extra VST3 folder, no manual copy).
 file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/Artifacts")
-set(RAZUMOV_CANONICAL_VST3 "${CMAKE_SOURCE_DIR}/Artifacts/Razumov Vocal Chain.vst3")
+set(RAZUMOV_CANONICAL_VST3 "${CMAKE_SOURCE_DIR}/Artifacts/Razumov VocalChainer.vst3")
 add_custom_command(
     TARGET RazumovVocalChain_VST3
     POST_BUILD

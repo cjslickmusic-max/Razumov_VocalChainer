@@ -4,6 +4,16 @@
 
 ---
 
+## Quick check — v0.9.17 (2026-03-29) — Knob shadow tail + value box contrast + adaptive chain height
+
+- `EditorVisualAssets::drawKnobSoftShadowStack`: contact base slightly weaker; long soft tail (ambient + wide contact, low alpha, +18/+28 px).
+- `styleRotary`: `textBoxTextColourId` / `rotaryValueBoxFill` / outline; Mic/Spectral bypass toggles `textColourId` + `tickColourId`.
+- `graphContainsAnySplit` + `PluginEditor::resized`: strip height 328 scaled when serial-only, 248 when any Split (parallel).
+- `Tests/FlexGraphSerializationTests`: `testGraphContainsAnySplit`.
+- ReadLints scoped; `cmake --build` VST3 + `RazumovVocalChainTests`: OK.
+
+---
+
 ## Quick check — v0.9.16 (2026-03-29) — Chain toolbar -> RMB menu + knob drop shadow + duplicate
 
 - `PluginEditor`: removed Bypass/Remove/Left/Right/Add toolbar row; graph actions on right-click (`showChainContextMenu`: Bypass, Remove, Move, Duplicate, Add after, Parallel split); `+` RMB: Add / Parallel.

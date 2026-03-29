@@ -3,6 +3,8 @@
 #include <dsp/graph/FlexGraphSerialization.h>
 #include <dsp/graph/GraphPlanFactory.h>
 
+using razumov::graph::graphContainsAnySplit;
+
 #include <cassert>
 
 namespace
@@ -95,6 +97,14 @@ void testSwapDirectRootModulesRejectsMicOrRoom()
     assert(!trySwapDirectRootModuleSlots(d, kMic, kGain));
 }
 
+void testGraphContainsAnySplit()
+{
+    const auto serial = GraphPlanFactory::makeDefaultVocalChainPhase3Desc(48000.0);
+    assert(!graphContainsAnySplit(serial));
+    const auto par = GraphPlanFactory::makeParallelHalvesDesc();
+    assert(graphContainsAnySplit(par));
+}
+
 } // namespace
 
 void runFlexGraphSerializationTests()
@@ -105,4 +115,5 @@ void runFlexGraphSerializationTests()
     testMaxSlotIdMatchesAfterAssign();
     testSwapDirectRootModulesSwapsBeyondProtectedSlots();
     testSwapDirectRootModulesRejectsMicOrRoom();
+    testGraphContainsAnySplit();
 }

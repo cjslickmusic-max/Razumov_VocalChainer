@@ -170,7 +170,7 @@ void drawKnobSoftShadowStack(juce::Graphics& g, juce::Point<float> centre, float
         const float h = (float) maps.contact.getHeight() * ctS * 0.82f;
         const float dx = centre.x - kContactRefX * ctS;
         const float dy = centre.y + 4.0f - kContactRefY * ctS * 0.82f;
-        g.setColour(juce::Colour(razumov::ui::tokens::argb::shadowRotaryContact).withMultipliedAlpha(0.88f * alphaMul));
+        g.setColour(juce::Colour(razumov::ui::tokens::argb::shadowRotaryContact).withMultipliedAlpha(0.74f * alphaMul));
         g.drawImage(maps.contact,
                     (int) std::floor(dx),
                     (int) std::floor(dy),
@@ -183,14 +183,32 @@ void drawKnobSoftShadowStack(juce::Graphics& g, juce::Point<float> centre, float
                     true);
     }
 
-    /** Drop shadow under the knob bottom (falls toward text/value box below); darker than ambient. */
+    /** Soft tail: wider, further down, low opacity (natural fall toward value row). */
     {
-        const float dropS = (radius + 5.5f) / 52.0f;
+        const float dropS = (radius + 6.5f) / 52.0f * 1.18f;
+        const float w = (float) maps.ambient.getWidth() * dropS;
+        const float h = (float) maps.ambient.getHeight() * dropS * squash;
+        const float dx = centre.x - kAmbientRefX * dropS;
+        const float dy = centre.y + 18.0f - kAmbientRefY * dropS * squash;
+        g.setColour(juce::Colour(0x42000000).withMultipliedAlpha(0.42f * alphaMul));
+        g.drawImage(maps.ambient,
+                    (int) std::floor(dx),
+                    (int) std::floor(dy),
+                    (int) std::ceil(w),
+                    (int) std::ceil(h),
+                    0,
+                    0,
+                    maps.ambient.getWidth(),
+                    maps.ambient.getHeight(),
+                    true);
+    }
+    {
+        const float dropS = (radius + 8.0f) / 52.0f * 1.32f;
         const float w = (float) maps.contact.getWidth() * dropS;
-        const float h = (float) maps.contact.getHeight() * dropS * 1.05f;
+        const float h = (float) maps.contact.getHeight() * dropS * 0.88f;
         const float dx = centre.x - kContactRefX * dropS;
-        const float dy = centre.y + 11.0f - kContactRefY * dropS * 0.82f;
-        g.setColour(juce::Colour(0x9a000000).withMultipliedAlpha(0.92f * alphaMul));
+        const float dy = centre.y + 28.0f - kContactRefY * dropS * 0.82f;
+        g.setColour(juce::Colour(0x28000000).withMultipliedAlpha(0.38f * alphaMul));
         g.drawImage(maps.contact,
                     (int) std::floor(dx),
                     (int) std::floor(dy),

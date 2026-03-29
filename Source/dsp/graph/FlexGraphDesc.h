@@ -59,6 +59,9 @@ juce::StringArray segmentDescToChainStripLabels(const FlexSegmentDesc& root);
 /** Плоский DFS: модули и split-узлы в порядке обхода. */
 std::vector<ChainStripItem> segmentDescToChainStripItems(const FlexSegmentDesc& root);
 
+/** Есть ли в дереве хотя бы один Split (параллель); для адаптивной высоты полосы цепочки в UI. */
+bool graphContainsAnySplit(const FlexSegmentDesc& root) noexcept;
+
 /** Редактирование дерева описания (message thread). */
 bool setSlotBypassById(FlexSegmentDesc& root, uint32_t slotId, bool bypassed) noexcept;
 bool removeSlotById(FlexSegmentDesc& root, uint32_t slotId) noexcept;

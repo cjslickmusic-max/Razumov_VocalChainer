@@ -31,6 +31,9 @@ inline constexpr uint32_t textCaption = 0xff6a7488;
 inline constexpr uint32_t textTitle = 0xff0f141c;
 
 inline constexpr uint32_t controlRotaryOutline = 0xffaeb8c8;
+/** Rotary numeric field: readable on light glass (not white-on-white). */
+inline constexpr uint32_t rotaryValueBoxFill = 0xfff5f7fb;
+inline constexpr uint32_t rotaryValueBoxText = 0xff1a1f2a;
 
 inline constexpr uint32_t accentSignal = 0xff5b8fd4;
 inline constexpr uint32_t accentSelection = 0xff2563eb;

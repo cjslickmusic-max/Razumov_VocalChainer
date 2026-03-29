@@ -103,6 +103,21 @@ std::vector<ChainStripItem> segmentDescToChainStripItems(const FlexSegmentDesc& 
     return out;
 }
 
+bool graphContainsAnySplit(const FlexSegmentDesc& seg) noexcept
+{
+    for (const auto& s : seg)
+    {
+        if (s.descType == FlexSlotDescType::Split)
+        {
+            for (const auto& br : s.branches)
+                if (graphContainsAnySplit(br))
+                    return true;
+            return true;
+        }
+    }
+    return false;
+}
+
 juce::StringArray segmentDescToChainStripLabels(const FlexSegmentDesc& root)
 {
     juce::StringArray a;

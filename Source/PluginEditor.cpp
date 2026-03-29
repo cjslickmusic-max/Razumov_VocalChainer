@@ -189,6 +189,9 @@ void RazumovVocalChainAudioProcessorEditor::styleRotary(juce::Slider& s, int tex
     s.setTextBoxStyle(juce::Slider::TextBoxBelow, false, textBoxW, textBoxH);
     s.setColour(juce::Slider::rotarySliderOutlineColourId, juce::Colour(tkn::argb::controlRotaryOutline));
     s.setColour(juce::Slider::thumbColourId, juce::Colour(tkn::argb::textPrimary));
+    s.setColour(juce::Slider::textBoxTextColourId, juce::Colour(tkn::argb::rotaryValueBoxText));
+    s.setColour(juce::Slider::textBoxBackgroundColourId, juce::Colour(tkn::argb::rotaryValueBoxFill));
+    s.setColour(juce::Slider::textBoxOutlineColourId, juce::Colour(tkn::argb::borderModulePanel));
 }
 
 void RazumovVocalChainAudioProcessorEditor::refreshRotaryStyles()
@@ -804,10 +807,14 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
 
     micBypassBtn.setButtonText("Mic bypass");
     micBypassBtn.setClickingTogglesState(true);
+    micBypassBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(tkn::argb::textLabel));
+    micBypassBtn.setColour(juce::ToggleButton::tickColourId, juce::Colour(tkn::argb::accentSignal));
     content.addAndMakeVisible(micBypassBtn);
 
     spectralBypassBtn.setButtonText("Spectral bypass");
     spectralBypassBtn.setClickingTogglesState(true);
+    spectralBypassBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(tkn::argb::textLabel));
+    spectralBypassBtn.setColour(juce::ToggleButton::tickColourId, juce::Colour(tkn::argb::accentSignal));
     content.addAndMakeVisible(spectralBypassBtn);
 
     addKnob(micAmountSlider, juce::Colour(tkn::knob::micAmount));
@@ -971,7 +978,8 @@ void RazumovVocalChainAudioProcessorEditor::resized()
     sectionMacro_ = juce::Rectangle<int>(bounds.getX(), bounds.getY(), bounds.getWidth(), macroBlockH);
     layoutMacroHeroRow(bounds.removeFromTop(macroBlockH));
 
-    const int chainH = scaled(248);
+    const bool parallelGraph = razumov::graph::graphContainsAnySplit(processor.getGraphDesc());
+    const int chainH = scaled(parallelGraph ? 248 : 328);
     chainStrip.setBounds(bounds.removeFromTop(chainH));
 
     viewport.setBounds(bounds);

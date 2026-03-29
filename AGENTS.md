@@ -64,4 +64,6 @@ JUCE **8.0.12** подтягивается через `FetchContent` при пе
 
 **UI ресурсы:** `juce_add_binary_data` (`RazumovVocalChainBinaryData`), PNG/SVG в `resources/ui/`, см. `docs/design/UI_ASSETS.md`.
 
+**Cursor skills (UI/UX):** см. `docs/CURSOR_SKILLS.md` — в репозитории `.cursor/skills/` (ui-ux-pro-max, frontend-design, kpi-dashboard-design, responsive-design, interaction-design, liquid-glass-design).
+
 **Тесты:** `cmake --build build --target RazumovVocalChainTests` затем `./build/RazumovVocalChainTests`; долгий прогон: таргет `RazumovVocalChainStressTests` или `ctest` (см. **`docs/TESTING.md`**). **Сборка после правок кода** — см. `.cursor/rules/agent-build-after-changes.mdc` (агент запускает сам).

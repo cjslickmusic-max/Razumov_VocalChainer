@@ -1,3 +1,9 @@
+# npx skills CLI may recreate this; canonical skills live in .cursor/skills/
+.agents/
+
+**/__pycache__/
+*.pyc
+
 build/
 # Локальные копии VST3 для проверки (README в Artifacts/ можно коммитить)
 Artifacts/*.vst3

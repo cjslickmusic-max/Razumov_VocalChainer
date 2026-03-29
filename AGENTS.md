@@ -30,7 +30,7 @@
 | `multi-message-task-continuity.mdc` | Не сбрасывать план из-за нового сообщения |
 | `code-health-check.mdc` | Scoped/Full аудит → `docs/CODE_HEALTH_AUDIT.md` |
 | `performance-checkpoints.mdc` | Замеры → `docs/PERF_CHECKPOINTS.md` |
-| `git-auto-checkpoint.mdc` | Локальные WIP-коммиты, если есть `.git` |
+| `git-auto-checkpoint.mdc` | Коммит после блока; **push на `origin` после крупной правки**; емкие сообщения (не «update») |
 | `agent-build-after-changes.mdc` | После правок кода — агент сам запускает сборку (`cmake --build`), пользователь не обязан компилировать вручную |
 | `ui-strings-ascii.mdc` | Строки UI — ASCII-first |
 | `refactor-suspicious-log.mdc` | Сомнения → `docs/REFACTOR_SUSPICIOUS_LOG.md` |

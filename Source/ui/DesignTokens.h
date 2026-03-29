@@ -8,61 +8,66 @@ namespace razumov::ui::tokens
 /**
  * Opaque colours as 0xAARRGGBB for juce::Colour(...).
  * Sync with resources/design/tokens/tokens.json (color.*.background / text / accent).
- * When changing a product colour: update tokens.json first, then this file, then tokens.css.
+ * Light glass theme: global uiScale still applied in editor for resize.
  */
 namespace argb
 {
-inline constexpr uint32_t backgroundEditor = 0xff1a1d23;
-inline constexpr uint32_t backgroundChainStrip = 0xff252830;
-inline constexpr uint32_t backgroundNode = 0xff1e2229;
-inline constexpr uint32_t backgroundMergeNode = 0xff222630;
+inline constexpr uint32_t backgroundEditor = 0xffe6e9ef;
+inline constexpr uint32_t backgroundChainStrip = 0xffdce1ea;
+inline constexpr uint32_t backgroundNode = 0xfff2f4f8;
+inline constexpr uint32_t backgroundMergeNode = 0xffe8ecf4;
 
-inline constexpr uint32_t surfaceMicPreviewInner = 0xff252b34;
-inline constexpr uint32_t surfaceModuleBackdrop = 0xff1e2229;
+inline constexpr uint32_t surfaceMicPreviewInner = 0xffeef1f6;
+inline constexpr uint32_t surfaceModuleBackdrop = 0xfff7f8fb;
 
-inline constexpr uint32_t borderMicPreview = 0xff4a5568;
-inline constexpr uint32_t borderModulePanel = 0xff353d4a;
+inline constexpr uint32_t borderMicPreview = 0xffb8c0d0;
+inline constexpr uint32_t borderModulePanel = 0xffc5ccd8;
 
-inline constexpr uint32_t textPrimary = 0xffe8eaed;
-inline constexpr uint32_t textSecondary = 0xff8892a0;
-inline constexpr uint32_t textLabel = 0xffaab4c0;
-inline constexpr uint32_t textTertiary = 0xff7a8490;
-inline constexpr uint32_t textCaption = 0xff6a7480;
-inline constexpr uint32_t textTitle = 0xffffffff;
+inline constexpr uint32_t textPrimary = 0xff1a1f2a;
+inline constexpr uint32_t textSecondary = 0xff5a6578;
+inline constexpr uint32_t textLabel = 0xff3d4a5c;
+inline constexpr uint32_t textTertiary = 0xff7a8494;
+inline constexpr uint32_t textCaption = 0xff6a7488;
+inline constexpr uint32_t textTitle = 0xff0f141c;
 
-inline constexpr uint32_t controlRotaryOutline = 0xff353d48;
+inline constexpr uint32_t controlRotaryOutline = 0xffaeb8c8;
 
-inline constexpr uint32_t accentSignal = 0xff6c9fd2;
-inline constexpr uint32_t accentSelection = 0xff9fd2ff;
-inline constexpr uint32_t accentBypass = 0xffe89868;
+inline constexpr uint32_t accentSignal = 0xff5b8fd4;
+inline constexpr uint32_t accentSelection = 0xff2563eb;
+inline constexpr uint32_t accentBypass = 0xffd97757;
+
+inline constexpr uint32_t controlButtonFace = 0xfff8f9fc;
+inline constexpr uint32_t controlButtonFaceOver = 0xffffffff;
+inline constexpr uint32_t controlButtonBorder = 0xffb0b8c8;
+inline constexpr uint32_t controlButtonShadow = 0x40000000;
 } // namespace argb
 
-/** Macro row: distinct fill colour per macro knob (matches APVTS macro mapping). */
+/** Macro row: fixed accent hues (readable on light panels). */
 namespace macro
 {
-inline constexpr uint32_t sectionLabel = 0xffc8d0dc;
-inline constexpr uint32_t glue = 0xffc080a0;
-inline constexpr uint32_t air = 0xff80c0c8;
-inline constexpr uint32_t sibilance = 0xffd0a868;
-inline constexpr uint32_t presence = 0xffa8d080;
-inline constexpr uint32_t punch = 0xffe88860;
-inline constexpr uint32_t body = 0xffb89870;
-inline constexpr uint32_t smooth = 0xff8898d0;
-inline constexpr uint32_t density = 0xff78b0a0;
+inline constexpr uint32_t sectionLabel = 0xff2d3748;
+inline constexpr uint32_t glue = 0xffb84d8a;
+inline constexpr uint32_t air = 0xff2aa8c4;
+inline constexpr uint32_t sibilance = 0xffd9a23c;
+inline constexpr uint32_t presence = 0xff4caf7c;
+inline constexpr uint32_t punch = 0xffe07040;
+inline constexpr uint32_t body = 0xffa08060;
+inline constexpr uint32_t smooth = 0xff6078d0;
+inline constexpr uint32_t density = 0xff48a898;
 } // namespace macro
 
 /** Per-module rotary accent (addKnob fill colour). */
 namespace knob
 {
-inline constexpr uint32_t micAmount = 0xff9a86d4;
-inline constexpr uint32_t gain = 0xff6c9fd2;
-inline constexpr uint32_t lowpass = 0xff8fd28c;
-inline constexpr uint32_t deess = 0xffd2a86c;
-inline constexpr uint32_t opto = 0xff6cb8d2;
-inline constexpr uint32_t fet = 0xffd26c8c;
-inline constexpr uint32_t vca = 0xffb8d26c;
-inline constexpr uint32_t exciter = 0xffe0c080;
-inline constexpr uint32_t spectral = 0xff9a9ae0;
+inline constexpr uint32_t micAmount = 0xff7c6fd4;
+inline constexpr uint32_t gain = 0xff4a8fd4;
+inline constexpr uint32_t lowpass = 0xff5cb870;
+inline constexpr uint32_t deess = 0xffd9a050;
+inline constexpr uint32_t opto = 0xff4a9fd0;
+inline constexpr uint32_t fet = 0xffd05088;
+inline constexpr uint32_t vca = 0xff88b050;
+inline constexpr uint32_t exciter = 0xffd0a868;
+inline constexpr uint32_t spectral = 0xff8888d8;
 } // namespace knob
 
 } // namespace razumov::ui::tokens

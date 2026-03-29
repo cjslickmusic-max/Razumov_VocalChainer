@@ -24,10 +24,33 @@ void drawPlusAffordance(juce::Graphics& g, juce::Rectangle<float> r, juce::Colou
     g.setColour(rim);
     g.drawRoundedRectangle(r.reduced(0.5f), 4.5f, 1.0f);
     g.setColour(rim.brighter(0.25f));
-    const auto c = r.getCentre();
+    const auto ctr = r.getCentre();
     const float half = 4.2f;
-    g.drawLine(c.x - half, c.y, c.x + half, c.y, 1.65f);
-    g.drawLine(c.x, c.y - half, c.x, c.y + half, 1.65f);
+    g.drawLine(ctr.x - half, ctr.y, ctr.x + half, ctr.y, 1.65f);
+    g.drawLine(ctr.x, ctr.y - half, ctr.x, ctr.y + half, 1.65f);
+}
+
+/** Simple mic glyph for Mic correction slot (profile-specific art can replace later). */
+void drawSimpleMicIcon(juce::Graphics& g, juce::Rectangle<float> r, juce::Colour ink)
+{
+    const float cx = r.getCentreX();
+    const float w = juce::jmin(r.getWidth(), r.getHeight()) * 0.42f;
+    const float top = r.getY() + 2.0f;
+    juce::Path body;
+    body.addRoundedRectangle(cx - w * 0.5f, top, w, w * 1.35f, w * 0.48f, w * 0.48f);
+    g.setColour(ink.withAlpha(0.85f));
+    g.fillPath(body);
+    g.setColour(ink.brighter(0.55f).withAlpha(0.4f));
+    for (int i = 0; i < 3; ++i)
+    {
+        const float yy = top + w * 0.32f + (float) i * w * 0.22f;
+        g.drawLine(cx - w * 0.28f, yy, cx + w * 0.28f, yy, 1.1f);
+    }
+    const float uY = top + w * 1.35f + 2.0f;
+    g.setColour(ink.withAlpha(0.72f));
+    g.drawLine(cx - w * 0.48f, uY, cx - w * 0.48f, uY + w * 0.32f, 2.0f);
+    g.drawLine(cx + w * 0.48f, uY, cx + w * 0.48f, uY + w * 0.32f, 2.0f);
+    g.drawLine(cx - w * 0.58f, uY + w * 0.32f, cx + w * 0.58f, uY + w * 0.32f, 2.0f);
 }
 
 bool firstSelectableSlot(const ChainStripLayout& layout, uint32_t& outId) noexcept
@@ -129,7 +152,7 @@ void ChainStripComponent::paint(juce::Graphics& g)
     for (const auto& w : layout_.wires)
         drawWire(g, w.a, w.b, wireCol);
 
-    const float corner = 8.0f;
+    const float corner = 10.0f;
 
     for (const auto& c : layout_.cards)
     {
@@ -142,6 +165,9 @@ void ChainStripComponent::paint(juce::Graphics& g)
     {
         const bool sel = (c.slotId != 0 && c.slotId == selectedSlotId_);
         const juce::Rectangle<float> card = c.bounds;
+
+        g.setColour(juce::Colour(0x18000000));
+        g.fillRoundedRectangle(card.translated(0.0f, 2.0f), corner + 1.0f);
 
         g.setColour(c.isMergeNode ? mergeFill : (c.bypassed ? cardFill.brighter(0.08f) : cardFill));
         g.fillRoundedRectangle(card, corner);
@@ -158,9 +184,23 @@ void ChainStripComponent::paint(juce::Graphics& g)
         }
 
         g.setColour(c.bypassed ? textSec : textPri);
-        const float fs = juce::jmin(11.5f, juce::jmax(8.5f, card.getWidth() * 0.11f));
-        g.setFont(juce::FontOptions(fs, juce::Font::bold));
-        g.drawText(c.label, card.reduced(4.0f), juce::Justification::centred);
+        const float fs = juce::jmin(11.5f, juce::jmax(8.5f, card.getWidth() * 0.09f));
+        const bool micCard = (!c.isMergeNode && c.label.containsIgnoreCase("Mic correction"));
+        if (micCard)
+        {
+            auto inner = card.reduced(5.0f);
+            const float iconH = inner.getHeight() * 0.58f;
+            auto iconR = inner.withHeight(iconH);
+            drawSimpleMicIcon(g, iconR, c.bypassed ? textSec : textPri);
+            auto cap = inner.withTrimmedTop(iconH + 2.0f);
+            g.setFont(juce::FontOptions(fs * 0.78f, juce::Font::bold));
+            g.drawText("Mic correction", cap, juce::Justification::centred);
+        }
+        else
+        {
+            g.setFont(juce::FontOptions(fs, juce::Font::bold));
+            g.drawText(c.label, card.reduced(5.0f), juce::Justification::centred);
+        }
 
         if (c.bypassed)
         {

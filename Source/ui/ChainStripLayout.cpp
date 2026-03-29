@@ -278,12 +278,12 @@ ChainStripLayout computeChainStripLayout(const razumov::graph::FlexSegmentDesc& 
         return layout;
 
     const float padX = 10.f;
-    const float padY = 16.f;
-    const float rowPitch = 56.f;
-    const float cardH = 46.f;
-    const float cardW = 104.f;
-    const float hGap = 14.f;
-    const float branchGap = 14.f;
+    const float padY = 18.f;
+    const float rowPitch = 68.f;
+    const float cardH = 56.f;
+    const float cardW = 124.f;
+    const float hGap = 16.f;
+    const float branchGap = 16.f;
 
     const float innerW = juce::jmax(80.f, availableWidth - 2.f * padX);
     const float yLine = 0.f;

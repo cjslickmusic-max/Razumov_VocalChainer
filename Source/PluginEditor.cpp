@@ -14,58 +14,65 @@ struct VocalChainerLookAndFeel : juce::LookAndFeel_V4
     {
         juce::ignoreUnused(slider);
         auto bounds = juce::Rectangle<int>(x, y, width, height).toFloat().reduced(5.0f);
-        const float radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.5f - 1.5f;
+        const float radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.5f - 2.0f;
         const auto centre = bounds.getCentre();
         const float a0 = rotaryStartAngle;
         const float a1 = rotaryEndAngle;
         const float aVal = a0 + sliderPos * (a1 - a0);
 
-        juce::Path track;
-        track.addCentredArc(centre.x, centre.y, radius, radius, 0.0f, a0, a1, true);
-        g.setColour(slider.findColour(juce::Slider::rotarySliderOutlineColourId));
-        g.strokePath(track, juce::PathStrokeType(4.2f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+        g.setColour(juce::Colour(0x22000000));
+        g.fillEllipse(centre.x - radius - 1.5f, centre.y - radius + 2.5f, (radius + 1.5f) * 2.0f, (radius + 1.5f) * 2.0f);
+
+        const juce::Colour trackDark = slider.findColour(juce::Slider::rotarySliderOutlineColourId).darker(0.35f);
+        const juce::Colour trackLight = slider.findColour(juce::Slider::rotarySliderOutlineColourId).brighter(0.55f);
+        const int segments = 40;
+        for (int i = 0; i < segments; ++i)
+        {
+            const float t0 = a0 + (a1 - a0) * (float) i / (float) segments;
+            const float t1 = a0 + (a1 - a0) * (float) (i + 1) / (float) segments;
+            const float mid = (t0 + t1) * 0.5f;
+            const float shade = 0.5f + 0.5f * std::sin(mid - juce::MathConstants<float>::halfPi);
+            juce::Path seg;
+            seg.addCentredArc(centre.x, centre.y, radius, radius, 0.0f, t0, t1, true);
+            g.setColour(trackLight.interpolatedWith(trackDark, juce::jlimit(0.0f, 1.0f, shade)));
+            g.strokePath(seg, juce::PathStrokeType(4.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+        }
 
         juce::Path val;
         val.addCentredArc(centre.x, centre.y, radius, radius, 0.0f, a0, aVal, true);
         g.setColour(slider.findColour(juce::Slider::rotarySliderFillColourId));
-        g.strokePath(val, juce::PathStrokeType(4.2f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+        g.strokePath(val, juce::PathStrokeType(4.4f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 
-        const float dotR = 4.0f;
+        const float dotR = 4.2f;
         const auto thumb = centre.getPointOnCircumference(radius - 1.0f, aVal);
         g.setColour(slider.findColour(juce::Slider::thumbColourId));
         g.fillEllipse(thumb.x - dotR, thumb.y - dotR, dotR * 2.0f, dotR * 2.0f);
+        g.setColour(juce::Colour(0x55000000));
+        g.drawEllipse(thumb.x - dotR, thumb.y - dotR, dotR * 2.0f, dotR * 2.0f, 1.0f);
+    }
+
+    void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::Colour&,
+                              bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override
+    {
+        auto r = button.getLocalBounds().toFloat().reduced(1.0f);
+        juce::Colour top = juce::Colour(tkn::argb::controlButtonFace);
+        if (shouldDrawButtonAsDown)
+            top = top.darker(0.14f);
+        else if (shouldDrawButtonAsHighlighted)
+            top = top.brighter(0.05f);
+        const juce::Colour bottom = top.darker(0.2f);
+        juce::ColourGradient cg(top, r.getX(), r.getY(), bottom, r.getX(), r.getBottom(), false);
+        g.setGradientFill(cg);
+        g.fillRoundedRectangle(r, 6.0f);
+        g.setColour(juce::Colour(tkn::argb::controlButtonBorder));
+        g.drawRoundedRectangle(r.reduced(0.5f), 6.0f, 1.0f);
+        if (!shouldDrawButtonAsDown)
+        {
+            g.setColour(juce::Colour(0x14000000));
+            g.fillRoundedRectangle(r.removeFromBottom(1.5f), 4.0f);
+        }
     }
 };
-
-void MicProfilePanel::resized()
-{
-    auto r = getLocalBounds().reduced(8, 8);
-    const int side = juce::jmin(96, juce::jmin(r.getWidth(), r.getHeight()));
-    previewBounds_ = r.withSizeKeepingCentre(side, side);
-}
-
-void MicProfilePanel::paint(juce::Graphics& g)
-{
-    g.fillAll(juce::Colour(tkn::argb::backgroundNode));
-    auto frame = previewBounds_.toFloat();
-    g.setColour(juce::Colour(tkn::argb::surfaceMicPreviewInner));
-    g.fillRoundedRectangle(frame, 7.0f);
-    g.setColour(juce::Colour(tkn::argb::borderMicPreview));
-    g.drawRoundedRectangle(frame.reduced(0.5f), 7.0f, 1.0f);
-    auto caption = frame.removeFromBottom(20.0f);
-    g.setColour(juce::Colour(tkn::argb::textSecondary));
-    g.setFont(juce::FontOptions(22.0f, juce::Font::bold));
-    g.drawText("Mic", frame, juce::Justification::centred);
-    g.setFont(juce::FontOptions(10.0f));
-    g.setColour(juce::Colour(tkn::argb::textCaption));
-    g.drawText("Tap to choose profile", caption, juce::Justification::centred);
-}
-
-void MicProfilePanel::mouseDown(const juce::MouseEvent& e)
-{
-    if (previewBounds_.contains(e.getPosition()) && onPreviewClicked)
-        onPreviewClicked();
-}
 
 void ModuleSectionBackdrop::paint(juce::Graphics& g)
 {
@@ -92,12 +99,47 @@ uint32_t referenceSlotForInsert(RazumovVocalChainAudioProcessor& proc, uint32_t 
 }
 } // namespace
 
-void RazumovVocalChainAudioProcessorEditor::styleRotary(juce::Slider& s)
+void RazumovVocalChainAudioProcessorEditor::styleRotary(juce::Slider& s, int textBoxW, int textBoxH)
 {
     s.setSliderStyle(juce::Slider::RotaryVerticalDrag);
-    s.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 58, 16);
+    s.setTextBoxStyle(juce::Slider::TextBoxBelow, false, textBoxW, textBoxH);
     s.setColour(juce::Slider::rotarySliderOutlineColourId, juce::Colour(tkn::argb::controlRotaryOutline));
     s.setColour(juce::Slider::thumbColourId, juce::Colour(tkn::argb::textPrimary));
+}
+
+void RazumovVocalChainAudioProcessorEditor::refreshRotaryStyles()
+{
+    const int tw = scaled(58);
+    const int th = scaled(18);
+    auto one = [this, tw, th](juce::Slider& s) { styleRotary(s, tw, th); };
+    one(macroGlueSlider);
+    one(macroAirSlider);
+    one(macroSibilanceSlider);
+    one(macroPresenceSlider);
+    one(macroPunchSlider);
+    one(macroBodySlider);
+    one(macroSmoothSlider);
+    one(macroDensitySlider);
+    one(micAmountSlider);
+    one(gainSlider);
+    one(lowpassSlider);
+    one(deessCrossSlider);
+    one(deessThreshSlider);
+    one(deessRatioSlider);
+    one(optoThreshSlider);
+    one(optoRatioSlider);
+    one(optoMakeupSlider);
+    one(fetThreshSlider);
+    one(fetRatioSlider);
+    one(fetMakeupSlider);
+    one(vcaThreshSlider);
+    one(vcaRatioSlider);
+    one(vcaMakeupSlider);
+    one(exciterDriveSlider);
+    one(exciterMixSlider);
+    one(spectralMixSlider);
+    one(spectralThreshSlider);
+    one(spectralRatioSlider);
 }
 
 void RazumovVocalChainAudioProcessorEditor::populateComboBoxes()
@@ -319,6 +361,7 @@ void RazumovVocalChainAudioProcessorEditor::refreshModulePanelVisibility()
 
     juce::ignoreUnused(showSplitPanel);
 
+    micProfileCombo.setVisible(showMic);
     micBypassBtn.setVisible(showMic);
     micAmountSlider.setVisible(showMic);
     gainSlider.setVisible(showGainKnob);
@@ -360,17 +403,18 @@ void RazumovVocalChainAudioProcessorEditor::refreshModulePanelVisibility()
     resized();
 }
 
-void RazumovVocalChainAudioProcessorEditor::layoutGlobalSection(juce::Rectangle<int> area)
+void RazumovVocalChainAudioProcessorEditor::layoutMacroHeroRow(juce::Rectangle<int> area)
 {
-    const int pad = 12;
-    const int kw = 80;
-    const int mkh = 72;
-    const int mlab = 14;
-    const int colGap = 10;
-    const int rowGap = 10;
-    macroSectionLabel.setBounds(area.removeFromTop(18).reduced(pad, 0));
-    int x = area.getX() + pad;
-    int y = area.getY() + pad;
+    const int pad = scaled(12);
+    const int kw = scaled(92);
+    const int mkh = scaled(96);
+    const int mlab = scaled(15);
+    const int colGap = scaled(6);
+    macroSectionLabel.setBounds(area.removeFromTop(scaled(22)).reduced(pad, 0));
+
+    const int totalW = 8 * kw + 7 * colGap;
+    int x = area.getX() + (area.getWidth() - totalW) / 2;
+    const int y = area.getY() + pad;
 
     auto place = [&](juce::Label& lbl, juce::Slider& s) {
         lbl.setBounds(x, y, kw, mlab);
@@ -382,10 +426,6 @@ void RazumovVocalChainAudioProcessorEditor::layoutGlobalSection(juce::Rectangle<
     place(macroAirLabel, macroAirSlider);
     place(macroSibilanceLabel, macroSibilanceSlider);
     place(macroPresenceLabel, macroPresenceSlider);
-
-    x = area.getX() + pad;
-    y += mlab + mkh + rowGap;
-
     place(macroPunchLabel, macroPunchSlider);
     place(macroBodyLabel, macroBodySlider);
     place(macroSmoothLabel, macroSmoothSlider);
@@ -394,33 +434,35 @@ void RazumovVocalChainAudioProcessorEditor::layoutGlobalSection(juce::Rectangle<
 
 void RazumovVocalChainAudioProcessorEditor::layoutModuleViewport(int viewportWidth)
 {
-    const int W = juce::jmax(760, viewportWidth);
-    const int pad = 12;
-    const int kw = 80;
-    const int kh = 100;
-    const int gap = 10;
+    const int W = juce::jmax(scaled(760), viewportWidth);
+    const int pad = scaled(12);
+    const int kw = scaled(80);
+    const int kh = scaled(100);
+    const int gap = scaled(10);
     int x = pad;
     int y = pad;
 
-    moduleTitleLabel.setBounds(x, y, W - 2 * pad, 22);
-    y += 26;
+    moduleTitleLabel.setBounds(x, y, W - 2 * pad, scaled(22));
+    y += scaled(26);
 
     if (moduleHintLabel.isVisible())
     {
-        moduleHintLabel.setBounds(x, y, W - 2 * pad, 36);
-        y += 42;
+        moduleHintLabel.setBounds(x, y, W - 2 * pad, scaled(36));
+        y += scaled(42);
     }
 
     if (micBypassBtn.isVisible())
     {
-        micBypassBtn.setBounds(x, y, 120, 28);
-        micAmountSlider.setBounds(x + 132, y, kw, kh);
-        y += kh + gap + 18;
+        micProfileCombo.setBounds(x, y, juce::jmin(scaled(420), W - 2 * pad), scaled(28));
+        y += scaled(34);
+        micBypassBtn.setBounds(x, y, scaled(120), scaled(28));
+        micAmountSlider.setBounds(x + scaled(132), y, kw, kh);
+        y += kh + gap + scaled(18);
     }
     else if (gainSlider.isVisible())
     {
         gainSlider.setBounds(x, y, kw, kh);
-        y += kh + gap + 18;
+        y += kh + gap + scaled(18);
     }
 
     auto row3 = [&](juce::Slider& a, juce::Slider& b, juce::Slider& c) {
@@ -429,7 +471,7 @@ void RazumovVocalChainAudioProcessorEditor::layoutModuleViewport(int viewportWid
         a.setBounds(x, y, kw, kh);
         b.setBounds(x + (kw + gap), y, kw, kh);
         c.setBounds(x + 2 * (kw + gap), y, kw, kh);
-        y += kh + gap + 18;
+        y += kh + gap + scaled(18);
     };
 
     row3(deessCrossSlider, deessThreshSlider, deessRatioSlider);
@@ -441,24 +483,24 @@ void RazumovVocalChainAudioProcessorEditor::layoutModuleViewport(int viewportWid
     {
         exciterDriveSlider.setBounds(x, y, kw, kh);
         exciterMixSlider.setBounds(x + (kw + gap), y, kw, kh);
-        y += kh + gap + 18;
+        y += kh + gap + scaled(18);
     }
 
     if (spectralBypassBtn.isVisible())
     {
-        spectralBypassBtn.setBounds(x, y, 140, 28);
-        y += 36;
+        spectralBypassBtn.setBounds(x, y, scaled(140), scaled(28));
+        y += scaled(36);
         row3(spectralMixSlider, spectralThreshSlider, spectralRatioSlider);
     }
 
     if (lowpassSlider.isVisible())
     {
         lowpassSlider.setBounds(x, y, kw, kh);
-        y += kh + gap + 18;
+        y += kh + gap + scaled(18);
     }
 
     const int bottom = y + pad;
-    const int h = juce::jmax(bottom, 120);
+    const int h = juce::jmax(bottom, scaled(120));
     content.setSize(W, h);
     moduleSectionBackdrop.setBounds(0, 0, W, h);
 }
@@ -473,12 +515,15 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
 
     setSize(1280, 920);
     setResizable(true, true);
-    setResizeLimits(900, 620, 2600, 2000);
+    setResizeLimits(1180, 780, 2800, 2200);
 
-    addAndMakeVisible(micProfilePanel);
-    addAndMakeVisible(micProfileCombo);
-    micProfilePanel.onPreviewClicked = [this] { micProfileCombo.showPopup(); };
-    micProfileCombo.setTooltip("Mic correction profile. Per-slot amount and bypass are in the Mic module below.");
+    auto styleCombo = [](juce::ComboBox& c) {
+        using namespace juce;
+        c.setColour(ComboBox::backgroundColourId, juce::Colour(tkn::argb::backgroundNode));
+        c.setColour(ComboBox::outlineColourId, juce::Colour(tkn::argb::borderModulePanel));
+        c.setColour(ComboBox::textColourId, juce::Colour(tkn::argb::textPrimary));
+        c.setColour(ComboBox::arrowColourId, juce::Colour(tkn::argb::textSecondary));
+    };
 
     presetLabel.setText("Preset", juce::dontSendNotification);
     presetLabel.setJustificationType(juce::Justification::centred);
@@ -497,7 +542,12 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
         }
     };
     addAndMakeVisible(presetCombo);
+    styleCombo(presetCombo);
     presetCombo.setTooltip("Built-in factory presets (macros and defaults). The graph is edited in the strip.");
+
+    content.addAndMakeVisible(micProfileCombo);
+    styleCombo(micProfileCombo);
+    micProfileCombo.setTooltip("Mic profile for correction (Mic correction module below).");
 
     populateComboBoxes();
 
@@ -582,7 +632,7 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
         apvts, razumov::params::micProfile, micProfileCombo);
 
     auto addKnob = [this](juce::Slider& s, juce::Colour c) {
-        styleRotary(s);
+        styleRotary(s, 58, 16);
         s.setColour(juce::Slider::rotarySliderFillColourId, c);
         content.addAndMakeVisible(s);
     };
@@ -592,15 +642,15 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
         lbl.setJustificationType(juce::Justification::centred);
         lbl.setColour(juce::Label::textColourId, juce::Colour(tkn::argb::textLabel));
         addAndMakeVisible(lbl);
-        styleRotary(s);
+        styleRotary(s, 58, 16);
         s.setColour(juce::Slider::rotarySliderFillColourId, c);
         addAndMakeVisible(s);
     };
 
     macroSectionLabel.setText("Macros", juce::dontSendNotification);
-    macroSectionLabel.setJustificationType(juce::Justification::centredLeft);
+    macroSectionLabel.setJustificationType(juce::Justification::centred);
     macroSectionLabel.setColour(juce::Label::textColourId, juce::Colour(tkn::macro::sectionLabel));
-    macroSectionLabel.setFont(juce::FontOptions(13.0f, juce::Font::bold));
+    macroSectionLabel.setFont(juce::FontOptions(15.0f, juce::Font::bold));
     addAndMakeVisible(macroSectionLabel);
 
     setupMacro(macroGlueSlider, macroGlueLabel, "Glue", juce::Colour(tkn::macro::glue));
@@ -751,45 +801,39 @@ void RazumovVocalChainAudioProcessorEditor::paint(juce::Graphics& g)
 
 void RazumovVocalChainAudioProcessorEditor::resized()
 {
-    auto bounds = getLocalBounds().reduced(16);
-    bounds.removeFromTop(40);
+    uiScale_ = juce::jlimit(0.88f, 1.5f, (float) getWidth() / 1280.f);
 
-    const int presetRowH = 52;
+    auto bounds = getLocalBounds().reduced(scaled(16));
+    bounds.removeFromTop(scaled(40));
+
+    const int presetRowH = scaled(52);
     auto presetRow = bounds.removeFromTop(presetRowH);
-    const int pw = juce::jmin(440, presetRow.getWidth() - 40);
+    const int pw = juce::jmin(scaled(440), presetRow.getWidth() - scaled(40));
     auto presetBox = presetRow.withSizeKeepingCentre(pw, presetRowH);
-    presetLabel.setBounds(presetBox.removeFromTop(14));
-    presetCombo.setBounds(presetBox.removeFromTop(32).reduced(0, 2));
+    presetLabel.setBounds(presetBox.removeFromTop(scaled(14)));
+    presetCombo.setBounds(presetBox.removeFromTop(scaled(32)).reduced(0, 2));
 
-    const int micH = 100;
-    auto micRow = bounds.removeFromTop(micH);
-    micProfilePanel.setBounds(micRow.removeFromLeft(100));
-    {
-        auto comboArea = micRow.reduced(8, 8);
-        const int ch = 30;
-        micProfileCombo.setBounds(comboArea.withHeight(ch).withY(comboArea.getCentreY() - ch / 2));
-    }
+    const int macroBlockH = scaled(178);
+    layoutMacroHeroRow(bounds.removeFromTop(macroBlockH));
 
-    chainStrip.setBounds(bounds.removeFromTop(210));
+    chainStrip.setBounds(bounds.removeFromTop(scaled(248)));
 
-    auto toolRow = bounds.removeFromTop(32);
-    const int tw = 88;
-    int tx = toolRow.getX() + 10;
-    bypassSlotBtn.setBounds(tx, toolRow.getY() + 2, tw, 28);
-    tx += tw + 6;
-    removeSlotBtn.setBounds(tx, toolRow.getY() + 2, tw, 28);
-    tx += tw + 6;
-    moveLeftBtn.setBounds(tx, toolRow.getY() + 2, 36, 28);
-    tx += 42;
-    moveRightBtn.setBounds(tx, toolRow.getY() + 2, 36, 28);
-    tx += 48;
-    addModuleBtn.setBounds(tx, toolRow.getY() + 2, 100, 28);
-
-    auto globalArea = bounds.removeFromTop(238);
-    layoutGlobalSection(globalArea);
+    auto toolRow = bounds.removeFromTop(scaled(34));
+    const int tw = scaled(88);
+    int tx = toolRow.getX() + scaled(10);
+    bypassSlotBtn.setBounds(tx, toolRow.getY() + 2, tw, scaled(28));
+    tx += tw + scaled(6);
+    removeSlotBtn.setBounds(tx, toolRow.getY() + 2, tw, scaled(28));
+    tx += tw + scaled(6);
+    moveLeftBtn.setBounds(tx, toolRow.getY() + 2, scaled(36), scaled(28));
+    tx += scaled(42);
+    moveRightBtn.setBounds(tx, toolRow.getY() + 2, scaled(36), scaled(28));
+    tx += scaled(48);
+    addModuleBtn.setBounds(tx, toolRow.getY() + 2, scaled(100), scaled(28));
 
     viewport.setBounds(bounds);
     layoutModuleViewport(viewport.getWidth());
+    refreshRotaryStyles();
 }
 
 RazumovVocalChainAudioProcessorEditor::~RazumovVocalChainAudioProcessorEditor()

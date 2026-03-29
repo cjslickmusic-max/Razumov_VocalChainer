@@ -29,7 +29,7 @@ void drawEditorBackgroundLayer(juce::Graphics& g, juce::Rectangle<int> area)
     {
         const int tw = tex.getWidth();
         const int th = tex.getHeight();
-        g.setOpacity(0.15f);
+        g.setOpacity(0.07f);
         for (int y = area.getY(); y < area.getBottom(); y += th)
         {
             for (int x = area.getX(); x < area.getRight(); x += tw)

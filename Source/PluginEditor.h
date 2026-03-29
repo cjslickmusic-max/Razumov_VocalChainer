@@ -11,18 +11,6 @@ class RazumovVocalChainAudioProcessor;
 
 struct VocalChainerLookAndFeel;
 
-/** Область под будущую графику микрофона; клик по превью открывает список профиля. */
-struct MicProfilePanel : juce::Component
-{
-    std::function<void()> onPreviewClicked;
-    void resized() override;
-    void paint(juce::Graphics&) override;
-    void mouseDown(const juce::MouseEvent& e) override;
-
-private:
-    juce::Rectangle<int> previewBounds_;
-};
-
 struct ModuleSectionBackdrop : juce::Component
 {
     void paint(juce::Graphics&) override;
@@ -38,7 +26,7 @@ public:
     void resized() override;
 
 private:
-    static void styleRotary(juce::Slider&);
+    static void styleRotary(juce::Slider&, int textBoxW, int textBoxH);
 
     void populateComboBoxes();
     void showAddModuleMenuForSlot(uint32_t referenceSlotId);
@@ -46,13 +34,15 @@ private:
     void refreshModulePanelVisibility();
     void reloadModuleParamsFromProcessor();
     void syncChainStripAfterGraphEdit();
-    void layoutGlobalSection(juce::Rectangle<int> area);
+    void layoutMacroHeroRow(juce::Rectangle<int> area);
     void layoutModuleViewport(int viewportWidth);
+    void refreshRotaryStyles();
+
+    int scaled(int base) const noexcept { return juce::roundToInt((float) base * uiScale_); }
 
     RazumovVocalChainAudioProcessor& processor;
     razumov::ui::ChainStripComponent chainStrip;
 
-    MicProfilePanel micProfilePanel;
     juce::ComboBox micProfileCombo;
     juce::Label presetLabel;
     juce::ComboBox presetCombo;
@@ -124,6 +114,7 @@ private:
 
     std::unique_ptr<VocalChainerLookAndFeel> laf;
 
+    float uiScale_ { 1.f };
     uint32_t selectedSlotId_ { 0 };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RazumovVocalChainAudioProcessorEditor)

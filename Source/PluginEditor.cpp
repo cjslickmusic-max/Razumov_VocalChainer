@@ -908,6 +908,18 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
 void RazumovVocalChainAudioProcessorEditor::paint(juce::Graphics& g)
 {
     g.fillAll(juce::Colour(tkn::argb::backgroundEditor));
+    {
+        const auto a = getLocalBounds().toFloat();
+        juce::ColourGradient depth(juce::Colours::transparentBlack,
+                                   a.getCentreX(),
+                                   a.getY(),
+                                   juce::Colour(tkn::argb::backgroundAtmosphereBottom),
+                                   a.getCentreX(),
+                                   a.getBottom(),
+                                   false);
+        g.setGradientFill(depth);
+        g.fillRect(a);
+    }
     razumov::ui::drawEditorBackgroundLayer(g, getLocalBounds());
     razumov::ui::drawEditorCornerAccents(g, getLocalBounds());
 

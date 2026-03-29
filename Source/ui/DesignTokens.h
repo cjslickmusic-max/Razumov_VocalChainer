@@ -12,16 +12,19 @@ namespace razumov::ui::tokens
  */
 namespace argb
 {
-inline constexpr uint32_t backgroundEditor = 0xffe6e9ef;
-inline constexpr uint32_t backgroundChainStrip = 0xffdce1ea;
-inline constexpr uint32_t backgroundNode = 0xfff2f4f8;
-inline constexpr uint32_t backgroundMergeNode = 0xffe8ecf4;
+/** Warm stone (not cold blue-grey): studio-adjacent, readable with slate text. */
+inline constexpr uint32_t backgroundEditor = 0xffebe8e3;
+/** Bottom vignette overlay in PluginEditor::paint (low alpha warm brown). */
+inline constexpr uint32_t backgroundAtmosphereBottom = 0x14908070;
+inline constexpr uint32_t backgroundChainStrip = 0xffddd8d2;
+inline constexpr uint32_t backgroundNode = 0xfff5f2ee;
+inline constexpr uint32_t backgroundMergeNode = 0xffe5e0da;
 
-inline constexpr uint32_t surfaceMicPreviewInner = 0xffeef1f6;
-inline constexpr uint32_t surfaceModuleBackdrop = 0xfff7f8fb;
+inline constexpr uint32_t surfaceMicPreviewInner = 0xfff0ebe7;
+inline constexpr uint32_t surfaceModuleBackdrop = 0xfff2ede8;
 
-inline constexpr uint32_t borderMicPreview = 0xffb8c0d0;
-inline constexpr uint32_t borderModulePanel = 0xffc5ccd8;
+inline constexpr uint32_t borderMicPreview = 0xffb8b0a8;
+inline constexpr uint32_t borderModulePanel = 0xffc4bcb4;
 
 inline constexpr uint32_t textPrimary = 0xff1a1f2a;
 inline constexpr uint32_t textSecondary = 0xff5a6578;
@@ -32,21 +35,21 @@ inline constexpr uint32_t textTitle = 0xff0f141c;
 
 inline constexpr uint32_t controlRotaryOutline = 0xffaeb8c8;
 /** Rotary numeric field: readable on light glass (not white-on-white). */
-inline constexpr uint32_t rotaryValueBoxFill = 0xfff5f7fb;
+inline constexpr uint32_t rotaryValueBoxFill = 0xfff3eee9;
 inline constexpr uint32_t rotaryValueBoxText = 0xff1a1f2a;
 
-inline constexpr uint32_t accentSignal = 0xff5b8fd4;
+inline constexpr uint32_t accentSignal = 0xff5b82c8;
 inline constexpr uint32_t accentSelection = 0xff2563eb;
 inline constexpr uint32_t accentBypass = 0xffd97757;
 
-inline constexpr uint32_t controlButtonFace = 0xfff8f9fc;
+inline constexpr uint32_t controlButtonFace = 0xfffaf8f6;
 inline constexpr uint32_t controlButtonFaceOver = 0xffffffff;
 inline constexpr uint32_t controlButtonBorder = 0xffb0b8c8;
 inline constexpr uint32_t controlButtonShadow = 0x40000000;
 /** Drop shadow under elevated controls (cards, knobs) — visible on light panels. */
 inline constexpr uint32_t shadowElevated = 0x6e000000;
-/** Broad diffuse shadow under rotary (cool grey-blue, soft UI). */
-inline constexpr uint32_t shadowRotaryAmbient = 0x45607080;
+/** Broad diffuse shadow under rotary (warm neutral, soft UI). */
+inline constexpr uint32_t shadowRotaryAmbient = 0x455a5850;
 /** Mid layer under rotary (neutral). */
 inline constexpr uint32_t shadowRotaryMid = 0x42000000;
 /** Tight contact shadow at knob base. */

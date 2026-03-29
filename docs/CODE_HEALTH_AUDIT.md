@@ -4,6 +4,15 @@
 
 ---
 
+## Quick check — v0.9.18 (2026-03-29) — Warm neutral theme + atmosphere gradient + mic/room architecture note
+
+- `DesignTokens.h`: warm stone backgrounds, borders, rotary ambient; accentSignal slightly warmer; `backgroundAtmosphereBottom` vignette.
+- `PluginEditor::paint`: subtle bottom gradient after base fill; brushed texture opacity 0.055.
+- `docs/ARCHITECTURE.md`: mic/room profile vs factory presets (global layer, onboarding vs header).
+- ReadLints scoped; `cmake --build` VST3 + `RazumovVocalChainTests`: OK.
+
+---
+
 ## Quick check — v0.9.17 (2026-03-29) — Knob shadow tail + value box contrast + adaptive chain height
 
 - `EditorVisualAssets::drawKnobSoftShadowStack`: contact base slightly weaker; long soft tail (ambient + wide contact, low alpha, +18/+28 px).

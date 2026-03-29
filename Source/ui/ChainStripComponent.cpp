@@ -12,9 +12,9 @@ void drawWire(juce::Graphics& g, juce::Point<float> a, juce::Point<float> b, juc
 {
     g.setColour(c);
     if (std::abs(a.y - b.y) < 2.0f && b.x > a.x + 3.0f)
-        g.drawArrow(juce::Line<float>(a.x, a.y, b.x, b.y), 1.5f, 4.5f, 4.5f);
+        g.drawArrow(juce::Line<float>(a.x, a.y, b.x, b.y), 1.75f, 4.5f, 4.5f);
     else
-        g.drawLine(juce::Line<float>(a.x, a.y, b.x, b.y), 1.35f);
+        g.drawLine(juce::Line<float>(a.x, a.y, b.x, b.y), 1.65f);
 }
 
 void drawPlusAffordance(juce::Graphics& g, juce::Rectangle<float> r, juce::Colour rim, juce::Colour fill)
@@ -132,7 +132,6 @@ void ChainStripComponent::paint(juce::Graphics& g)
     using namespace razumov::ui::tokens::argb;
     const juce::Colour panelBg(backgroundChainStrip);
     const juce::Colour cardFill(backgroundNode);
-    const juce::Colour mergeFill(backgroundMergeNode);
     const juce::Colour accent(accentSignal);
     const juce::Colour textPri(textPrimary);
     const juce::Colour textSec(textSecondary);
@@ -148,7 +147,7 @@ void ChainStripComponent::paint(juce::Graphics& g)
     if (layout_.cards.empty())
         return;
 
-    const juce::Colour wireCol = accent.withAlpha(0.72f);
+    const juce::Colour wireCol = accent.withAlpha(0.88f);
     for (const auto& w : layout_.wires)
         drawWire(g, w.a, w.b, wireCol);
 
@@ -166,10 +165,10 @@ void ChainStripComponent::paint(juce::Graphics& g)
         const bool sel = (c.slotId != 0 && c.slotId == selectedSlotId_);
         const juce::Rectangle<float> card = c.bounds;
 
-        g.setColour(juce::Colour(0x18000000));
-        g.fillRoundedRectangle(card.translated(0.0f, 2.0f), corner + 1.0f);
+        g.setColour(juce::Colour(shadowElevated));
+        g.fillRoundedRectangle(card.translated(0.0f, 3.0f), corner + 1.0f);
 
-        g.setColour(c.isMergeNode ? mergeFill : (c.bypassed ? cardFill.brighter(0.08f) : cardFill));
+        g.setColour(c.bypassed ? cardFill.brighter(0.08f) : cardFill);
         g.fillRoundedRectangle(card, corner);
 
         if (sel)

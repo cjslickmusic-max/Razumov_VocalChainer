@@ -19,36 +19,60 @@ struct VocalChainerLookAndFeel : juce::LookAndFeel_V4
         const float a0 = rotaryStartAngle;
         const float a1 = rotaryEndAngle;
         const float aVal = a0 + sliderPos * (a1 - a0);
+        const float trackW = 4.35f;
+        const float bodyR = juce::jmax(2.0f, radius - trackW - 0.75f);
 
+        // Layered drop shadows (broad ambient -> mid -> tight contact), offset downward.
+        const auto amb = juce::Colour(tkn::argb::shadowRotaryAmbient);
+        const auto mid = juce::Colour(tkn::argb::shadowRotaryMid);
+        const auto contact = juce::Colour(tkn::argb::shadowRotaryContact);
+        const float w1 = (radius + 4.0f) * 2.1f;
+        const float h1 = (radius + 2.0f) * 1.15f;
+        g.setColour(amb.withAlpha(0.38f));
+        g.fillEllipse(centre.x - w1 * 0.5f, centre.y - radius + 7.0f, w1, h1);
+        g.setColour(mid.withAlpha(0.42f));
+        g.fillEllipse(centre.x - (radius + 3.0f), centre.y - radius + 5.0f, (radius + 3.0f) * 2.0f, (radius + 1.8f) * 2.0f);
+        g.setColour(contact.withAlpha(0.55f));
+        g.fillEllipse(centre.x - (radius + 1.2f), centre.y - radius + 3.2f, (radius + 1.2f) * 2.0f, (radius + 0.6f) * 2.0f);
+
+        // Knob face: radial gradient (soft top highlight, bottom shade).
+        juce::ColourGradient faceGrad(
+            juce::Colour(tkn::argb::backgroundNode).brighter(0.07f),
+            centre.x,
+            centre.y - bodyR * 0.35f,
+            juce::Colour(tkn::argb::backgroundNode).darker(0.14f),
+            centre.x,
+            centre.y + bodyR * 0.55f,
+            true);
+        g.setGradientFill(faceGrad);
+        g.fillEllipse(centre.x - bodyR, centre.y - bodyR, bodyR * 2.0f, bodyR * 2.0f);
+        g.setColour(juce::Colour(0x28ffffff));
+        g.drawEllipse(centre.x - bodyR + 0.75f, centre.y - bodyR + 0.75f, (bodyR - 0.75f) * 2.0f, (bodyR - 0.75f) * 2.0f, 1.0f);
         g.setColour(juce::Colour(0x22000000));
-        g.fillEllipse(centre.x - radius - 1.5f, centre.y - radius + 2.5f, (radius + 1.5f) * 2.0f, (radius + 1.5f) * 2.0f);
+        g.drawEllipse(centre.x - bodyR + 0.5f, centre.y - bodyR + 0.5f, (bodyR - 0.5f) * 2.0f, (bodyR - 0.5f) * 2.0f, 1.0f);
 
-        const juce::Colour trackDark = slider.findColour(juce::Slider::rotarySliderOutlineColourId).darker(0.35f);
-        const juce::Colour trackLight = slider.findColour(juce::Slider::rotarySliderOutlineColourId).brighter(0.55f);
-        const int segments = 40;
-        for (int i = 0; i < segments; ++i)
-        {
-            const float t0 = a0 + (a1 - a0) * (float) i / (float) segments;
-            const float t1 = a0 + (a1 - a0) * (float) (i + 1) / (float) segments;
-            const float mid = (t0 + t1) * 0.5f;
-            const float shade = 0.5f + 0.5f * std::sin(mid - juce::MathConstants<float>::halfPi);
-            juce::Path seg;
-            seg.addCentredArc(centre.x, centre.y, radius, radius, 0.0f, t0, t1, true);
-            g.setColour(trackLight.interpolatedWith(trackDark, juce::jlimit(0.0f, 1.0f, shade)));
-            g.strokePath(seg, juce::PathStrokeType(4.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
-        }
+        const juce::Colour inactiveTrack { tkn::argb::rotaryTrackInactive };
+        juce::Path trackBg;
+        trackBg.addCentredArc(centre.x, centre.y, radius, radius, 0.0f, a0, a1, true);
+        g.setColour(inactiveTrack);
+        g.strokePath(trackBg, juce::PathStrokeType(trackW, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 
         juce::Path val;
         val.addCentredArc(centre.x, centre.y, radius, radius, 0.0f, a0, aVal, true);
-        g.setColour(slider.findColour(juce::Slider::rotarySliderFillColourId));
-        g.strokePath(val, juce::PathStrokeType(4.4f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+        const juce::Colour accent = slider.findColour(juce::Slider::rotarySliderFillColourId);
+        g.setColour(accent);
+        g.strokePath(val, juce::PathStrokeType(trackW + 0.15f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+        g.setColour(accent.brighter(0.35f).withAlpha(0.45f));
+        g.strokePath(val, juce::PathStrokeType(1.1f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 
-        const float dotR = 4.2f;
-        const auto thumb = centre.getPointOnCircumference(radius - 1.0f, aVal);
-        g.setColour(slider.findColour(juce::Slider::thumbColourId));
+        const float dotR = 4.0f;
+        const auto thumb = centre.getPointOnCircumference(radius - 0.5f, aVal);
+        g.setColour(accent.darker(0.22f));
+        g.fillEllipse(thumb.x - dotR - 0.35f, thumb.y - dotR - 0.35f, (dotR + 0.35f) * 2.0f, (dotR + 0.35f) * 2.0f);
+        g.setColour(accent.brighter(0.12f));
         g.fillEllipse(thumb.x - dotR, thumb.y - dotR, dotR * 2.0f, dotR * 2.0f);
-        g.setColour(juce::Colour(0x55000000));
-        g.drawEllipse(thumb.x - dotR, thumb.y - dotR, dotR * 2.0f, dotR * 2.0f, 1.0f);
+        g.setColour(juce::Colour(0x78000000));
+        g.drawEllipse(thumb.x - dotR, thumb.y - dotR, dotR * 2.0f, dotR * 2.0f, 1.05f);
     }
 
     void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::Colour&,
@@ -68,8 +92,8 @@ struct VocalChainerLookAndFeel : juce::LookAndFeel_V4
         g.drawRoundedRectangle(r.reduced(0.5f), 6.0f, 1.0f);
         if (!shouldDrawButtonAsDown)
         {
-            g.setColour(juce::Colour(0x14000000));
-            g.fillRoundedRectangle(r.removeFromBottom(1.5f), 4.0f);
+            g.setColour(juce::Colour(tkn::argb::shadowElevated));
+            g.fillRoundedRectangle(r.removeFromBottom(2.0f), 4.0f);
         }
     }
 };

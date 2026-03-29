@@ -40,6 +40,16 @@ inline constexpr uint32_t controlButtonFace = 0xfff8f9fc;
 inline constexpr uint32_t controlButtonFaceOver = 0xffffffff;
 inline constexpr uint32_t controlButtonBorder = 0xffb0b8c8;
 inline constexpr uint32_t controlButtonShadow = 0x40000000;
+/** Drop shadow under elevated controls (cards, knobs) — visible on light panels. */
+inline constexpr uint32_t shadowElevated = 0x5a000000;
+/** Broad diffuse shadow under rotary (cool grey-blue, soft UI). */
+inline constexpr uint32_t shadowRotaryAmbient = 0x45607080;
+/** Mid layer under rotary (neutral). */
+inline constexpr uint32_t shadowRotaryMid = 0x42000000;
+/** Tight contact shadow at knob base. */
+inline constexpr uint32_t shadowRotaryContact = 0x62000000;
+/** Inactive arc / track background (near-black for contrast with accent). */
+inline constexpr uint32_t rotaryTrackInactive = 0xff1e222a;
 } // namespace argb
 
 /** Macro row: fixed accent hues (readable on light panels). */

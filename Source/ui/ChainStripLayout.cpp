@@ -1,5 +1,6 @@
 #include "ChainStripLayout.h"
 #include <cmath>
+#include <optional>
 
 namespace razumov::ui
 {
@@ -54,14 +55,45 @@ struct SegmentBounds
 
 void pushSerialWire(ChainStripLayout& out, juce::Point<float> from, juce::Point<float> to) noexcept
 {
-    if (from.x < to.x - 0.5f)
+    if (from.getDistanceFrom(to) > 1.5f)
         out.wires.push_back({ from, to });
+}
+
+/** Fork on main row down to first module on a parallel row (orthogonal). */
+void pushOrthogonalForkToFirst(ChainStripLayout& out, juce::Point<float> fork, juce::Point<float> firstCenter) noexcept
+{
+    juce::Point<float> elbow(fork.x, firstCenter.y);
+    pushSerialWire(out, fork, elbow);
+    pushSerialWire(out, elbow, firstCenter);
+}
+
+/** Last module on branch row up to merge on main row (orthogonal). */
+void pushOrthogonalBranchToMerge(ChainStripLayout& out, juce::Point<float> from, juce::Point<float> mergeOnMain) noexcept
+{
+    juce::Point<float> elbow(from.x, mergeOnMain.y);
+    pushSerialWire(out, from, elbow);
+    pushSerialWire(out, elbow, mergeOnMain);
 }
 
 struct RootModuleCounter
 {
     int nextRootModuleIndex { 0 };
 };
+
+bool shouldHidePlaceholderInStrip(const FlexSlotDesc& s, bool inBranch) noexcept
+{
+    if (!inBranch)
+        return false;
+    if (s.descType != FlexSlotDescType::Module)
+        return false;
+    if (s.kind != AudioNodeKind::Gain)
+        return false;
+    if (std::abs(s.gainLinear - 1.0f) > 1e-3f)
+        return false;
+    if (s.uiLabel.isNotEmpty())
+        return false;
+    return true;
+}
 
 SegmentBounds layoutSegment(
     const FlexSegmentDesc& seg,
@@ -73,25 +105,31 @@ SegmentBounds layoutSegment(
     float hGap,
     float branchGap,
     ChainStripLayout& out,
-    RootModuleCounter* rootCounter)
+    RootModuleCounter* rootCounter,
+    bool inBranch,
+    const std::optional<juce::Point<float>>& branchFeed)
 {
+    SegmentBounds block;
     if (seg.empty())
     {
-        SegmentBounds empty;
-        empty.endX = x;
-        empty.hadContent = false;
-        return empty;
+        block.endX = x;
+        return block;
     }
 
-    SegmentBounds block;
     float xCursor = x;
     juce::Point<float> lastCenter { 0, 0 };
-    bool haveLast = false;
+    bool haveLast = branchFeed.has_value();
+    if (branchFeed.has_value())
+        lastCenter = *branchFeed;
+    bool branchFirstWireDone = false;
 
     for (const auto& slot : seg)
     {
         if (slot.descType == FlexSlotDescType::Module)
         {
+            if (shouldHidePlaceholderInStrip(slot, inBranch))
+                continue;
+
             ChainStripLayoutCard c;
             c.bounds = { xCursor, yLine, cardW, cardH };
             c.slotId = slot.slotId;
@@ -129,9 +167,19 @@ SegmentBounds layoutSegment(
                 }
             }
             const auto curCenter = centerOf(c.bounds);
-            out.cards.push_back(c);
+
             if (haveLast)
-                pushSerialWire(out, lastCenter, curCenter);
+            {
+                if (branchFeed.has_value() && !branchFirstWireDone)
+                {
+                    pushOrthogonalForkToFirst(out, lastCenter, curCenter);
+                    branchFirstWireDone = true;
+                }
+                else
+                    pushSerialWire(out, lastCenter, curCenter);
+            }
+
+            out.cards.push_back(c);
 
             if (!block.hadContent)
             {
@@ -147,65 +195,60 @@ SegmentBounds layoutSegment(
             continue;
         }
 
-        // Split
-        ChainStripLayoutCard splitCard;
-        splitCard.bounds = { xCursor, yLine, cardW, cardH };
-        splitCard.slotId = slot.slotId;
-        splitCard.bypassed = slot.bypassed;
-        splitCard.label = "Split x" + juce::String((int) slot.branches.size());
-        splitCard.selectable = true;
-        splitCard.isMergeNode = false;
-        out.cards.push_back(splitCard);
+        // Split: no Split/Merge cards; compact fork/join; schematic wires only.
+        const float splitZone = 28.f;
+        const float mergeZone = 28.f;
+        const auto splitForkPoint = juce::Point<float>(xCursor + splitZone * 0.5f, yLine + cardH * 0.5f);
 
-        const auto splitCenter = centerOf(splitCard.bounds);
         if (haveLast)
-            pushSerialWire(out, lastCenter, splitCenter);
+            pushSerialWire(out, lastCenter, splitForkPoint);
 
         if (!block.hadContent)
         {
-            block.firstCenter = splitCenter;
+            block.firstCenter = splitForkPoint;
             block.hadContent = true;
         }
 
         const float branchY = yLine + rowPitch;
-        float branchX = xCursor + cardW + hGap;
-        float maxBranchEnd = 0;
+        float branchCursorX = xCursor + splitZone + hGap;
+        float maxBranchEnd = branchCursorX;
         std::vector<SegmentBounds> branchInfo;
         branchInfo.reserve(slot.branches.size());
 
         for (const auto& br : slot.branches)
         {
-            const auto bb = layoutSegment(br, branchX, branchY, rowPitch, cardW, cardH, hGap, branchGap, out, rootCounter);
+            const auto bb = layoutSegment(br,
+                                          branchCursorX,
+                                          branchY,
+                                          rowPitch,
+                                          cardW,
+                                          cardH,
+                                          hGap,
+                                          branchGap,
+                                          out,
+                                          rootCounter,
+                                          true,
+                                          splitForkPoint);
             branchInfo.push_back(bb);
             maxBranchEnd = juce::jmax(maxBranchEnd, bb.endX);
-            branchX = bb.endX + branchGap;
+            branchCursorX = bb.endX + branchGap;
         }
 
         const float mergeX = maxBranchEnd + hGap;
-        ChainStripLayoutCard mergeCard;
-        mergeCard.bounds = { mergeX, yLine, cardW, cardH };
-        mergeCard.slotId = 0;
-        mergeCard.bypassed = false;
-        mergeCard.label = "Merge";
-        mergeCard.selectable = false;
-        mergeCard.isMergeNode = true;
-        out.cards.push_back(mergeCard);
-        const auto mergeCenter = centerOf(mergeCard.bounds);
+        const auto mergeJunction = juce::Point<float>(mergeX + mergeZone * 0.5f, yLine + cardH * 0.5f);
 
         for (const auto& bb : branchInfo)
         {
             if (bb.hadContent)
-            {
-                out.wires.push_back({ splitCenter, bb.firstCenter });
-                out.wires.push_back({ bb.lastCenter, mergeCenter });
-            }
+                pushOrthogonalBranchToMerge(out, bb.lastCenter, mergeJunction);
         }
 
-        block.lastCenter = mergeCenter;
-        lastCenter = mergeCenter;
+        block.lastCenter = mergeJunction;
+        lastCenter = mergeJunction;
         haveLast = true;
+        branchFirstWireDone = false;
 
-        xCursor = mergeX + cardW + hGap;
+        xCursor = mergeX + mergeZone + hGap;
         block.endX = xCursor;
     }
 
@@ -289,7 +332,7 @@ ChainStripLayout computeChainStripLayout(const razumov::graph::FlexSegmentDesc& 
     const float yLine = 0.f;
 
     RootModuleCounter rootCounter;
-    layoutSegment(root, 0.f, yLine, rowPitch, cardW, cardH, hGap, branchGap, layout, &rootCounter);
+    layoutSegment(root, 0.f, yLine, rowPitch, cardW, cardH, hGap, branchGap, layout, &rootCounter, false, {});
 
     const float maxR = computeMaxRight(layout);
     const float maxB = computeMaxBottom(layout);

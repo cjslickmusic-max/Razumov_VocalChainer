@@ -4,6 +4,14 @@
 
 ---
 
+## Quick check — v0.9.12 (2026-03-29) — Rotary soft-UI shadows + inactive track
+
+- `DesignTokens.h`: `shadowRotaryAmbient`, `shadowRotaryMid`, `shadowRotaryContact`, `rotaryTrackInactive`.
+- `VocalChainerLookAndFeel::drawRotarySlider`: многослойные тени, радиальный градиент «шайбы», тёмный полный трек, акцентная дуга + маркер.
+- ReadLints: OK; `cmake --build` `RazumovVocalChain_VST3`: OK.
+
+---
+
 ## Quick check — v0.9.9 (2026-03-29) — Product name VocalChainer + VERSIONING.md
 
 - Отображаемое имя плагина: **Razumov VocalChainer** (`PRODUCT_NAME`, заголовок UI); артефакт VST3: `Artifacts/Razumov VocalChainer.vst3`; `BUNDLE_ID` `com.razumov.vocalchainer`; `VocalChainerLookAndFeel`.

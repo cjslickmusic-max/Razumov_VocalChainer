@@ -38,6 +38,8 @@
 ## Документы (по мере появления кода)
 
 - **`docs/ROADMAP.md`** — пошаговая дорожная карта; **следовать порядку фаз**.
+- **`docs/PRODUCT_UX_CONCEPT.md`** — **концепция UX** для дизайна и агентов: зачем макросы сверху, две зоны (цепочка / инспектор), микрофон в панели модуля, масштаб окна.
+- `docs/PRODUCT_ARCHITECTURE_ROADMAP.md` — продуктовое видение и приоритеты DSP.
 - `docs/ARCHITECTURE.md` — граф, поток аудио, пресеты (после появления кода).
 - `docs/design/DESIGN_SYSTEM.md` — дизайн-система и **токены** (`resources/design/tokens/tokens.json`, `tokens.css`, `Source/ui/DesignTokens.h`).
 - `docs/VERSIONING.md` — политика версий до **1.0** (линия 0.9.x).

@@ -56,4 +56,4 @@ cmake --build build --config Release
 
 ## Документация для агентов
 
-См. `AGENTS.md` и `.cursor/rules/`.
+См. `AGENTS.md` и `.cursor/rules/`. Концепция UX (макросы, иерархия экрана, зоны) — **`docs/PRODUCT_UX_CONCEPT.md`**.

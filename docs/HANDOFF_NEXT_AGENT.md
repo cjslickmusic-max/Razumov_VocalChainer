@@ -26,6 +26,7 @@
 
 | Задача | Файлы / места |
 |--------|----------------|
+| Дизайн-система, токены (цвета UI, веб/CSS, JUCE) | `docs/design/DESIGN_SYSTEM.md`, `resources/design/tokens/tokens.json`, `Source/ui/DesignTokens.h` |
 | Очередь работ и критерии | `docs/ROADMAP.md` |
 | Приоритеты продукта (цепочка, макросы, компрессоры, **фаза на параллелях**, микрофон/комната — в конце) | `docs/PRODUCT_ARCHITECTURE_ROADMAP.md` |
 | Правила агента (язык ответов RU, DSP safety, git WIP-коммиты, UI ASCII) | `AGENTS.md`, `.cursor/rules/*.mdc` |

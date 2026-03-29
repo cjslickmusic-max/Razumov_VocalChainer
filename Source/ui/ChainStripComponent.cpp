@@ -1,4 +1,5 @@
 #include "ChainStripComponent.h"
+#include "DesignTokens.h"
 #include "EditorVisualAssets.h"
 #include "PluginProcessor.h"
 #include "params/ParamIDs.h"
@@ -105,13 +106,14 @@ void ChainStripComponent::rebuildLayout()
 
 void ChainStripComponent::paint(juce::Graphics& g)
 {
-    const juce::Colour panelBg(0xff252830);
-    const juce::Colour cardFill(0xff1e2229);
-    const juce::Colour mergeFill(0xff222630);
-    const juce::Colour accent(0xff6c9fd2);
-    const juce::Colour textPri(0xffe8eaed);
-    const juce::Colour textSec(0xff8892a0);
-    const juce::Colour selOutline(0xff9fd2ff);
+    using namespace razumov::ui::tokens::argb;
+    const juce::Colour panelBg(backgroundChainStrip);
+    const juce::Colour cardFill(backgroundNode);
+    const juce::Colour mergeFill(backgroundMergeNode);
+    const juce::Colour accent(accentSignal);
+    const juce::Colour textPri(textPrimary);
+    const juce::Colour textSec(textSecondary);
+    const juce::Colour selOutline(accentSelection);
 
     g.fillAll(panelBg);
 
@@ -162,7 +164,7 @@ void ChainStripComponent::paint(juce::Graphics& g)
 
         if (c.bypassed)
         {
-            g.setColour(juce::Colour(0xffe89868));
+            g.setColour(juce::Colour(accentBypass));
             g.setFont(juce::FontOptions(9.0f, juce::Font::bold));
             g.drawText("BYP", card.reduced(4.0f).removeFromBottom(11.0f), juce::Justification::bottomRight);
         }

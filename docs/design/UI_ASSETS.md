@@ -1,5 +1,7 @@
 # UI assets (SVG + PNG + glow)
 
+**Design system and tokens:** `docs/design/DESIGN_SYSTEM.md` (colours, principles, sync with `resources/design/tokens/` and `Source/ui/DesignTokens.h`).
+
 ## Embedded resources (BinaryData)
 
 | File | Size (px) | Role |

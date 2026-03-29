@@ -4,6 +4,14 @@
 
 ---
 
+## Quick check — v0.9.7 (2026-03-29) — Design tokens + DESIGN_SYSTEM.md
+
+- `resources/design/tokens/tokens.json`, `tokens.css`; `docs/design/DESIGN_SYSTEM.md`; `Source/ui/DesignTokens.h`; `chain-graph-prototype.html` подключает `tokens.css`.
+- `ChainStripComponent` / `PluginEditor::paint` используют `tokens::argb`; `docs/design/UI_ASSETS.md` — ссылка на дизайн-систему.
+- ReadLints (изменённые исходники); `cmake --build` `RazumovVocalChain_VST3`: по плану после правок.
+
+---
+
 ## Quick check — v0.9.5 (2026-03-28) — COPY_PLUGIN_AFTER_BUILD OFF (no ~/Library copy)
 
 - `CMakeLists.txt`: `COPY_PLUGIN_AFTER_BUILD FALSE`; `README.md`, `Artifacts/README.md`, `HANDOFF_NEXT_AGENT.md`, `plugin-artifacts-only.mdc`.

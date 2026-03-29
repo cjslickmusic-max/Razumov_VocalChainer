@@ -2,6 +2,7 @@
 #include "PluginProcessor.h"
 #include "dsp/graph/FlexGraphDesc.h"
 #include "params/ParamIDs.h"
+#include "ui/DesignTokens.h"
 #include "ui/EditorVisualAssets.h"
 
 struct VocalChainLookAndFeel : juce::LookAndFeel_V4
@@ -696,7 +697,7 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
 
 void RazumovVocalChainAudioProcessorEditor::paint(juce::Graphics& g)
 {
-    g.fillAll(juce::Colour(0xff1a1d23));
+    g.fillAll(juce::Colour(razumov::ui::tokens::argb::backgroundEditor));
     razumov::ui::drawEditorBackgroundLayer(g, getLocalBounds());
     razumov::ui::drawEditorCornerAccents(g, getLocalBounds());
     auto r = getLocalBounds().reduced(16);

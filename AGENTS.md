@@ -39,6 +39,7 @@
 
 - **`docs/ROADMAP.md`** — пошаговая дорожная карта; **следовать порядку фаз**.
 - `docs/ARCHITECTURE.md` — граф, поток аудио, пресеты (после появления кода).
+- `docs/design/DESIGN_SYSTEM.md` — дизайн-система и **токены** (`resources/design/tokens/tokens.json`, `tokens.css`, `Source/ui/DesignTokens.h`).
 - `docs/CODE_HEALTH_AUDIT.md` — журнал аудитов.
 - `docs/PERF_CHECKPOINTS.md` — замеры CPU.
 - `docs/REFACTOR_SUSPICIOUS_LOG.md` — отложенные риски.

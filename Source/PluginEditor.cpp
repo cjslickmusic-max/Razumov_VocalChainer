@@ -1,5 +1,7 @@
 #include "PluginEditor.h"
 #include "PluginProcessor.h"
+
+#include <cmath>
 #include "dsp/graph/FlexGraphDesc.h"
 #include "params/MacroRouting.h"
 #include "params/ParamIDs.h"
@@ -294,7 +296,13 @@ void RazumovVocalChainAudioProcessorEditor::GrMeterBar::paint(juce::Graphics& g)
 void RazumovVocalChainAudioProcessorEditor::SpectralCompPanel::updateFrom(RazumovVocalChainAudioProcessor& proc,
                                                                           uint32_t slotId)
 {
+    using namespace razumov::params;
     hasData_ = proc.copySpectralCompressionDisplayForSlot(slotId, in_.data(), red_.data());
+    centerHz_ = proc.getModuleFloatParam(slotId, spectralScFreqHz);
+    q_ = proc.getModuleFloatParam(slotId, spectralScQ);
+    thrDb_ = proc.getModuleFloatParam(slotId, spectralThresholdDb);
+    envDb_ = proc.getSpectralSidechainEnvDbForSlot(slotId);
+    sampleRate_ = proc.getSampleRate() > 1.0 ? proc.getSampleRate() : 48000.0;
     if (!hasData_)
     {
         in_.fill(0.f);
@@ -313,8 +321,42 @@ void RazumovVocalChainAudioProcessorEditor::SpectralCompPanel::paint(juce::Graph
 
     const int n = 256;
     const float w = r.getWidth();
-    const float plotH = juce::jmax(4.f, r.getHeight() - 8.f);
-    const float base = r.getBottom() - 2.f;
+    const float plotH = juce::jmax(4.f, r.getHeight() - 18.f);
+    const float base = r.getBottom() - 10.f;
+    const float nyq = (float) (sampleRate_ * 0.5);
+    const float fc = juce::jlimit(20.f, juce::jmin(nyq * 0.99f, 20000.f), centerHz_);
+    const float sigmaHz = fc / juce::jmax(0.25f, q_ * 2.0f);
+
+    juce::Path bandFill;
+    bandFill.startNewSubPath(r.getX(), base);
+    for (int i = 0; i < n; ++i)
+    {
+        const float x0 = r.getX() + (float) i / (float) juce::jmax(1, n - 1) * w;
+        const float fk = (float) ((double) (i + 0.5) / (double) n * (double) nyq);
+        const float d = (fk - fc) / juce::jmax(1.0f, sigmaHz);
+        const float bell = std::exp(-d * d);
+        const float y = base - bell * plotH * 0.38f;
+        bandFill.lineTo(x0, y);
+    }
+    bandFill.lineTo(r.getRight(), base);
+    bandFill.closeSubPath();
+    g.setColour(juce::Colour(0xff2a8a8a).withAlpha(0.28f));
+    g.fillPath(bandFill);
+
+    auto yFromDetectorDb = [&](float db) {
+        const float lo = -80.f;
+        const float hi = 0.f;
+        const float t = juce::jlimit(0.f, 1.f, (db - lo) / (hi - lo));
+        return base - t * plotH;
+    };
+
+    const float yThr = yFromDetectorDb(thrDb_);
+    g.setColour(juce::Colour(0xffe8c040));
+    g.drawLine(r.getX(), yThr, r.getRight(), yThr, 1.4f);
+
+    const float yEnv = yFromDetectorDb(envDb_);
+    g.setColour(juce::Colour(0xff5ec8e8).withAlpha(0.95f));
+    g.drawLine(r.getX(), yEnv, r.getRight(), yEnv, 1.1f);
 
     for (int i = 0; i < n; ++i)
     {
@@ -342,6 +384,20 @@ void RazumovVocalChainAudioProcessorEditor::SpectralCompPanel::paint(juce::Graph
     }
     g.setColour(juce::Colour(tkn::argb::textSecondary).withAlpha(0.9f));
     g.strokePath(inPath, juce::PathStrokeType(1.35f));
+
+    g.setColour(juce::Colour(tkn::argb::textTertiary));
+    g.setFont(juce::FontOptions(9.5f));
+    const float fl = std::log10(20.f);
+    const float fh = std::log10(juce::jmax(100.f, nyq));
+    auto xAtHz = [&](float hz) {
+        const float t = (std::log10(hz) - fl) / (fh - fl);
+        return r.getX() + juce::jlimit(0.f, 1.f, t) * w;
+    };
+    const char* tags[] = { "100 Hz", "1 kHz", "10 kHz" };
+    const float freqs[] = { 100.f, 1000.f, 10000.f };
+    for (int t = 0; t < 3; ++t)
+        g.drawText(tags[t], juce::Rectangle<int>((int) xAtHz(freqs[t]) - 22, (int) r.getY(), 44, 12),
+                   juce::Justification::centred);
 }
 
 void RazumovVocalChainAudioProcessorEditor::timerCallback()
@@ -495,6 +551,10 @@ void RazumovVocalChainAudioProcessorEditor::refreshRotaryStyles()
     one(spectralMixSlider);
     one(spectralThreshSlider);
     one(spectralRatioSlider);
+    one(spectralScFreqSlider);
+    one(spectralScQSlider);
+    one(spectralAttackSlider);
+    one(spectralReleaseSlider);
     one(eq1FreqSlider);
     one(eq1GainSlider);
     one(eq1QSlider);
@@ -770,6 +830,10 @@ void RazumovVocalChainAudioProcessorEditor::reloadModuleParamsFromProcessor()
     spectralMixSlider.setValue(processor.getModuleFloatParam(id, spectralMix), juce::dontSendNotification);
     spectralThreshSlider.setValue(processor.getModuleFloatParam(id, spectralThresholdDb), juce::dontSendNotification);
     spectralRatioSlider.setValue(processor.getModuleFloatParam(id, spectralRatio), juce::dontSendNotification);
+    spectralScFreqSlider.setValue(processor.getModuleFloatParam(id, spectralScFreqHz), juce::dontSendNotification);
+    spectralScQSlider.setValue(processor.getModuleFloatParam(id, spectralScQ), juce::dontSendNotification);
+    spectralAttackSlider.setValue(processor.getModuleFloatParam(id, spectralAttackMs), juce::dontSendNotification);
+    spectralReleaseSlider.setValue(processor.getModuleFloatParam(id, spectralReleaseMs), juce::dontSendNotification);
     eqBypassToggle.setToggleState(processor.getModuleBoolParam(id, eqBypass), juce::dontSendNotification);
     eq1FreqSlider.setValue(processor.getModuleFloatParam(id, eqBand1FreqHz), juce::dontSendNotification);
     eq1GainSlider.setValue(processor.getModuleFloatParam(id, eqBand1GainDb), juce::dontSendNotification);
@@ -852,7 +916,7 @@ void RazumovVocalChainAudioProcessorEditor::refreshModulePanelVisibility()
             case AK::SpectralCompressor:
                 moduleTitleLabel.setText("Spectral compressor", juce::dontSendNotification);
                 moduleHintLabel.setText(
-                    "Gray: input level per band. Red: how much is pulled down (spectral GR). L channel meter.",
+                    "Sidechain band (teal) + threshold (yellow) vs level (cyan). Q / Attack / Release. L ch meter.",
                     juce::dontSendNotification);
                 moduleHintLabel.setVisible(true);
                 break;
@@ -926,6 +990,10 @@ void RazumovVocalChainAudioProcessorEditor::refreshModulePanelVisibility()
     spectralMixSlider.setVisible(showSpec);
     spectralThreshSlider.setVisible(showSpec);
     spectralRatioSlider.setVisible(showSpec);
+    spectralScFreqSlider.setVisible(showSpec);
+    spectralScQSlider.setVisible(showSpec);
+    spectralAttackSlider.setVisible(showSpec);
+    spectralReleaseSlider.setVisible(showSpec);
 
     lowpassSlider.setVisible(showLp);
 
@@ -1005,8 +1073,8 @@ void RazumovVocalChainAudioProcessorEditor::layoutModuleViewport(int viewportWid
 
     if (spectralCompPanel.isVisible())
     {
-        spectralCompPanel.setBounds(x, y, W - 2 * pad, scaled(100));
-        y += scaled(108);
+        spectralCompPanel.setBounds(x, y, W - 2 * pad, scaled(120));
+        y += scaled(128);
     }
 
     if (spectrumPanel.isVisible())
@@ -1079,7 +1147,10 @@ void RazumovVocalChainAudioProcessorEditor::layoutModuleViewport(int viewportWid
     {
         spectralBypassBtn.setBounds(x, y, scaled(140), scaled(28));
         y += scaled(36);
-        row3(spectralMixSlider, spectralThreshSlider, spectralRatioSlider);
+        row3(spectralScFreqSlider, spectralScQSlider, spectralThreshSlider);
+        row3(spectralAttackSlider, spectralReleaseSlider, spectralRatioSlider);
+        spectralMixSlider.setBounds(x, y, kw, kh);
+        y += kh + gap + scaled(18);
     }
 
     if (lowpassSlider.isVisible())
@@ -1292,6 +1363,10 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     addKnob(spectralMixSlider, juce::Colour(tkn::knob::spectral));
     addKnob(spectralThreshSlider, juce::Colour(tkn::knob::spectral));
     addKnob(spectralRatioSlider, juce::Colour(tkn::knob::spectral));
+    addKnob(spectralScFreqSlider, juce::Colour(tkn::knob::spectral));
+    addKnob(spectralScQSlider, juce::Colour(tkn::knob::spectral));
+    addKnob(spectralAttackSlider, juce::Colour(tkn::knob::spectral));
+    addKnob(spectralReleaseSlider, juce::Colour(tkn::knob::spectral));
 
     micAmountSlider.setRange(0.0, 1.0, 0.01);
     gainSlider.setRange(-24.0, 12.0, 0.1);
@@ -1316,6 +1391,15 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     spectralMixSlider.setRange(0.0, 1.0, 0.01);
     spectralThreshSlider.setRange(-60.0, 0.0, 0.1);
     spectralRatioSlider.setRange(1.0, 20.0, 0.1);
+    spectralScFreqSlider.setRange(50.0, 20000.0, 1.0);
+    spectralScFreqSlider.setSkewFactorFromMidPoint(1000.0);
+    spectralScFreqSlider.setTextValueSuffix(" Hz");
+    spectralScQSlider.setRange(0.25, 16.0, 0.01);
+    spectralScQSlider.setTextValueSuffix(" Q");
+    spectralAttackSlider.setRange(0.5, 500.0, 0.1);
+    spectralAttackSlider.setTextValueSuffix(" ms");
+    spectralReleaseSlider.setRange(5.0, 3000.0, 1.0);
+    spectralReleaseSlider.setTextValueSuffix(" ms");
 
     micAmountSlider.setTargetContext(*this, razumov::params::micAmount);
     gainSlider.setTargetContext(*this, razumov::params::gainDb);
@@ -1337,6 +1421,10 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     spectralMixSlider.setTargetContext(*this, razumov::params::spectralMix);
     spectralThreshSlider.setTargetContext(*this, razumov::params::spectralThresholdDb);
     spectralRatioSlider.setTargetContext(*this, razumov::params::spectralRatio);
+    spectralScFreqSlider.setTargetContext(*this, razumov::params::spectralScFreqHz);
+    spectralScQSlider.setTargetContext(*this, razumov::params::spectralScQ);
+    spectralAttackSlider.setTargetContext(*this, razumov::params::spectralAttackMs);
+    spectralReleaseSlider.setTargetContext(*this, razumov::params::spectralReleaseMs);
 
     auto wireFloat = [this](juce::Slider& s, const char* paramId) {
         s.onValueChange = [this, &s, paramId] {
@@ -1373,6 +1461,10 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     wireFloat(spectralMixSlider, razumov::params::spectralMix);
     wireFloat(spectralThreshSlider, razumov::params::spectralThresholdDb);
     wireFloat(spectralRatioSlider, razumov::params::spectralRatio);
+    wireFloat(spectralScFreqSlider, razumov::params::spectralScFreqHz);
+    wireFloat(spectralScQSlider, razumov::params::spectralScQ);
+    wireFloat(spectralAttackSlider, razumov::params::spectralAttackMs);
+    wireFloat(spectralReleaseSlider, razumov::params::spectralReleaseMs);
 
     content.addAndMakeVisible(spectrumPanel);
     spectrumPanel.setVisible(false);

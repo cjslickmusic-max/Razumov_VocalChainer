@@ -35,6 +35,10 @@ struct ModuleSlotBlock
     std::atomic<float> spectralMix { 0.75f };
     std::atomic<float> spectralThresholdDb { -24.0f };
     std::atomic<float> spectralRatio { 3.0f };
+    std::atomic<float> spectralScFreqHz { 2000.0f };
+    std::atomic<float> spectralScQ { 1.2f };
+    std::atomic<float> spectralAttackMs { 50.0f };
+    std::atomic<float> spectralReleaseMs { 250.0f };
 
     std::atomic<float> eqBypass { 0.0f };
     std::atomic<float> eqBand1FreqHz { 120.0f };
@@ -75,6 +79,10 @@ inline void copyModuleSlotBlockState(const ModuleSlotBlock& src, ModuleSlotBlock
     dst.spectralMix.store(src.spectralMix.load());
     dst.spectralThresholdDb.store(src.spectralThresholdDb.load());
     dst.spectralRatio.store(src.spectralRatio.load());
+    dst.spectralScFreqHz.store(src.spectralScFreqHz.load());
+    dst.spectralScQ.store(src.spectralScQ.load());
+    dst.spectralAttackMs.store(src.spectralAttackMs.load());
+    dst.spectralReleaseMs.store(src.spectralReleaseMs.load());
     dst.eqBypass.store(src.eqBypass.load());
     dst.eqBand1FreqHz.store(src.eqBand1FreqHz.load());
     dst.eqBand1GainDb.store(src.eqBand1GainDb.load());
@@ -119,6 +127,10 @@ void storeFromPhase3(detail::ModuleSlotBlock& b, const Phase3RealtimeParams& p)
     b.spectralMix.store(p.spectralMix);
     b.spectralThresholdDb.store(p.spectralThresholdDb);
     b.spectralRatio.store(p.spectralRatio);
+    b.spectralScFreqHz.store(p.spectralScFreqHz);
+    b.spectralScQ.store(p.spectralScQ);
+    b.spectralAttackMs.store(p.spectralAttackMs);
+    b.spectralReleaseMs.store(p.spectralReleaseMs);
     b.eqBypass.store(p.eqBypass ? 1.0f : 0.0f);
     b.eqBand1FreqHz.store(p.eqBand1FreqHz);
     b.eqBand1GainDb.store(p.eqBand1GainDb);
@@ -158,6 +170,10 @@ void loadToPhase3(const detail::ModuleSlotBlock& b, Phase3RealtimeParams& out)
     out.spectralMix = b.spectralMix.load();
     out.spectralThresholdDb = b.spectralThresholdDb.load();
     out.spectralRatio = b.spectralRatio.load();
+    out.spectralScFreqHz = b.spectralScFreqHz.load();
+    out.spectralScQ = b.spectralScQ.load();
+    out.spectralAttackMs = b.spectralAttackMs.load();
+    out.spectralReleaseMs = b.spectralReleaseMs.load();
     out.eqBypass = b.eqBypass.load() > 0.5f;
     out.eqBand1FreqHz = b.eqBand1FreqHz.load();
     out.eqBand1GainDb = b.eqBand1GainDb.load();
@@ -326,6 +342,14 @@ float ModuleParamsRuntime::getFloat(uint32_t slotId, const juce::String& paramId
         return b->spectralThresholdDb.load();
     if (paramId == spectralRatio)
         return b->spectralRatio.load();
+    if (paramId == spectralScFreqHz)
+        return b->spectralScFreqHz.load();
+    if (paramId == spectralScQ)
+        return b->spectralScQ.load();
+    if (paramId == spectralAttackMs)
+        return b->spectralAttackMs.load();
+    if (paramId == spectralReleaseMs)
+        return b->spectralReleaseMs.load();
     if (paramId == eqBand1FreqHz)
         return b->eqBand1FreqHz.load();
     if (paramId == eqBand1GainDb)
@@ -400,6 +424,14 @@ void ModuleParamsRuntime::setFloat(uint32_t slotId, const juce::String& paramId,
         b->spectralThresholdDb.store(value);
     else if (paramId == spectralRatio)
         b->spectralRatio.store(value);
+    else if (paramId == spectralScFreqHz)
+        b->spectralScFreqHz.store(value);
+    else if (paramId == spectralScQ)
+        b->spectralScQ.store(value);
+    else if (paramId == spectralAttackMs)
+        b->spectralAttackMs.store(value);
+    else if (paramId == spectralReleaseMs)
+        b->spectralReleaseMs.store(value);
     else if (paramId == eqBand1FreqHz)
         b->eqBand1FreqHz.store(value);
     else if (paramId == eqBand1GainDb)
@@ -512,6 +544,10 @@ juce::ValueTree ModuleParamsRuntime::toValueTree() const
         slot.setProperty(spectralMix, b->spectralMix.load(), nullptr);
         slot.setProperty(spectralThresholdDb, b->spectralThresholdDb.load(), nullptr);
         slot.setProperty(spectralRatio, b->spectralRatio.load(), nullptr);
+        slot.setProperty(spectralScFreqHz, b->spectralScFreqHz.load(), nullptr);
+        slot.setProperty(spectralScQ, b->spectralScQ.load(), nullptr);
+        slot.setProperty(spectralAttackMs, b->spectralAttackMs.load(), nullptr);
+        slot.setProperty(spectralReleaseMs, b->spectralReleaseMs.load(), nullptr);
         slot.setProperty(eqBypass, b->eqBypass.load(), nullptr);
         slot.setProperty(eqBand1FreqHz, b->eqBand1FreqHz.load(), nullptr);
         slot.setProperty(eqBand1GainDb, b->eqBand1GainDb.load(), nullptr);
@@ -586,6 +622,10 @@ void ModuleParamsRuntime::fromValueTree(const juce::ValueTree& v)
         b->spectralMix.store(gf(spectralMix, 0.75f));
         b->spectralThresholdDb.store(gf(spectralThresholdDb, -24.0f));
         b->spectralRatio.store(gf(spectralRatio, 3.0f));
+        b->spectralScFreqHz.store(gf(spectralScFreqHz, 2000.0f));
+        b->spectralScQ.store(gf(spectralScQ, 1.2f));
+        b->spectralAttackMs.store(gf(spectralAttackMs, 50.0f));
+        b->spectralReleaseMs.store(gf(spectralReleaseMs, 250.0f));
         b->eqBypass.store(gf(eqBypass, 0.0f));
         b->eqBand1FreqHz.store(gf(eqBand1FreqHz, 120.0f));
         b->eqBand1GainDb.store(gf(eqBand1GainDb, 0.0f));

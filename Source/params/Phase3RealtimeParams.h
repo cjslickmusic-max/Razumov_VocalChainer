@@ -35,6 +35,11 @@ struct Phase3RealtimeParams
     float spectralMix { 0.75f };
     float spectralThresholdDb { -24.0f };
     float spectralRatio { 3.0f };
+    /** Weighted sidechain band center (Hz) and Q; envelope times (ms). */
+    float spectralScFreqHz { 2000.0f };
+    float spectralScQ { 1.2f };
+    float spectralAttackMs { 50.0f };
+    float spectralReleaseMs { 250.0f };
 
     bool eqBypass { false };
     float eqBand1FreqHz { 120.0f };

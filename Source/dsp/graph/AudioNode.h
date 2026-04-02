@@ -65,6 +65,9 @@ public:
         juce::ignoreUnused(inNorm256, redNorm256);
         return false;
     }
+
+    /** Spectral compressor: сглаженный уровень сайдчейна (dB), для UI. */
+    virtual float getSpectralSidechainEnvDbForUi() const noexcept { return -120.0f; }
 };
 
 } // namespace razumov::graph

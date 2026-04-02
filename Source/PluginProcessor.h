@@ -93,6 +93,7 @@ public:
 
     /** UI: спектральный компрессор — вход и величина снятия по бинам (256). */
     bool copySpectralCompressionDisplayForSlot(uint32_t slotId, float* inNorm256, float* redNorm256) const;
+    float getSpectralSidechainEnvDbForSlot(uint32_t slotId) const;
     void pushMacroIntoAssignedModuleParam(int macroIndex);
     void syncMacroApvtsFromAssignedModule(int macroIndex);
 

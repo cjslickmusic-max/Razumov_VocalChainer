@@ -33,6 +33,11 @@ inline constexpr const char* spectralBypass = "spectralBypass";
 inline constexpr const char* spectralMix = "spectralMix";
 inline constexpr const char* spectralThresholdDb = "spectralThresholdDb";
 inline constexpr const char* spectralRatio = "spectralRatio";
+/** Sidechain band (frequency-selective detector). */
+inline constexpr const char* spectralScFreqHz = "spectralScFreqHz";
+inline constexpr const char* spectralScQ = "spectralScQ";
+inline constexpr const char* spectralAttackMs = "spectralAttackMs";
+inline constexpr const char* spectralReleaseMs = "spectralReleaseMs";
 
 inline constexpr const char* eqBypass = "eqBypass";
 inline constexpr const char* eqBand1FreqHz = "eqBand1FreqHz";

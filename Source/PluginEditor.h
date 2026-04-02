@@ -96,7 +96,7 @@ private:
         float db_ { 0.f };
     };
 
-    /** Spectral compressor: вход (серый контур) и величина снятия (красная заливка сверху вниз). */
+    /** Spectral compressor: полоса сайдчейна, порог (желтый), уровень (cyan), GR. */
     struct SpectralCompPanel : public juce::Component
     {
         void updateFrom(RazumovVocalChainAudioProcessor& proc, uint32_t slotId);
@@ -106,6 +106,11 @@ private:
         std::array<float, 256> in_{};
         std::array<float, 256> red_{};
         bool hasData_ { false };
+        float centerHz_ { 2000.f };
+        float q_ { 1.2f };
+        float thrDb_ { -24.f };
+        float envDb_ { -120.f };
+        double sampleRate_ { 48000.0 };
     };
 
     struct ModuleTargetSlider : public juce::Slider
@@ -158,6 +163,10 @@ private:
     ModuleTargetSlider spectralMixSlider;
     ModuleTargetSlider spectralThreshSlider;
     ModuleTargetSlider spectralRatioSlider;
+    ModuleTargetSlider spectralScFreqSlider;
+    ModuleTargetSlider spectralScQSlider;
+    ModuleTargetSlider spectralAttackSlider;
+    ModuleTargetSlider spectralReleaseSlider;
 
     SpectrumPanel spectrumPanel;
     GrMeterBar grMeterBar;

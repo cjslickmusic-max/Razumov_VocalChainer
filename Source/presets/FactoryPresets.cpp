@@ -66,6 +66,10 @@ razumov::params::Phase3RealtimeParams buildDefaultModule()
     p.spectralMix = 0.75f;
     p.spectralThresholdDb = -24.0f;
     p.spectralRatio = 3.0f;
+    p.spectralScFreqHz = 2000.0f;
+    p.spectralScQ = 1.2f;
+    p.spectralAttackMs = 50.0f;
+    p.spectralReleaseMs = 250.0f;
     return p;
 }
 

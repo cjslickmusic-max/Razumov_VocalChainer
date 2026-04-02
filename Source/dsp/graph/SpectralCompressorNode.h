@@ -14,9 +14,9 @@ namespace razumov::graph
 {
 
 /**
- * Спектральный компрессор: STFT, динамика по модулю с сохранением фазы входа (без лишнего
- * фазового искажения от динамики). Dry задержан на ту же задержку, что и wet (MergeDelayPad),
- * затем dry/wet mix — выравнивание как у параллельных веток с PDC.
+ * Спектральный компрессор: STFT, динамика по модулю с сохранением фазы входа.
+ * Детектор — взвешенная энергия в полосе (center + Q), огибающая Attack/Release,
+ * порог и ratio задают общее снятие, применяемое к бинам с весом полосы.
  */
 class SpectralCompressorNode final : public AudioNode
 {
@@ -37,12 +37,17 @@ public:
     void setMix(float m) noexcept { mix_ = juce::jlimit(0.0f, 1.0f, m); }
     void setThresholdDb(float dB) noexcept { thresholdDb_ = dB; }
     void setRatio(float r) noexcept { ratio_ = juce::jmax(1.0f, r); }
+    void setSidechainHz(float hz) noexcept { sidechainHz_ = juce::jlimit(20.0f, 20000.0f, hz); }
+    void setSidechainQ(float q) noexcept { sidechainQ_ = juce::jlimit(0.25f, 16.0f, q); }
+    void setAttackMs(float ms) noexcept { attackMs_ = juce::jlimit(0.5f, 500.0f, ms); }
+    void setReleaseMs(float ms) noexcept { releaseMs_ = juce::jlimit(5.0f, 3000.0f, ms); }
 
     void prepare(double sampleRate, int maxBlockSize, int numChannels) override;
     void reset() override;
     void process(juce::AudioBuffer<float>& buffer) override;
 
     bool copySpectralCompressionDisplay256(float* inNorm256, float* redNorm256) const noexcept override;
+    float getSpectralSidechainEnvDbForUi() const noexcept override;
 
 private:
     struct ChannelData;
@@ -50,7 +55,12 @@ private:
 
     static constexpr int kSpectralDisplayBins = 256;
 
-    void commitSpectralMeterFrame(int half, const float* magIn, float thresholdDb, float ratio) noexcept;
+    void commitSpectralMeterFrame(int half,
+                                  const float* magIn,
+                                  const float* weight,
+                                  float gainLin,
+                                  float thresholdDb,
+                                  float ratio) noexcept;
 
     static constexpr int fftOrder_ = 10;
     static constexpr int fftSize_ = 1 << fftOrder_;
@@ -61,6 +71,12 @@ private:
     float mix_ { 0.75f };
     float thresholdDb_ { -24.0f };
     float ratio_ { 3.0f };
+    float sidechainHz_ { 2000.0f };
+    float sidechainQ_ { 1.2f };
+    float attackMs_ { 50.0f };
+    float releaseMs_ { 250.0f };
+
+    double sampleRate_ { 44100.0 };
 
     int numChannels_ { 2 };
 
@@ -74,6 +90,7 @@ private:
 
     std::array<std::atomic<float>, kSpectralDisplayBins> specInNorm_ {};
     std::array<std::atomic<float>, kSpectralDisplayBins> specRedNorm_ {};
+    std::atomic<float> scEnvDbUi_ { -120.0f };
 };
 
 } // namespace razumov::graph

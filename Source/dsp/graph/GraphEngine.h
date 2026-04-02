@@ -46,6 +46,9 @@ public:
     /** UI: спектральный компрессор — вход 0...1 и величина снятия 0...1 на бин. */
     bool copySpectralCompressionDisplayForSlot(uint32_t slotId, float* inNorm256, float* redNorm256) const;
 
+    /** UI: уровень сайдчейна (dB) после A/R. */
+    float getSpectralSidechainEnvDbForSlot(uint32_t slotId) const;
+
 private:
     void swapAndPreparePendingPlan();
     void ensureBranchPool(int breadth);
@@ -58,6 +61,7 @@ private:
                                                uint32_t slotId,
                                                float* in256,
                                                float* red256) noexcept;
+    static bool walkSpectralSidechainEnvDb(const FlexSegment& seg, uint32_t slotId, float& outDb) noexcept;
 
     std::function<void(int)> onLatency_;
 

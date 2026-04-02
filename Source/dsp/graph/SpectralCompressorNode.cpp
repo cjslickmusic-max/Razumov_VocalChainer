@@ -9,12 +9,45 @@ namespace razumov::graph
 namespace
 {
 
-float compressMag(float mag, float thresholdDb, float ratio) noexcept
+void buildSidechainWeights(double sampleRate,
+                           int fftSize,
+                           int half,
+                           float fcHz,
+                           float Q,
+                           float* wOut) noexcept
 {
-    const float inDb = 20.0f * std::log10(mag + 1.0e-20f);
-    const float over = juce::jmax(0.0f, inDb - thresholdDb);
-    const float outDb = inDb - over * (1.0f - 1.0f / ratio);
-    return std::pow(10.0f, outDb * 0.05f);
+    const float nyq = (float) (sampleRate * 0.5);
+    const float fc = juce::jlimit(20.0f, juce::jmin(nyq * 0.99f, 20000.0f), fcHz);
+    const float sigmaHz = fc / juce::jmax(0.25f, Q * 2.0f);
+
+    wOut[0] = 0.0f;
+    float sumW = 0.0f;
+    for (int k = 1; k <= half; ++k)
+    {
+        const float fk = (float) k * (float) sampleRate / (float) fftSize;
+        const float d = (fk - fc) / juce::jmax(1.0f, sigmaHz);
+        const float ww = std::exp(-d * d);
+        wOut[(size_t) k] = ww;
+        sumW += ww;
+    }
+
+    if (sumW > 1.0e-12f)
+    {
+        const float inv = 1.0f / sumW;
+        for (int k = 1; k <= half; ++k)
+            wOut[(size_t) k] *= inv;
+    }
+}
+
+float weightedPowerDb(const float* magIn, const float* w, int half) noexcept
+{
+    float sumP = 0.0f;
+    for (int k = 1; k <= half; ++k)
+    {
+        const float m = magIn[(size_t) k];
+        sumP += w[(size_t) k] * (m * m);
+    }
+    return 10.0f * std::log10(sumP + 1.0e-18f);
 }
 
 } // namespace
@@ -30,6 +63,7 @@ struct SpectralCompressorNode::ChannelData
     std::vector<float> ola;
     std::vector<juce::dsp::Complex<float>> timeDomain;
     std::vector<juce::dsp::Complex<float>> freqDomain;
+    float envDb { -120.0f };
 
     void prepare(int fftSize, int maxBlockHint)
     {
@@ -41,6 +75,7 @@ struct SpectralCompressorNode::ChannelData
         freqDomain.assign((size_t) fftSize, {});
         writePos = 0;
         inputSampleCounter = 0;
+        envDb = -120.0f;
     }
 
     void reset() noexcept
@@ -50,13 +85,12 @@ struct SpectralCompressorNode::ChannelData
         std::fill(ola.begin(), ola.end(), 0.0f);
         writePos = 0;
         inputSampleCounter = 0;
+        envDb = -120.0f;
     }
 
     void processFrame(int fftSize,
                       const float* window,
                       juce::dsp::FFT& fft,
-                      float thresholdDb,
-                      float ratio,
                       SpectralCompressorNode& owner,
                       int channelIndex)
     {
@@ -73,6 +107,7 @@ struct SpectralCompressorNode::ChannelData
 
         const int half = fftSize / 2;
         std::array<float, 513> magIn {};
+        std::array<float, 513> weight {};
         const int magCount = juce::jmin(half + 1, (int) magIn.size());
         for (int k = 0; k < magCount; ++k)
         {
@@ -82,19 +117,45 @@ struct SpectralCompressorNode::ChannelData
             magIn[(size_t) k] = std::sqrt(re * re + im * im);
         }
 
+        buildSidechainWeights(owner.sampleRate_, fftSize, half, owner.sidechainHz_, owner.sidechainQ_, weight.data());
+
+        const float detDb = weightedPowerDb(magIn.data(), weight.data(), half);
+
+        const double hop = (double) (fftSize / 2);
+        const double sr = owner.sampleRate_;
+        const float frameDt = (float) (hop / juce::jmax(1.0e-6, sr));
+        const float attS = juce::jmax(0.0005f, owner.attackMs_ * 0.001f);
+        const float relS = juce::jmax(0.0005f, owner.releaseMs_ * 0.001f);
+        const float alphaA = 1.0f - std::exp(-frameDt / attS);
+        const float alphaR = 1.0f - std::exp(-frameDt / relS);
+
+        if (detDb > envDb)
+            envDb += (detDb - envDb) * alphaA;
+        else
+            envDb += (detDb - envDb) * alphaR;
+
+        const float thr = owner.thresholdDb_;
+        const float rat = owner.ratio_;
+        const float overDb = juce::jmax(0.0f, envDb - thr);
+        const float grDb = overDb * (1.0f - 1.0f / rat);
+        const float gainLin = std::pow(10.0f, -grDb * 0.05f);
+
+        if (channelIndex == 0)
+        {
+            owner.scEnvDbUi_.store(envDb, std::memory_order_relaxed);
+            owner.commitSpectralMeterFrame(half, magIn.data(), weight.data(), gainLin, thr, rat);
+        }
+
         for (int k = 0; k <= half; ++k)
         {
             auto& c = freqDomain[(size_t) k];
             const float re = c.real();
             const float im = c.imag();
             const float mag = magIn[(size_t) k];
-            const float m2 = compressMag(mag, thresholdDb, ratio);
-            const float g = m2 / (mag + 1.0e-20f);
+            const float wk = weight[(size_t) k];
+            const float g = 1.0f + wk * (gainLin - 1.0f);
             c = { re * g, im * g };
         }
-
-        if (channelIndex == 0)
-            owner.commitSpectralMeterFrame(half, magIn.data(), thresholdDb, ratio);
 
         freqDomain[0] = { freqDomain[0].real(), 0.0f };
         freqDomain[(size_t) half] = { freqDomain[(size_t) half].real(), 0.0f };
@@ -120,8 +181,6 @@ struct SpectralCompressorNode::ChannelData
                     int hop,
                     const float* window,
                     juce::dsp::FFT& fft,
-                    float thresholdDb,
-                    float ratio,
                     SpectralCompressorNode& owner,
                     int channelIndex)
     {
@@ -131,7 +190,7 @@ struct SpectralCompressorNode::ChannelData
 
         if (inputSampleCounter >= (uint64_t) fftSize
             && ((inputSampleCounter - (uint64_t) fftSize) % (uint64_t) hop) == 0)
-            processFrame(fftSize, window, fft, thresholdDb, ratio, owner, channelIndex);
+            processFrame(fftSize, window, fft, owner, channelIndex);
     }
 
     float getWetOutput(int latencySamples) noexcept
@@ -149,9 +208,12 @@ struct SpectralCompressorNode::ChannelData
 
 void SpectralCompressorNode::commitSpectralMeterFrame(int half,
                                                       const float* magIn,
+                                                      const float* weight,
+                                                      float gainLin,
                                                       float thresholdDb,
                                                       float ratio) noexcept
 {
+    juce::ignoreUnused(thresholdDb, ratio);
     constexpr int nBins = kSpectralDisplayBins;
     std::array<float, nBins> frameIn {};
     std::array<float, nBins> frameRed {};
@@ -165,7 +227,9 @@ void SpectralCompressorNode::commitSpectralMeterFrame(int half,
         for (int k = k0; k < k1 && k <= half; ++k)
         {
             const float mag = magIn[(size_t) k];
-            const float m2 = compressMag(mag, thresholdDb, ratio);
+            const float wk = weight[(size_t) k];
+            const float g = 1.0f + wk * (gainLin - 1.0f);
+            const float m2 = mag * g;
             const float inDb = 20.0f * std::log10(mag + 1.0e-20f);
             const float normIn = juce::jlimit(0.f, 1.f, (inDb + 90.f) / 90.f);
             const float outDb = 20.0f * std::log10(m2 + 1.0e-20f);
@@ -206,6 +270,11 @@ bool SpectralCompressorNode::copySpectralCompressionDisplay256(float* inNorm256,
     return true;
 }
 
+float SpectralCompressorNode::getSpectralSidechainEnvDbForUi() const noexcept
+{
+    return scEnvDbUi_.load(std::memory_order_relaxed);
+}
+
 SpectralCompressorNode::SpectralCompressorNode() = default;
 
 SpectralCompressorNode::~SpectralCompressorNode() = default;
@@ -217,7 +286,7 @@ int SpectralCompressorNode::getLatencySamples() const noexcept
 
 void SpectralCompressorNode::prepare(double sampleRate, int maxBlockSize, int numChannels)
 {
-    juce::ignoreUnused(sampleRate);
+    sampleRate_ = juce::jmax(1.0, sampleRate);
     const int mb = juce::jmax(1, maxBlockSize);
     numChannels_ = juce::jmax(1, numChannels);
 
@@ -258,6 +327,7 @@ void SpectralCompressorNode::reset()
         a.store(0.f, std::memory_order_relaxed);
     for (auto& a : specRedNorm_)
         a.store(0.f, std::memory_order_relaxed);
+    scEnvDbUi_.store(-120.0f, std::memory_order_relaxed);
 }
 
 void SpectralCompressorNode::process(juce::AudioBuffer<float>& buffer)
@@ -268,6 +338,7 @@ void SpectralCompressorNode::process(juce::AudioBuffer<float>& buffer)
             a.store(0.f, std::memory_order_relaxed);
         for (auto& a : specRedNorm_)
             a.store(0.f, std::memory_order_relaxed);
+        scEnvDbUi_.store(-120.0f, std::memory_order_relaxed);
         return;
     }
 
@@ -285,15 +356,13 @@ void SpectralCompressorNode::process(juce::AudioBuffer<float>& buffer)
 
     const float mix = mix_;
     const float dryMix = 1.0f - mix;
-    const float thr = thresholdDb_;
-    const float rat = ratio_;
 
     for (int i = 0; i < n; ++i)
     {
         for (int c = 0; c < ch; ++c)
         {
             const float x = buffer.getSample(c, i);
-            channels_[(size_t) c]->pushSample(x, fftSize_, hop_, window_.data(), *fft_, thr, rat, *this, c);
+            channels_[(size_t) c]->pushSample(x, fftSize_, hop_, window_.data(), *fft_, *this, c);
             const float wet = channels_[(size_t) c]->getWetOutput(kLatencySamples_);
             const float dry = dryScratch_.getSample(c, i);
             buffer.setSample(c, i, wet * mix + dry * dryMix);

@@ -70,6 +70,10 @@ bool tryBuildPhase3FromLegacyMap(const std::map<juce::String, float>& m,
     out.spectralMix = getF(spectralMix, d.spectralMix);
     out.spectralThresholdDb = getF(spectralThresholdDb, d.spectralThresholdDb);
     out.spectralRatio = getF(spectralRatio, d.spectralRatio);
+    out.spectralScFreqHz = getF(spectralScFreqHz, d.spectralScFreqHz);
+    out.spectralScQ = getF(spectralScQ, d.spectralScQ);
+    out.spectralAttackMs = getF(spectralAttackMs, d.spectralAttackMs);
+    out.spectralReleaseMs = getF(spectralReleaseMs, d.spectralReleaseMs);
     return true;
 }
 
@@ -591,6 +595,11 @@ bool RazumovVocalChainAudioProcessor::copySpectralCompressionDisplayForSlot(uint
                                                                           float* redNorm256) const
 {
     return graphEngine_.copySpectralCompressionDisplayForSlot(slotId, inNorm256, redNorm256);
+}
+
+float RazumovVocalChainAudioProcessor::getSpectralSidechainEnvDbForSlot(uint32_t slotId) const
+{
+    return graphEngine_.getSpectralSidechainEnvDbForSlot(slotId);
 }
 
 void RazumovVocalChainAudioProcessor::pushMacroIntoAssignedModuleParam(int macroIndex)

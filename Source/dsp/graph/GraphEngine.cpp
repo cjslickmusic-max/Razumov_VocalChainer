@@ -83,6 +83,10 @@ void applyPhase3ToNode(AudioNode& node, const razumov::params::Phase3RealtimePar
             n.setMix(p.spectralMix);
             n.setThresholdDb(p.spectralThresholdDb);
             n.setRatio(p.spectralRatio);
+            n.setSidechainHz(p.spectralScFreqHz);
+            n.setSidechainQ(p.spectralScQ);
+            n.setAttackMs(p.spectralAttackMs);
+            n.setReleaseMs(p.spectralReleaseMs);
             break;
         }
         case AudioNodeKind::ParametricEq:
@@ -221,6 +225,39 @@ bool GraphEngine::copySpectralCompressionDisplayForSlot(uint32_t slotId, float* 
     if (activePlan_ == nullptr)
         return false;
     return walkSpectralCompressionDisplay(activePlan_->getRoot(), slotId, in256, red256);
+}
+
+bool GraphEngine::walkSpectralSidechainEnvDb(const FlexSegment& seg, uint32_t slotId, float& outDb) noexcept
+{
+    for (const auto& s : seg)
+    {
+        if (s.type == FlexSlot::Type::Module)
+        {
+            if (s.slotId == slotId && s.node != nullptr)
+            {
+                outDb = s.node->getSpectralSidechainEnvDbForUi();
+                return true;
+            }
+        }
+        else
+        {
+            for (const auto& br : s.branches)
+                if (walkSpectralSidechainEnvDb(br, slotId, outDb))
+                    return true;
+        }
+    }
+    return false;
+}
+
+float GraphEngine::getSpectralSidechainEnvDbForSlot(uint32_t slotId) const
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (activePlan_ == nullptr)
+        return -120.f;
+    float db = -120.f;
+    if (walkSpectralSidechainEnvDb(activePlan_->getRoot(), slotId, db))
+        return db;
+    return -120.f;
 }
 
 void GraphEngine::ensureBranchPool(int breadth)

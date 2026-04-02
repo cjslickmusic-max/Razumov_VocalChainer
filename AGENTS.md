@@ -35,6 +35,8 @@
 | `ui-strings-ascii.mdc` | Строки UI — ASCII-first |
 | `refactor-suspicious-log.mdc` | Сомнения → `docs/REFACTOR_SUSPICIOUS_LOG.md` |
 
+**FFT / спектр (общая политика):** skill **`.cursor/skills/fft-spectrum-engineering/SKILL.md`** — единый контракт тапов по графу, вызов анализа после узла, audio vs UI thread, задел под SIMD; кратко: **`docs/FFT_SPECTRUM_ARCHITECTURE.md`**.
+
 ## Документы (по мере появления кода)
 
 - **`docs/ROADMAP.md`** — пошаговая дорожная карта; **следовать порядку фаз**.
@@ -46,6 +48,7 @@
 - `docs/CODE_HEALTH_AUDIT.md` — журнал аудитов.
 - `docs/PERF_CHECKPOINTS.md` — замеры CPU.
 - `docs/REFACTOR_SUSPICIOUS_LOG.md` — отложенные риски.
+- `docs/FFT_SPECTRUM_ARCHITECTURE.md` — FFT/спектр: тапы по узлам, потоки, SIMD; детали в skill `fft-spectrum-engineering`.
 
 ## Отличия от Razumov Ultimate Sampler
 
@@ -68,6 +71,6 @@ JUCE **8.0.12** подтягивается через `FetchContent` при пе
 
 **UI ресурсы:** `juce_add_binary_data` (`RazumovVocalChainBinaryData`), PNG/SVG в `resources/ui/`, см. `docs/design/UI_ASSETS.md`.
 
-**Cursor skills (UI/UX):** см. `docs/CURSOR_SKILLS.md` — в репозитории `.cursor/skills/` (ui-ux-pro-max, frontend-design, kpi-dashboard-design, responsive-design, interaction-design, liquid-glass-design).
+**Cursor skills:** см. `docs/CURSOR_SKILLS.md` — в репозитории `.cursor/skills/` (в т.ч. **fft-spectrum-engineering** для FFT/спектра и SIMD-задела; ui-ux-pro-max, frontend-design, kpi-dashboard-design, responsive-design, interaction-design, liquid-glass-design).
 
 **Тесты:** `cmake --build build --target RazumovVocalChainTests` затем `./build/RazumovVocalChainTests`; долгий прогон: таргет `RazumovVocalChainStressTests` или `ctest` (см. **`docs/TESTING.md`**). **Сборка после правок кода** — см. `.cursor/rules/agent-build-after-changes.mdc` (агент запускает сам).

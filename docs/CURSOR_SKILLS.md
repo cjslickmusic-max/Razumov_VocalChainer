@@ -4,6 +4,7 @@ Installed under **`.cursor/skills/`** (team-shared). Restart Cursor after pull s
 
 | Skill | Source |
 |-------|--------|
+| `fft-spectrum-engineering` | Проектный: `.cursor/skills/fft-spectrum-engineering/SKILL.md` — FFT/спектр, тапы по графу, SIMD-задел; см. `docs/FFT_SPECTRUM_ARCHITECTURE.md` |
 | `ui-ux-pro-max` | `uipro init --ai cursor` ([ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)) |
 | `frontend-design` | [anthropics/skills](https://github.com/anthropics/skills/tree/main/skills/frontend-design) (SKILL.md + LICENSE) |
 | `kpi-dashboard-design` | [wshobson/agents](https://github.com/wshobson/agents) (`npx skills add ... --skill kpi-dashboard-design --yes`) |

@@ -40,6 +40,12 @@ public:
     /** UI / message thread: копия 256 нормализованных бинов для slotId (false если нет ISpectrumSource). */
     bool copySpectrumForSlot(uint32_t slotId, float* dst256) const;
 
+    /** UI: сглаженный GR (dB) для Opto/FET/VCA по slotId. */
+    float getGainReductionDbForSlot(uint32_t slotId) const;
+
+    /** UI: спектральный компрессор — вход 0...1 и величина снятия 0...1 на бин. */
+    bool copySpectralCompressionDisplayForSlot(uint32_t slotId, float* inNorm256, float* redNorm256) const;
+
 private:
     void swapAndPreparePendingPlan();
     void ensureBranchPool(int breadth);
@@ -47,6 +53,11 @@ private:
     void processSplit(FlexSlot& slot, juce::AudioBuffer<float>& buffer, int splitDepth);
 
     static bool walkCopySpectrum(const FlexSegment& seg, uint32_t slotId, float* dst256) noexcept;
+    static bool walkGainReduction(const FlexSegment& seg, uint32_t slotId, float& outDb) noexcept;
+    static bool walkSpectralCompressionDisplay(const FlexSegment& seg,
+                                               uint32_t slotId,
+                                               float* in256,
+                                               float* red256) noexcept;
 
     std::function<void(int)> onLatency_;
 

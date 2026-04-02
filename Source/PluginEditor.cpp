@@ -255,10 +255,103 @@ void RazumovVocalChainAudioProcessorEditor::SpectrumPanel::paint(juce::Graphics&
     g.strokePath(path, juce::PathStrokeType(1.2f));
 }
 
+void RazumovVocalChainAudioProcessorEditor::GrMeterBar::setDb(float db) noexcept
+{
+    db_ = juce::jlimit(0.f, 36.f, db);
+    repaint();
+}
+
+void RazumovVocalChainAudioProcessorEditor::GrMeterBar::paint(juce::Graphics& g)
+{
+    auto area = getLocalBounds().toFloat().reduced(2.f);
+    g.setColour(juce::Colour(tkn::argb::backgroundNode));
+    g.fillRoundedRectangle(area, 4.f);
+    g.setColour(juce::Colour(tkn::argb::borderModulePanel));
+    g.drawRoundedRectangle(area, 4.f, 1.f);
+
+    constexpr float maxDb = 24.f;
+    const float t = juce::jlimit(0.f, 1.f, db_ / maxDb);
+
+    const float labelW = juce::jmax(34.f, area.getWidth() * 0.1f);
+    auto row = area.reduced(3.f, 2.f);
+    auto labelZone = row.removeFromLeft(labelW);
+    g.setColour(juce::Colour(tkn::argb::textTertiary));
+    g.setFont(juce::FontOptions(10.0f));
+    g.drawText("GR", labelZone, juce::Justification::centredLeft);
+
+    auto bar = row;
+    g.setColour(juce::Colour(tkn::argb::backgroundNode).brighter(0.08f));
+    g.fillRoundedRectangle(bar, 3.f);
+    auto fill = bar.withWidth(bar.getWidth() * t);
+    g.setColour(juce::Colour(0xffc94a4a).withAlpha(0.88f));
+    g.fillRoundedRectangle(fill.reduced(0.5f), 2.5f);
+
+    juce::String s = juce::String(db_, 1) + " dB";
+    g.setColour(juce::Colour(tkn::argb::textSecondary));
+    g.drawText(s, bar, juce::Justification::centred);
+}
+
+void RazumovVocalChainAudioProcessorEditor::SpectralCompPanel::updateFrom(RazumovVocalChainAudioProcessor& proc,
+                                                                          uint32_t slotId)
+{
+    hasData_ = proc.copySpectralCompressionDisplayForSlot(slotId, in_.data(), red_.data());
+    if (!hasData_)
+    {
+        in_.fill(0.f);
+        red_.fill(0.f);
+    }
+    repaint();
+}
+
+void RazumovVocalChainAudioProcessorEditor::SpectralCompPanel::paint(juce::Graphics& g)
+{
+    auto r = getLocalBounds().toFloat().reduced(4.f);
+    g.setColour(juce::Colour(tkn::argb::backgroundNode));
+    g.fillRoundedRectangle(r, 6.f);
+    g.setColour(juce::Colour(tkn::argb::borderModulePanel));
+    g.drawRoundedRectangle(r, 6.f, 1.f);
+
+    const int n = 256;
+    const float w = r.getWidth();
+    const float plotH = juce::jmax(4.f, r.getHeight() - 8.f);
+    const float base = r.getBottom() - 2.f;
+
+    for (int i = 0; i < n; ++i)
+    {
+        const float x0 = r.getX() + (float) i / (float) juce::jmax(1, n - 1) * w;
+        const float x1 = r.getX() + (float) (i + 1) / (float) juce::jmax(1, n - 1) * w;
+        const float bw = juce::jmax(1.f, x1 - x0);
+        const float inV = juce::jlimit(0.f, 1.f, in_[(size_t) i]);
+        const float redV = juce::jlimit(0.f, 1.f, red_[(size_t) i]);
+        const float topIn = base - inV * plotH;
+        const float redH = redV * plotH * 0.9f;
+        g.setColour(juce::Colour(0xffc94a4a).withAlpha(0.42f));
+        g.fillRect(x0, topIn, bw, redH);
+    }
+
+    juce::Path inPath;
+    for (int i = 0; i < n; ++i)
+    {
+        const float x = r.getX() + (float) i / (float) juce::jmax(1, n - 1) * w;
+        const float v = juce::jlimit(0.f, 1.f, in_[(size_t) i]);
+        const float y = base - v * plotH;
+        if (i == 0)
+            inPath.startNewSubPath(x, y);
+        else
+            inPath.lineTo(x, y);
+    }
+    g.setColour(juce::Colour(tkn::argb::textSecondary).withAlpha(0.9f));
+    g.strokePath(inPath, juce::PathStrokeType(1.35f));
+}
+
 void RazumovVocalChainAudioProcessorEditor::timerCallback()
 {
     if (spectrumPanel.isVisible())
         spectrumPanel.updateFrom(processor, selectedSlotId_);
+    if (grMeterBar.isVisible())
+        grMeterBar.setDb(processor.getGainReductionDbForSlot(selectedSlotId_));
+    if (spectralCompPanel.isVisible())
+        spectralCompPanel.updateFrom(processor, selectedSlotId_);
 }
 
 void RazumovVocalChainAudioProcessorEditor::styleRotary(juce::Slider& s, int textBoxW, int textBoxH)
@@ -758,6 +851,10 @@ void RazumovVocalChainAudioProcessorEditor::refreshModulePanelVisibility()
                 break;
             case AK::SpectralCompressor:
                 moduleTitleLabel.setText("Spectral compressor", juce::dontSendNotification);
+                moduleHintLabel.setText(
+                    "Gray: input level per band. Red: how much is pulled down (spectral GR). L channel meter.",
+                    juce::dontSendNotification);
+                moduleHintLabel.setVisible(true);
                 break;
             case AK::ParametricEq:
                 moduleTitleLabel.setText("Parametric EQ", juce::dontSendNotification);
@@ -796,6 +893,8 @@ void RazumovVocalChainAudioProcessorEditor::refreshModulePanelVisibility()
     const bool showGainKnob = kind == AK::Gain;
     const bool showEq = kind == AK::ParametricEq;
     const bool showSpectrumPlot = showEq || kind == AK::SpectrumAnalyzer;
+    const bool showCompMeter = showOpto || showFet || showVca;
+    const bool showSpectralCompPlot = showSpec;
 
     juce::ignoreUnused(showSplitPanel);
 
@@ -831,6 +930,8 @@ void RazumovVocalChainAudioProcessorEditor::refreshModulePanelVisibility()
     lowpassSlider.setVisible(showLp);
 
     spectrumPanel.setVisible(showSpectrumPlot);
+    spectralCompPanel.setVisible(showSpectralCompPlot);
+    grMeterBar.setVisible(showCompMeter);
     eqBypassToggle.setVisible(showEq);
     eq1FreqSlider.setVisible(showEq);
     eq1GainSlider.setVisible(showEq);
@@ -845,7 +946,7 @@ void RazumovVocalChainAudioProcessorEditor::refreshModulePanelVisibility()
     eq4GainSlider.setVisible(showEq);
     eq4QSlider.setVisible(showEq);
 
-    if (showSpectrumPlot)
+    if (showSpectrumPlot || showCompMeter || showSpectralCompPlot)
         startTimerHz(30);
     else
         stopTimer();
@@ -902,6 +1003,12 @@ void RazumovVocalChainAudioProcessorEditor::layoutModuleViewport(int viewportWid
         y += scaled(42);
     }
 
+    if (spectralCompPanel.isVisible())
+    {
+        spectralCompPanel.setBounds(x, y, W - 2 * pad, scaled(100));
+        y += scaled(108);
+    }
+
     if (spectrumPanel.isVisible())
     {
         spectrumPanel.setBounds(x, y, W - 2 * pad, scaled(100));
@@ -939,6 +1046,12 @@ void RazumovVocalChainAudioProcessorEditor::layoutModuleViewport(int viewportWid
     {
         gainSlider.setBounds(x, y, kw, kh);
         y += kh + gap + scaled(18);
+    }
+
+    if (grMeterBar.isVisible())
+    {
+        grMeterBar.setBounds(x, y, W - 2 * pad, scaled(24));
+        y += scaled(32);
     }
 
     auto row3 = [&](juce::Slider& a, juce::Slider& b, juce::Slider& c) {
@@ -1263,6 +1376,12 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
 
     content.addAndMakeVisible(spectrumPanel);
     spectrumPanel.setVisible(false);
+
+    content.addAndMakeVisible(spectralCompPanel);
+    spectralCompPanel.setVisible(false);
+
+    content.addAndMakeVisible(grMeterBar);
+    grMeterBar.setVisible(false);
 
     eqBypassToggle.setButtonText("EQ bypass");
     eqBypassToggle.setClickingTogglesState(true);

@@ -87,6 +87,12 @@ public:
 
     /** UI: 256 нормализованных бинов (0...1) для слота с ISpectrumSource. */
     bool copySpectrumForSlot(uint32_t slotId, float* dst256) const;
+
+    /** UI: gain reduction (dB) для Opto/FET/VCA по slotId. */
+    float getGainReductionDbForSlot(uint32_t slotId) const;
+
+    /** UI: спектральный компрессор — вход и величина снятия по бинам (256). */
+    bool copySpectralCompressionDisplayForSlot(uint32_t slotId, float* inNorm256, float* redNorm256) const;
     void pushMacroIntoAssignedModuleParam(int macroIndex);
     void syncMacroApvtsFromAssignedModule(int macroIndex);
 

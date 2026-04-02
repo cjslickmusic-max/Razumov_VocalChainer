@@ -581,6 +581,18 @@ bool RazumovVocalChainAudioProcessor::copySpectrumForSlot(uint32_t slotId, float
     return graphEngine_.copySpectrumForSlot(slotId, dst256);
 }
 
+float RazumovVocalChainAudioProcessor::getGainReductionDbForSlot(uint32_t slotId) const
+{
+    return graphEngine_.getGainReductionDbForSlot(slotId);
+}
+
+bool RazumovVocalChainAudioProcessor::copySpectralCompressionDisplayForSlot(uint32_t slotId,
+                                                                          float* inNorm256,
+                                                                          float* redNorm256) const
+{
+    return graphEngine_.copySpectralCompressionDisplayForSlot(slotId, inNorm256, redNorm256);
+}
+
 void RazumovVocalChainAudioProcessor::pushMacroIntoAssignedModuleParam(int macroIndex)
 {
     const uint32_t sid = moduleParams_.getMacroTargetSlot(macroIndex);

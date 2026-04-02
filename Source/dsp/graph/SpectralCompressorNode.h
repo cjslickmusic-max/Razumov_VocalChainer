@@ -3,6 +3,8 @@
 #include "AudioNode.h"
 #include "MergeDelayPad.h"
 
+#include <array>
+#include <atomic>
 #include <juce_dsp/juce_dsp.h>
 
 #include <memory>
@@ -40,8 +42,15 @@ public:
     void reset() override;
     void process(juce::AudioBuffer<float>& buffer) override;
 
+    bool copySpectralCompressionDisplay256(float* inNorm256, float* redNorm256) const noexcept override;
+
 private:
     struct ChannelData;
+    friend struct ChannelData;
+
+    static constexpr int kSpectralDisplayBins = 256;
+
+    void commitSpectralMeterFrame(int half, const float* magIn, float thresholdDb, float ratio) noexcept;
 
     static constexpr int fftOrder_ = 10;
     static constexpr int fftSize_ = 1 << fftOrder_;
@@ -62,6 +71,9 @@ private:
     std::vector<std::unique_ptr<ChannelData>> channels_;
 
     juce::AudioBuffer<float> dryScratch_;
+
+    std::array<std::atomic<float>, kSpectralDisplayBins> specInNorm_ {};
+    std::array<std::atomic<float>, kSpectralDisplayBins> specRedNorm_ {};
 };
 
 } // namespace razumov::graph

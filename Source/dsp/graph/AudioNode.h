@@ -52,6 +52,19 @@ public:
 
     /** Дополнительная задержка узла (lookahead, FIR, спектр и т.д.). */
     virtual int getLatencySamples() const noexcept { return 0; }
+
+    /** Opto/FET/VCA: сглаженный gain reduction (dB), 0 = нет. Чтение с message/UI thread. */
+    virtual float getGainReductionDbForUi() const noexcept { return 0.f; }
+
+    /**
+     * Spectral compressor: входной спектр 0...1 и величина «снятия» 0...1 на бин (как вычитание по полосам).
+     * false если узел не поддерживает. dst массивы по 256 элементов.
+     */
+    virtual bool copySpectralCompressionDisplay256(float* inNorm256, float* redNorm256) const noexcept
+    {
+        juce::ignoreUnused(inNorm256, redNorm256);
+        return false;
+    }
 };
 
 } // namespace razumov::graph

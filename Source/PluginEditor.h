@@ -86,6 +86,28 @@ private:
         std::array<float, 256> bins_{};
     };
 
+    /** Opto/FET/VCA: горизонтальный GR 0...24 dB. */
+    struct GrMeterBar : public juce::Component
+    {
+        void setDb(float db) noexcept;
+        void paint(juce::Graphics& g) override;
+
+    private:
+        float db_ { 0.f };
+    };
+
+    /** Spectral compressor: вход (серый контур) и величина снятия (красная заливка сверху вниз). */
+    struct SpectralCompPanel : public juce::Component
+    {
+        void updateFrom(RazumovVocalChainAudioProcessor& proc, uint32_t slotId);
+        void paint(juce::Graphics& g) override;
+
+    private:
+        std::array<float, 256> in_{};
+        std::array<float, 256> red_{};
+        bool hasData_ { false };
+    };
+
     struct ModuleTargetSlider : public juce::Slider
     {
         void setTargetContext(RazumovVocalChainAudioProcessorEditor& ed, const char* paramId) noexcept;
@@ -138,6 +160,8 @@ private:
     ModuleTargetSlider spectralRatioSlider;
 
     SpectrumPanel spectrumPanel;
+    GrMeterBar grMeterBar;
+    SpectralCompPanel spectralCompPanel;
     juce::ToggleButton eqBypassToggle;
     ModuleTargetSlider eq1FreqSlider;
     ModuleTargetSlider eq1GainSlider;

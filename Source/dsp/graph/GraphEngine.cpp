@@ -158,6 +158,71 @@ bool GraphEngine::copySpectrumForSlot(uint32_t slotId, float* dst256) const
     return walkCopySpectrum(activePlan_->getRoot(), slotId, dst256);
 }
 
+bool GraphEngine::walkGainReduction(const FlexSegment& seg, uint32_t slotId, float& outDb) noexcept
+{
+    for (const auto& s : seg)
+    {
+        if (s.type == FlexSlot::Type::Module)
+        {
+            if (s.slotId == slotId && s.node != nullptr)
+            {
+                outDb = s.node->getGainReductionDbForUi();
+                return true;
+            }
+        }
+        else
+        {
+            for (const auto& br : s.branches)
+                if (walkGainReduction(br, slotId, outDb))
+                    return true;
+        }
+    }
+    return false;
+}
+
+float GraphEngine::getGainReductionDbForSlot(uint32_t slotId) const
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (activePlan_ == nullptr)
+        return 0.f;
+    float db = 0.f;
+    if (walkGainReduction(activePlan_->getRoot(), slotId, db))
+        return db;
+    return 0.f;
+}
+
+bool GraphEngine::walkSpectralCompressionDisplay(const FlexSegment& seg,
+                                                 uint32_t slotId,
+                                                 float* in256,
+                                                 float* red256) noexcept
+{
+    if (in256 == nullptr || red256 == nullptr)
+        return false;
+    for (const auto& s : seg)
+    {
+        if (s.type == FlexSlot::Type::Module)
+        {
+            if (s.slotId == slotId && s.node != nullptr)
+                return s.node->copySpectralCompressionDisplay256(in256, red256);
+        }
+        else
+        {
+            for (const auto& br : s.branches)
+                if (walkSpectralCompressionDisplay(br, slotId, in256, red256))
+                    return true;
+        }
+    }
+    return false;
+}
+
+bool GraphEngine::copySpectralCompressionDisplayForSlot(uint32_t slotId, float* in256, float* red256) const
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (activePlan_ == nullptr)
+        return false;
+    return walkSpectralCompressionDisplay(activePlan_->getRoot(), slotId, in256, red256);
+}
+
 void GraphEngine::ensureBranchPool(int breadth)
 {
     const int b = juce::jmax(2, breadth);

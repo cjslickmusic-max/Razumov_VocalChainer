@@ -4,6 +4,16 @@
 
 ---
 
+## Quick check — v0.9.22 (2026-03-29) — Compressor GR meter + spectral compression display
+
+- `CompressorArchetypeNode`: block peak GR (dB), smoothed for UI; `GraphEngine::getGainReductionDbForSlot`.
+- `SpectralCompressorNode`: 256-bin input vs reduction frame for L channel; `copySpectralCompressionDisplay256`.
+- `PluginEditor`: `GrMeterBar` (Opto/FET/VCA), `SpectralCompPanel` (Spectral compressor); timer refresh when visible.
+- `SpectralCompressorNode.cpp`: `make_unique<SpectralCompressorNode::ChannelData>()` for nested type.
+- ReadLints scoped; `cmake --build` VST3 + `RazumovVocalChainTests`: OK.
+
+---
+
 ## Quick check — v0.9.19 (2026-03-29) — Parallel + opens module palette (not Split x2/x3)
 
 - `GraphPlanFactory::makeSplitDryBranchAndParallelModule`: 2-way split, dry 0.5 + (0.5 -> chosen module); `insertParallelModuleAfterSlot`.

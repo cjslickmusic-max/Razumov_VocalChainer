@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AudioNode.h"
+#include <atomic>
 #include <juce_dsp/juce_dsp.h>
 
 namespace razumov::graph
@@ -29,6 +30,8 @@ public:
     void reset() override;
     void process(juce::AudioBuffer<float>& buffer) override;
 
+    float getGainReductionDbForUi() const noexcept override;
+
 private:
     void applyArchetypeTiming();
 
@@ -40,6 +43,8 @@ private:
     float makeupDb_ { 0.0f };
 
     double sampleRate_ { 44100.0 };
+    float smoothedGrDb_ { 0.f };
+    std::atomic<float> grMeterDbAtomic_ { 0.f };
 };
 
 } // namespace razumov::graph

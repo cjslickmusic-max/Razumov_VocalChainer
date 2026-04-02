@@ -21,6 +21,9 @@ struct ChainStripLayoutCard
     bool showParallelPlus { false };
     juce::Rectangle<float> serialPlusBounds;
     juce::Rectangle<float> parallelPlusBounds;
+
+    bool showDeleteButton { false };
+    juce::Rectangle<float> deleteButtonBounds;
 };
 
 /** Соединительная линия (серийная стрелка или fork/join). */

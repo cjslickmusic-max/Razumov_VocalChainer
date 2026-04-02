@@ -2,6 +2,7 @@
 
 #include "dsp/graph/FlexGraphDesc.h"
 #include "dsp/graph/GraphEngine.h"
+#include "params/MacroRouting.h"
 #include "params/ModuleParamsRuntime.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <vector>
@@ -75,6 +76,16 @@ public:
     /** Direct root module only (not Mic/Room, not inside split). */
     bool canDuplicateRootModuleSlot(uint32_t slotId) const;
     void duplicateRootModuleAfter(uint32_t slotId);
+
+    void assignMacroToModuleParam(int macroIndex, uint32_t slotId, razumov::params::MacroTargetParam param);
+    void clearMacroTarget(int macroIndex);
+    uint32_t getMacroTargetSlot(int macroIndex) const noexcept;
+    razumov::params::MacroTargetParam getMacroTargetParam(int macroIndex) const noexcept;
+    int findMacroIndexForSlotParam(uint32_t slotId, const juce::String& paramId) const noexcept;
+    void setMacroDisplayName(int macroIndex, const juce::String& name);
+    juce::String getMacroDisplayName(int macroIndex) const;
+    void pushMacroIntoAssignedModuleParam(int macroIndex);
+    void syncMacroApvtsFromAssignedModule(int macroIndex);
 
 private:
     void submitGraphPlanFromCurrentDesc();

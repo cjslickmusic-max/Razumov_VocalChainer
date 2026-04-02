@@ -1,4 +1,5 @@
 #include "ModuleParamsRuntime.h"
+#include "MacroRouting.h"
 #include "ParamIDs.h"
 
 #include <juce_dsp/juce_dsp.h>
@@ -67,11 +68,6 @@ inline void copyModuleSlotBlockState(const ModuleSlotBlock& src, ModuleSlotBlock
 namespace
 {
 
-float bipolarMacro01(float normalized01) noexcept
-{
-    return (normalized01 - 0.5f) * 2.0f;
-}
-
 void storeFromPhase3(detail::ModuleSlotBlock& b, const Phase3RealtimeParams& p)
 {
     b.micBypass.store(p.micBypass ? 1.0f : 0.0f);
@@ -134,7 +130,16 @@ void initDefaults(detail::ModuleSlotBlock& b)
 
 const juce::Identifier ModuleParamsRuntime::moduleParamsTreeType { "ModuleParams" };
 
-ModuleParamsRuntime::ModuleParamsRuntime() = default;
+ModuleParamsRuntime::ModuleParamsRuntime()
+{
+    static const char* const kDefaultNames[8] = { "Glue", "Air", "Sibil", "Presence", "Punch", "Body", "Smooth", "Density" };
+    for (int i = 0; i < 8; ++i)
+    {
+        macroTargetSlot_[(size_t) i].store(0u, std::memory_order_relaxed);
+        macroTargetParam_[(size_t) i].store((uint32_t) MacroTargetParam::None, std::memory_order_relaxed);
+        macroDisplayNames_[(size_t) i] = kDefaultNames[(size_t) i];
+    }
+}
 
 ModuleParamsRuntime::~ModuleParamsRuntime() = default;
 
@@ -142,6 +147,11 @@ void ModuleParamsRuntime::clear() noexcept
 {
     slotIds_.clear();
     blocks_.clear();
+    for (int i = 0; i < 8; ++i)
+    {
+        macroTargetSlot_[(size_t) i].store(0u, std::memory_order_relaxed);
+        macroTargetParam_[(size_t) i].store((uint32_t) MacroTargetParam::None, std::memory_order_relaxed);
+    }
 }
 
 int ModuleParamsRuntime::findSlotIndex(uint32_t slotId) const noexcept
@@ -204,7 +214,16 @@ void ModuleParamsRuntime::fillSlot(uint32_t slotId, const MacroAudioState& macro
     else
         loadToPhase3(*b, out);
 
-    applyMacroOffsetsToPhase3(out, macros);
+    for (int i = 0; i < 8; ++i)
+    {
+        const uint32_t ts = macroTargetSlot_[(size_t) i].load(std::memory_order_acquire);
+        if (ts == 0 || ts != slotId)
+            continue;
+        const auto pk = (MacroTargetParam) macroTargetParam_[(size_t) i].load(std::memory_order_acquire);
+        if (pk == MacroTargetParam::None)
+            continue;
+        applyMacroFullRangeToPhase3(out, pk, macros.getByIndex(i));
+    }
 }
 
 float ModuleParamsRuntime::getFloat(uint32_t slotId, const juce::String& paramId) const
@@ -390,6 +409,18 @@ juce::ValueTree ModuleParamsRuntime::toValueTree() const
         slot.setProperty(spectralRatio, b->spectralRatio.load(), nullptr);
         root.appendChild(slot, nullptr);
     }
+
+    juce::ValueTree mr("MacroRouting");
+    for (int i = 0; i < 8; ++i)
+    {
+        juce::ValueTree row("Macro");
+        row.setProperty("i", i, nullptr);
+        row.setProperty("slot", (int) macroTargetSlot_[(size_t) i].load(std::memory_order_relaxed), nullptr);
+        row.setProperty("param", (int) macroTargetParam_[(size_t) i].load(std::memory_order_relaxed), nullptr);
+        row.setProperty("name", macroDisplayNames_[(size_t) i], nullptr);
+        mr.appendChild(row, nullptr);
+    }
+    root.appendChild(mr, nullptr);
     return root;
 }
 
@@ -438,41 +469,86 @@ void ModuleParamsRuntime::fromValueTree(const juce::ValueTree& v)
         b->spectralThresholdDb.store(gf(spectralThresholdDb, -24.0f));
         b->spectralRatio.store(gf(spectralRatio, 3.0f));
     }
+
+    juce::ValueTree mr = v.getChildWithName("MacroRouting");
+    if (mr.isValid())
+    {
+        for (int c = 0; c < mr.getNumChildren(); ++c)
+        {
+            auto row = mr.getChild(c);
+            if (!row.isValid() || row.getType().toString() != "Macro")
+                continue;
+            const int idx = (int) row.getProperty("i", -1);
+            if (idx < 0 || idx > 7)
+                continue;
+            macroTargetSlot_[(size_t) idx].store((uint32_t)(int) row.getProperty("slot", 0), std::memory_order_relaxed);
+            macroTargetParam_[(size_t) idx].store((uint32_t)(int) row.getProperty("param", 0), std::memory_order_relaxed);
+            const juce::String nm = row.getProperty("name").toString();
+            if (nm.isNotEmpty())
+                macroDisplayNames_[(size_t) idx] = nm;
+        }
+    }
 }
 
-void applyMacroOffsetsToPhase3(Phase3RealtimeParams& p, const MacroAudioState& macros) noexcept
+void ModuleParamsRuntime::setMacroTarget(int macroIndex, uint32_t slotId, MacroTargetParam param) noexcept
 {
-    const float bGlue = bipolarMacro01(macros.glue01);
-    p.optoMakeupDb = juce::jlimit(0.0f, 24.0f, p.optoMakeupDb + bGlue * 4.0f);
-    p.fetMakeupDb = juce::jlimit(0.0f, 24.0f, p.fetMakeupDb + bGlue * 3.0f);
-    p.vcaMakeupDb = juce::jlimit(0.0f, 24.0f, p.vcaMakeupDb + bGlue * 3.0f);
+    if (macroIndex < 0 || macroIndex > 7)
+        return;
+    macroTargetSlot_[(size_t) macroIndex].store(slotId, std::memory_order_release);
+    macroTargetParam_[(size_t) macroIndex].store((uint32_t) param, std::memory_order_release);
+}
 
-    const float bAir = bipolarMacro01(macros.air01);
-    p.lowpassHz = juce::jlimit(400.0f, 20000.0f, p.lowpassHz + bAir * 4500.0f);
-    p.exciterMix = juce::jlimit(0.0f, 1.0f, p.exciterMix + bAir * 0.12f);
+void ModuleParamsRuntime::clearMacroTarget(int macroIndex) noexcept
+{
+    if (macroIndex < 0 || macroIndex > 7)
+        return;
+    macroTargetSlot_[(size_t) macroIndex].store(0u, std::memory_order_release);
+    macroTargetParam_[(size_t) macroIndex].store((uint32_t) MacroTargetParam::None, std::memory_order_release);
+}
 
-    const float bSib = bipolarMacro01(macros.sibil01);
-    p.deessThresholdDb = juce::jlimit(-60.0f, 0.0f, p.deessThresholdDb + bSib * -10.0f);
+uint32_t ModuleParamsRuntime::getMacroTargetSlot(int macroIndex) const noexcept
+{
+    if (macroIndex < 0 || macroIndex > 7)
+        return 0;
+    return macroTargetSlot_[(size_t) macroIndex].load(std::memory_order_acquire);
+}
 
-    const float bPr = bipolarMacro01(macros.presence01);
-    p.exciterDrive = juce::jlimit(0.1f, 8.0f, p.exciterDrive + bPr * 2.0f);
-    p.gainLinear *= juce::Decibels::decibelsToGain(bPr * 2.0f);
+MacroTargetParam ModuleParamsRuntime::getMacroTargetParam(int macroIndex) const noexcept
+{
+    if (macroIndex < 0 || macroIndex > 7)
+        return MacroTargetParam::None;
+    return (MacroTargetParam) macroTargetParam_[(size_t) macroIndex].load(std::memory_order_acquire);
+}
 
-    const float bPunch = bipolarMacro01(macros.punch01);
-    p.fetRatio = juce::jlimit(1.0f, 20.0f, p.fetRatio + bPunch * 6.0f);
-    p.fetMakeupDb = juce::jlimit(0.0f, 24.0f, p.fetMakeupDb + bPunch * 2.5f);
+int ModuleParamsRuntime::findMacroIndexForTarget(uint32_t slotId, MacroTargetParam param) const noexcept
+{
+    if (slotId == 0 || param == MacroTargetParam::None)
+        return -1;
+    for (int i = 0; i < 8; ++i)
+    {
+        if (macroTargetSlot_[(size_t) i].load(std::memory_order_acquire) != slotId)
+            continue;
+        if ((MacroTargetParam) macroTargetParam_[(size_t) i].load(std::memory_order_acquire) == param)
+            return i;
+    }
+    return -1;
+}
 
-    const float bBody = bipolarMacro01(macros.body01);
-    p.lowpassHz = juce::jlimit(400.0f, 20000.0f, p.lowpassHz + bBody * -3200.0f);
-    p.gainLinear *= juce::Decibels::decibelsToGain(bBody * 1.5f);
+void ModuleParamsRuntime::setMacroDisplayName(int macroIndex, juce::String name)
+{
+    if (macroIndex < 0 || macroIndex > 7)
+        return;
+    name = name.trim();
+    if (name.isEmpty())
+        return;
+    macroDisplayNames_[(size_t) macroIndex] = name;
+}
 
-    const float bSmooth = bipolarMacro01(macros.smooth01);
-    p.spectralMix = juce::jlimit(0.0f, 1.0f, p.spectralMix + bSmooth * 0.18f);
-    p.spectralThresholdDb = juce::jlimit(-60.0f, 0.0f, p.spectralThresholdDb + bSmooth * 8.0f);
-
-    const float bDen = bipolarMacro01(macros.density01);
-    p.optoRatio = juce::jlimit(1.0f, 20.0f, p.optoRatio + bDen * 4.5f);
-    p.vcaRatio = juce::jlimit(1.0f, 20.0f, p.vcaRatio + bDen * 4.0f);
+juce::String ModuleParamsRuntime::getMacroDisplayName(int macroIndex) const
+{
+    if (macroIndex < 0 || macroIndex > 7)
+        return {};
+    return macroDisplayNames_[(size_t) macroIndex];
 }
 
 } // namespace razumov::params

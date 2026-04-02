@@ -16,7 +16,7 @@ struct ModuleSectionBackdrop : juce::Component
     void paint(juce::Graphics&) override;
 };
 
-class RazumovVocalChainAudioProcessorEditor : public juce::AudioProcessorEditor
+class RazumovVocalChainAudioProcessorEditor : public juce::AudioProcessorEditor, public juce::Label::Listener
 {
 public:
     explicit RazumovVocalChainAudioProcessorEditor(RazumovVocalChainAudioProcessor&);
@@ -38,6 +38,13 @@ private:
     void layoutMacroHeroRow(juce::Rectangle<int> area);
     void layoutModuleViewport(int viewportWidth);
     void refreshRotaryStyles();
+    void labelTextChanged(juce::Label* labelThatHasChanged) override;
+
+    void onMacroLearnSliderPressed(int macroIndex);
+    void assignMacroFromLearn(const char* paramId);
+    void updateMacroLearnVisuals();
+    void refreshMacroLabelsFromProcessor();
+    void wireMacroValueCallbacks();
 
     int scaled(int base) const noexcept { return juce::roundToInt((float) base * uiScale_); }
 
@@ -56,14 +63,34 @@ private:
     juce::Component content;
     ModuleSectionBackdrop moduleSectionBackdrop;
 
-    juce::Slider macroGlueSlider;
-    juce::Slider macroAirSlider;
-    juce::Slider macroSibilanceSlider;
-    juce::Slider macroPresenceSlider;
-    juce::Slider macroPunchSlider;
-    juce::Slider macroBodySlider;
-    juce::Slider macroSmoothSlider;
-    juce::Slider macroDensitySlider;
+    struct MacroLearnSlider : public juce::Slider
+    {
+        void setLearnContext(RazumovVocalChainAudioProcessorEditor& ed, int macroIndex) noexcept;
+        void mouseDown(const juce::MouseEvent& e) override;
+
+    private:
+        RazumovVocalChainAudioProcessorEditor* parent_ { nullptr };
+        int macroIndex_ { 0 };
+    };
+
+    struct ModuleTargetSlider : public juce::Slider
+    {
+        void setTargetContext(RazumovVocalChainAudioProcessorEditor& ed, const char* paramId) noexcept;
+        void mouseDown(const juce::MouseEvent& e) override;
+
+    private:
+        RazumovVocalChainAudioProcessorEditor* parent_ { nullptr };
+        const char* paramId_ { nullptr };
+    };
+
+    MacroLearnSlider macroGlueSlider;
+    MacroLearnSlider macroAirSlider;
+    MacroLearnSlider macroSibilanceSlider;
+    MacroLearnSlider macroPresenceSlider;
+    MacroLearnSlider macroPunchSlider;
+    MacroLearnSlider macroBodySlider;
+    MacroLearnSlider macroSmoothSlider;
+    MacroLearnSlider macroDensitySlider;
     juce::Label macroGlueLabel;
     juce::Label macroAirLabel;
     juce::Label macroSibilanceLabel;
@@ -76,26 +103,26 @@ private:
     juce::ToggleButton micBypassBtn;
     juce::ToggleButton spectralBypassBtn;
 
-    juce::Slider micAmountSlider;
-    juce::Slider gainSlider;
-    juce::Slider lowpassSlider;
-    juce::Slider deessCrossSlider;
-    juce::Slider deessThreshSlider;
-    juce::Slider deessRatioSlider;
-    juce::Slider optoThreshSlider;
-    juce::Slider optoRatioSlider;
-    juce::Slider optoMakeupSlider;
-    juce::Slider fetThreshSlider;
-    juce::Slider fetRatioSlider;
-    juce::Slider fetMakeupSlider;
-    juce::Slider vcaThreshSlider;
-    juce::Slider vcaRatioSlider;
-    juce::Slider vcaMakeupSlider;
-    juce::Slider exciterDriveSlider;
-    juce::Slider exciterMixSlider;
-    juce::Slider spectralMixSlider;
-    juce::Slider spectralThreshSlider;
-    juce::Slider spectralRatioSlider;
+    ModuleTargetSlider micAmountSlider;
+    ModuleTargetSlider gainSlider;
+    ModuleTargetSlider lowpassSlider;
+    ModuleTargetSlider deessCrossSlider;
+    ModuleTargetSlider deessThreshSlider;
+    ModuleTargetSlider deessRatioSlider;
+    ModuleTargetSlider optoThreshSlider;
+    ModuleTargetSlider optoRatioSlider;
+    ModuleTargetSlider optoMakeupSlider;
+    ModuleTargetSlider fetThreshSlider;
+    ModuleTargetSlider fetRatioSlider;
+    ModuleTargetSlider fetMakeupSlider;
+    ModuleTargetSlider vcaThreshSlider;
+    ModuleTargetSlider vcaRatioSlider;
+    ModuleTargetSlider vcaMakeupSlider;
+    ModuleTargetSlider exciterDriveSlider;
+    ModuleTargetSlider exciterMixSlider;
+    ModuleTargetSlider spectralMixSlider;
+    ModuleTargetSlider spectralThreshSlider;
+    ModuleTargetSlider spectralRatioSlider;
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> micProfileAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroGlueAttachment;
@@ -111,6 +138,8 @@ private:
 
     float uiScale_ { 1.f };
     uint32_t selectedSlotId_ { 0 };
+    int macroLearnPendingIndex_ { -1 };
+    bool syncingMacroFromModule_ { false };
 
     /** Section backgrounds (updated in resized; used in paint for hierarchy). */
     juce::Rectangle<int> sectionMacro_;

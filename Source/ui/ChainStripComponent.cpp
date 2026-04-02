@@ -2,6 +2,7 @@
 #include "DesignTokens.h"
 #include "EditorVisualAssets.h"
 #include "PluginProcessor.h"
+#include "dsp/graph/FlexGraphDesc.h"
 #include <cmath>
 
 namespace razumov::ui
@@ -15,6 +16,18 @@ void drawWire(juce::Graphics& g, juce::Point<float> a, juce::Point<float> b, juc
         g.drawArrow(juce::Line<float>(a.x, a.y, b.x, b.y), 1.75f, 4.5f, 4.5f);
     else
         g.drawLine(juce::Line<float>(a.x, a.y, b.x, b.y), 1.65f);
+}
+
+void drawDeleteAffordance(juce::Graphics& g, juce::Rectangle<float> r, juce::Colour ink)
+{
+    g.setColour(juce::Colour(0x18000000));
+    g.fillEllipse(r);
+    g.setColour(ink.withAlpha(0.82f));
+    g.drawEllipse(r.reduced(0.5f), 1.0f);
+    const auto c = r.getCentre();
+    const float h = r.getWidth() * 0.28f;
+    g.drawLine(c.x - h, c.y - h, c.x + h, c.y + h, 1.45f);
+    g.drawLine(c.x - h, c.y + h, c.x + h, c.y - h, 1.45f);
 }
 
 void drawPlusAffordance(juce::Graphics& g, juce::Rectangle<float> r, juce::Colour rim, juce::Colour fill)
@@ -166,6 +179,17 @@ void ChainStripComponent::resized()
 void ChainStripComponent::rebuildLayout()
 {
     layout_ = computeChainStripLayout(processor_.getGraphDesc(), (float) getWidth(), (float) getHeight());
+    const float ds = 14.f;
+    for (auto& c : layout_.cards)
+    {
+        c.showDeleteButton = false;
+        if (c.selectable && c.slotId != 0 && !c.isMergeNode
+            && !razumov::graph::isProtectedFrontRootModuleSlot(processor_.getGraphDesc(), c.slotId))
+        {
+            c.showDeleteButton = true;
+            c.deleteButtonBounds = { c.bounds.getRight() - ds - 4.f, c.bounds.getY() + 4.f, ds, ds };
+        }
+    }
 }
 
 void ChainStripComponent::paint(juce::Graphics& g)
@@ -254,6 +278,12 @@ void ChainStripComponent::paint(juce::Graphics& g)
             const auto pill = bypassPillBounds(card);
             drawBypassPill(g, pill, c.bypassed, true, accent, textPri, textSec);
         }
+
+        if (c.showDeleteButton && c.deleteButtonBounds.getWidth() > 0.5f)
+        {
+            const bool delHover = deleteHoverSlotId_ == c.slotId;
+            drawDeleteAffordance(g, c.deleteButtonBounds, delHover ? accent : textSec);
+        }
     }
 
     const juce::Colour plusFill = juce::Colour(backgroundNode).brighter(0.12f);
@@ -274,6 +304,27 @@ void ChainStripComponent::paint(juce::Graphics& g)
     g.setColour(textSec);
     g.setFont(juce::FontOptions(11.5f, juce::Font::bold));
     g.drawText("Signal path", titleBar.reduced(6, 0), juce::Justification::centredLeft);
+
+    if (dragging_ && dragSlotId_ != 0)
+    {
+        for (const auto& c : layout_.cards)
+        {
+            if (c.slotId != dragSlotId_)
+                continue;
+            const float dx = dragLast_.x - dragStart_.x;
+            const float dy = dragLast_.y - dragStart_.y;
+            auto ghost = c.bounds.translated(dx, dy);
+            g.setColour(cardFill.withAlpha(0.48f));
+            g.fillRoundedRectangle(ghost, corner);
+            g.setColour(accent.withAlpha(0.72f));
+            g.drawRoundedRectangle(ghost.reduced(0.5f), corner, 1.5f);
+            g.setColour(textPri.withAlpha(0.78f));
+            const float fs = juce::jmin(11.5f, juce::jmax(8.5f, ghost.getWidth() * 0.09f));
+            g.setFont(juce::FontOptions(fs, juce::Font::bold));
+            g.drawText(c.label, ghost.reduced(6.f), juce::Justification::centred);
+            break;
+        }
+    }
 }
 
 void ChainStripComponent::mouseDown(const juce::MouseEvent& e)
@@ -321,6 +372,20 @@ void ChainStripComponent::mouseDown(const juce::MouseEvent& e)
     for (auto it = layout_.cards.rbegin(); it != layout_.cards.rend(); ++it)
     {
         const auto& c = *it;
+        if (!c.showDeleteButton)
+            continue;
+        if (c.deleteButtonBounds.contains(p))
+        {
+            if (onRequestRemoveSlot)
+                onRequestRemoveSlot(c.slotId);
+            syncFromProcessor();
+            return;
+        }
+    }
+
+    for (auto it = layout_.cards.rbegin(); it != layout_.cards.rend(); ++it)
+    {
+        const auto& c = *it;
         if (c.slotId == 0 || !c.selectable)
             continue;
         if (bypassPillBounds(c.bounds).contains(p))
@@ -360,6 +425,7 @@ void ChainStripComponent::mouseDown(const juce::MouseEvent& e)
         {
             dragSlotId_ = c.slotId;
             dragStart_ = p;
+            dragLast_ = p;
             selectedSlotId_ = c.slotId;
             if (onSlotSelected)
                 onSlotSelected(selectedSlotId_);
@@ -373,8 +439,11 @@ void ChainStripComponent::mouseDrag(const juce::MouseEvent& e)
 {
     if (dragSlotId_ == 0)
         return;
+    dragLast_ = e.position;
     if (dragStart_.getDistanceFrom(e.position) > 6.f)
         dragging_ = true;
+    if (dragging_)
+        repaint();
 }
 
 void ChainStripComponent::mouseUp(const juce::MouseEvent& e)
@@ -388,15 +457,36 @@ void ChainStripComponent::mouseUp(const juce::MouseEvent& e)
     dragging_ = false;
     dragSlotId_ = 0;
     syncFromProcessor();
+    repaint();
 }
 
 void ChainStripComponent::mouseMove(const juce::MouseEvent& e)
 {
     const auto p = e.position;
+    uint32_t delHover = 0;
+    for (const auto& c : layout_.cards)
+    {
+        if (c.showDeleteButton && c.deleteButtonBounds.contains(p))
+        {
+            delHover = c.slotId;
+            break;
+        }
+    }
+    if (delHover != deleteHoverSlotId_)
+    {
+        deleteHoverSlotId_ = delHover;
+        repaint();
+    }
+
     for (const auto& c : layout_.cards)
     {
         if (c.slotId == 0)
             continue;
+        if (c.showDeleteButton && c.deleteButtonBounds.contains(p))
+        {
+            setMouseCursor(juce::MouseCursor::PointingHandCursor);
+            return;
+        }
         if (bypassPillBounds(c.bounds).contains(p))
         {
             setMouseCursor(juce::MouseCursor::PointingHandCursor);

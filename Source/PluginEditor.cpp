@@ -1,11 +1,43 @@
 #include "PluginEditor.h"
 #include "PluginProcessor.h"
 #include "dsp/graph/FlexGraphDesc.h"
+#include "params/MacroRouting.h"
 #include "params/ParamIDs.h"
 #include "ui/DesignTokens.h"
 #include "ui/EditorVisualAssets.h"
 
 namespace tkn = razumov::ui::tokens;
+
+void RazumovVocalChainAudioProcessorEditor::MacroLearnSlider::setLearnContext(
+    RazumovVocalChainAudioProcessorEditor& ed, int macroIndex) noexcept
+{
+    parent_ = &ed;
+    macroIndex_ = macroIndex;
+}
+
+void RazumovVocalChainAudioProcessorEditor::MacroLearnSlider::mouseDown(const juce::MouseEvent& e)
+{
+    if (parent_ != nullptr)
+        parent_->onMacroLearnSliderPressed(macroIndex_);
+    juce::Slider::mouseDown(e);
+}
+
+void RazumovVocalChainAudioProcessorEditor::ModuleTargetSlider::setTargetContext(
+    RazumovVocalChainAudioProcessorEditor& ed, const char* paramId) noexcept
+{
+    parent_ = &ed;
+    paramId_ = paramId;
+}
+
+void RazumovVocalChainAudioProcessorEditor::ModuleTargetSlider::mouseDown(const juce::MouseEvent& e)
+{
+    if (parent_ != nullptr && parent_->macroLearnPendingIndex_ >= 0)
+    {
+        parent_->assignMacroFromLearn(paramId_);
+        return;
+    }
+    juce::Slider::mouseDown(e);
+}
 
 struct VocalChainerLookAndFeel : juce::LookAndFeel_V4
 {
@@ -192,6 +224,103 @@ void RazumovVocalChainAudioProcessorEditor::styleRotary(juce::Slider& s, int tex
     s.setColour(juce::Slider::textBoxTextColourId, juce::Colour(tkn::argb::rotaryValueBoxText));
     s.setColour(juce::Slider::textBoxBackgroundColourId, juce::Colour(tkn::argb::rotaryValueBoxFill));
     s.setColour(juce::Slider::textBoxOutlineColourId, juce::Colour(tkn::argb::borderModulePanel));
+}
+
+void RazumovVocalChainAudioProcessorEditor::onMacroLearnSliderPressed(int macroIndex)
+{
+    macroLearnPendingIndex_ = macroIndex;
+    updateMacroLearnVisuals();
+}
+
+void RazumovVocalChainAudioProcessorEditor::assignMacroFromLearn(const char* paramId)
+{
+    const int idx = macroLearnPendingIndex_;
+    if (idx < 0)
+        return;
+    macroLearnPendingIndex_ = -1;
+    updateMacroLearnVisuals();
+
+    const uint32_t slot = selectedSlotId_;
+    const auto mp = razumov::params::macroTargetParamFromParamId(juce::String(paramId));
+    if (mp == razumov::params::MacroTargetParam::None)
+        return;
+    const auto kind = razumov::graph::queryModuleKindForSlotId(processor.getGraphDesc(), slot);
+    if (!kind.has_value() || !razumov::params::moduleKindSupportsMacroTarget(*kind, mp))
+        return;
+
+    processor.assignMacroToModuleParam(idx, slot, mp);
+    syncingMacroFromModule_ = true;
+    processor.syncMacroApvtsFromAssignedModule(idx);
+    syncingMacroFromModule_ = false;
+    reloadModuleParamsFromProcessor();
+}
+
+void RazumovVocalChainAudioProcessorEditor::updateMacroLearnVisuals()
+{
+    auto setOne = [this](juce::Label& lbl, int idx) {
+        const bool on = (macroLearnPendingIndex_ == idx);
+        lbl.setColour(juce::Label::textColourId,
+                      juce::Colour(on ? tkn::argb::accentSignal : tkn::argb::textLabel));
+    };
+    setOne(macroGlueLabel, 0);
+    setOne(macroAirLabel, 1);
+    setOne(macroSibilanceLabel, 2);
+    setOne(macroPresenceLabel, 3);
+    setOne(macroPunchLabel, 4);
+    setOne(macroBodyLabel, 5);
+    setOne(macroSmoothLabel, 6);
+    setOne(macroDensityLabel, 7);
+}
+
+void RazumovVocalChainAudioProcessorEditor::refreshMacroLabelsFromProcessor()
+{
+    macroGlueLabel.setText(processor.getMacroDisplayName(0), juce::dontSendNotification);
+    macroAirLabel.setText(processor.getMacroDisplayName(1), juce::dontSendNotification);
+    macroSibilanceLabel.setText(processor.getMacroDisplayName(2), juce::dontSendNotification);
+    macroPresenceLabel.setText(processor.getMacroDisplayName(3), juce::dontSendNotification);
+    macroPunchLabel.setText(processor.getMacroDisplayName(4), juce::dontSendNotification);
+    macroBodyLabel.setText(processor.getMacroDisplayName(5), juce::dontSendNotification);
+    macroSmoothLabel.setText(processor.getMacroDisplayName(6), juce::dontSendNotification);
+    macroDensityLabel.setText(processor.getMacroDisplayName(7), juce::dontSendNotification);
+}
+
+void RazumovVocalChainAudioProcessorEditor::wireMacroValueCallbacks()
+{
+    auto hook = [this](int i, MacroLearnSlider& s) {
+        s.onValueChange = [this, i] {
+            if (syncingMacroFromModule_)
+                return;
+            processor.pushMacroIntoAssignedModuleParam(i);
+        };
+    };
+    hook(0, macroGlueSlider);
+    hook(1, macroAirSlider);
+    hook(2, macroSibilanceSlider);
+    hook(3, macroPresenceSlider);
+    hook(4, macroPunchSlider);
+    hook(5, macroBodySlider);
+    hook(6, macroSmoothSlider);
+    hook(7, macroDensitySlider);
+}
+
+void RazumovVocalChainAudioProcessorEditor::labelTextChanged(juce::Label* labelThatHasChanged)
+{
+    if (labelThatHasChanged == &macroGlueLabel)
+        processor.setMacroDisplayName(0, macroGlueLabel.getText());
+    else if (labelThatHasChanged == &macroAirLabel)
+        processor.setMacroDisplayName(1, macroAirLabel.getText());
+    else if (labelThatHasChanged == &macroSibilanceLabel)
+        processor.setMacroDisplayName(2, macroSibilanceLabel.getText());
+    else if (labelThatHasChanged == &macroPresenceLabel)
+        processor.setMacroDisplayName(3, macroPresenceLabel.getText());
+    else if (labelThatHasChanged == &macroPunchLabel)
+        processor.setMacroDisplayName(4, macroPunchLabel.getText());
+    else if (labelThatHasChanged == &macroBodyLabel)
+        processor.setMacroDisplayName(5, macroBodyLabel.getText());
+    else if (labelThatHasChanged == &macroSmoothLabel)
+        processor.setMacroDisplayName(6, macroSmoothLabel.getText());
+    else if (labelThatHasChanged == &macroDensityLabel)
+        processor.setMacroDisplayName(7, macroDensityLabel.getText());
 }
 
 void RazumovVocalChainAudioProcessorEditor::refreshRotaryStyles()
@@ -765,6 +894,10 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
         processor.swapDirectRootModules(a, b);
         syncChainStripAfterGraphEdit();
     };
+    chainStrip.onRequestRemoveSlot = [this](uint32_t id) {
+        processor.removeGraphSlotById(id);
+        syncChainStripAfterGraphEdit();
+    };
     chainStrip.onChainContextMenu = [this](razumov::ui::ChainContextTarget t, uint32_t id, juce::Point<int> pos) {
         showChainContextMenu(t, id, pos);
     };
@@ -836,6 +969,40 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     macroDensityAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
         apvts, razumov::params::macroDensity, macroDensitySlider);
 
+    wireMacroValueCallbacks();
+    macroGlueSlider.setLearnContext(*this, 0);
+    macroAirSlider.setLearnContext(*this, 1);
+    macroSibilanceSlider.setLearnContext(*this, 2);
+    macroPresenceSlider.setLearnContext(*this, 3);
+    macroPunchSlider.setLearnContext(*this, 4);
+    macroBodySlider.setLearnContext(*this, 5);
+    macroSmoothSlider.setLearnContext(*this, 6);
+    macroDensitySlider.setLearnContext(*this, 7);
+    {
+        const juce::String mtip("Click to arm, then choose a module parameter below.");
+        macroGlueSlider.setTooltip(mtip);
+        macroAirSlider.setTooltip(mtip);
+        macroSibilanceSlider.setTooltip(mtip);
+        macroPresenceSlider.setTooltip(mtip);
+        macroPunchSlider.setTooltip(mtip);
+        macroBodySlider.setTooltip(mtip);
+        macroSmoothSlider.setTooltip(mtip);
+        macroDensitySlider.setTooltip(mtip);
+    }
+
+    auto wireMacroLabel = [](juce::Label& l, RazumovVocalChainAudioProcessorEditor& ed) {
+        l.setEditable(false, true, false);
+        l.addListener(&ed);
+    };
+    wireMacroLabel(macroGlueLabel, *this);
+    wireMacroLabel(macroAirLabel, *this);
+    wireMacroLabel(macroSibilanceLabel, *this);
+    wireMacroLabel(macroPresenceLabel, *this);
+    wireMacroLabel(macroPunchLabel, *this);
+    wireMacroLabel(macroBodyLabel, *this);
+    wireMacroLabel(macroSmoothLabel, *this);
+    wireMacroLabel(macroDensityLabel, *this);
+
     micBypassBtn.setButtonText("Mic bypass");
     micBypassBtn.setClickingTogglesState(true);
     micBypassBtn.setColour(juce::ToggleButton::textColourId, juce::Colour(tkn::argb::textLabel));
@@ -893,9 +1060,39 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     spectralThreshSlider.setRange(-60.0, 0.0, 0.1);
     spectralRatioSlider.setRange(1.0, 20.0, 0.1);
 
+    micAmountSlider.setTargetContext(*this, razumov::params::micAmount);
+    gainSlider.setTargetContext(*this, razumov::params::gainDb);
+    lowpassSlider.setTargetContext(*this, razumov::params::lowpassHz);
+    deessCrossSlider.setTargetContext(*this, razumov::params::deessCrossoverHz);
+    deessThreshSlider.setTargetContext(*this, razumov::params::deessThresholdDb);
+    deessRatioSlider.setTargetContext(*this, razumov::params::deessRatio);
+    optoThreshSlider.setTargetContext(*this, razumov::params::optoThresholdDb);
+    optoRatioSlider.setTargetContext(*this, razumov::params::optoRatio);
+    optoMakeupSlider.setTargetContext(*this, razumov::params::optoMakeupDb);
+    fetThreshSlider.setTargetContext(*this, razumov::params::fetThresholdDb);
+    fetRatioSlider.setTargetContext(*this, razumov::params::fetRatio);
+    fetMakeupSlider.setTargetContext(*this, razumov::params::fetMakeupDb);
+    vcaThreshSlider.setTargetContext(*this, razumov::params::vcaThresholdDb);
+    vcaRatioSlider.setTargetContext(*this, razumov::params::vcaRatio);
+    vcaMakeupSlider.setTargetContext(*this, razumov::params::vcaMakeupDb);
+    exciterDriveSlider.setTargetContext(*this, razumov::params::exciterDrive);
+    exciterMixSlider.setTargetContext(*this, razumov::params::exciterMix);
+    spectralMixSlider.setTargetContext(*this, razumov::params::spectralMix);
+    spectralThreshSlider.setTargetContext(*this, razumov::params::spectralThresholdDb);
+    spectralRatioSlider.setTargetContext(*this, razumov::params::spectralRatio);
+
     auto wireFloat = [this](juce::Slider& s, const char* paramId) {
         s.onValueChange = [this, &s, paramId] {
             processor.setModuleFloatParam(selectedSlotId_, paramId, (float) s.getValue());
+            if (syncingMacroFromModule_)
+                return;
+            const int mi = processor.findMacroIndexForSlotParam(selectedSlotId_, juce::String(paramId));
+            if (mi >= 0)
+            {
+                syncingMacroFromModule_ = true;
+                processor.syncMacroApvtsFromAssignedModule(mi);
+                syncingMacroFromModule_ = false;
+            }
         };
     };
 
@@ -933,6 +1130,7 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     chainStrip.syncFromProcessor();
     selectedSlotId_ = chainStrip.getSelectedSlotId();
     chainStrip.setSelectedSlotId(selectedSlotId_);
+    refreshMacroLabelsFromProcessor();
     refreshModulePanelVisibility();
 }
 
@@ -1032,5 +1230,13 @@ void RazumovVocalChainAudioProcessorEditor::resized()
 
 RazumovVocalChainAudioProcessorEditor::~RazumovVocalChainAudioProcessorEditor()
 {
+    macroGlueLabel.removeListener(this);
+    macroAirLabel.removeListener(this);
+    macroSibilanceLabel.removeListener(this);
+    macroPresenceLabel.removeListener(this);
+    macroPunchLabel.removeListener(this);
+    macroBodyLabel.removeListener(this);
+    macroSmoothLabel.removeListener(this);
+    macroDensityLabel.removeListener(this);
     setLookAndFeel(nullptr);
 }

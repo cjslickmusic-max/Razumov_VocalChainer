@@ -42,6 +42,7 @@ public:
     std::function<void(uint32_t slotId)> onRequestParallelBranch;
     /** Swap order of two root-level modules (strip UI); host validates. */
     std::function<void(uint32_t slotIdA, uint32_t slotIdB)> onRequestSwapRootModules;
+    std::function<void(uint32_t slotId)> onRequestRemoveSlot;
 
     /** Right-click: add/remove/duplicate live in the menu instead of a toolbar row. */
     std::function<void(ChainContextTarget target, uint32_t slotId, juce::Point<int> screenPosition)> onChainContextMenu;
@@ -58,6 +59,8 @@ private:
     bool dragging_ { false };
     uint32_t dragSlotId_ { 0 };
     juce::Point<float> dragStart_ {};
+    juce::Point<float> dragLast_ {};
+    uint32_t deleteHoverSlotId_ { 0 };
 };
 
 } // namespace razumov::ui

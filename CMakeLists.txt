@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(RazumovVocalChain VERSION 0.9.19 LANGUAGES C CXX)
+project(RazumovVocalChain VERSION 0.9.20 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -53,6 +53,7 @@ target_sources(
         Source/ui/EditorVisualAssets.cpp
         Source/presets/FactoryPresets.cpp
         Source/params/ParameterLayout.cpp
+        Source/params/MacroRouting.cpp
         Source/params/ModuleParamsRuntime.cpp
         Source/params/MicProfileChoices.cpp
         Source/dsp/graph/FilterNode.cpp
@@ -119,6 +120,7 @@ set(
     Source/dsp/graph/GraphPlanFactory.cpp
     Source/dsp/graph/GraphEngine.cpp
     Source/dsp/graph/MergeDelayPad.cpp
+    Source/params/MacroRouting.cpp
     Source/params/ModuleParamsRuntime.cpp
     Source/dsp/graph/MicCorrectionNode.cpp
     Source/dsp/graph/CompressorArchetypeNode.cpp

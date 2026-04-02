@@ -4,6 +4,7 @@
 #include "dsp/graph/FlexGraphDesc.h"
 #include "dsp/graph/FlexGraphSerialization.h"
 #include "dsp/graph/GraphPlanFactory.h"
+#include "params/MacroRouting.h"
 #include "params/ModuleParamsRuntime.h"
 #include "params/ParamIDs.h"
 #include "params/ParameterLayout.h"
@@ -93,6 +94,44 @@ razumov::params::MacroAudioState buildMacroStateFromApvts(juce::AudioProcessorVa
     if (auto* raw = apvts.getRawParameterValue(macroDensity))
         m.density01 = raw->load();
     return m;
+}
+
+float getMacro01FromApvts(juce::AudioProcessorValueTreeState& apvts, int macroIndex)
+{
+    using namespace razumov::params;
+    const char* id = nullptr;
+    switch (macroIndex)
+    {
+        case 0:
+            id = macroGlue;
+            break;
+        case 1:
+            id = macroAir;
+            break;
+        case 2:
+            id = macroSibilance;
+            break;
+        case 3:
+            id = macroPresence;
+            break;
+        case 4:
+            id = macroPunch;
+            break;
+        case 5:
+            id = macroBody;
+            break;
+        case 6:
+            id = macroSmooth;
+            break;
+        case 7:
+            id = macroDensity;
+            break;
+        default:
+            return 0.5f;
+    }
+    if (auto* raw = apvts.getRawParameterValue(id))
+        return raw->load();
+    return 0.5f;
 }
 
 } // namespace
@@ -480,6 +519,120 @@ void RazumovVocalChainAudioProcessor::setStateInformation(const void* data, int 
             submitGraphPlanFromCurrentDesc();
         }
     }
+}
+
+void RazumovVocalChainAudioProcessor::assignMacroToModuleParam(int macroIndex, uint32_t slotId,
+                                                               razumov::params::MacroTargetParam param)
+{
+    if (macroIndex < 0 || macroIndex > 7)
+        return;
+    if (slotId == 0 || param == razumov::params::MacroTargetParam::None)
+        return;
+
+    for (int i = 0; i < 8; ++i)
+    {
+        if (i == macroIndex)
+            continue;
+        if (moduleParams_.getMacroTargetSlot(i) == slotId && moduleParams_.getMacroTargetParam(i) == param)
+            moduleParams_.clearMacroTarget(i);
+    }
+
+    moduleParams_.setMacroTarget(macroIndex, slotId, param);
+    persistEmbeddedStateToApvts();
+}
+
+void RazumovVocalChainAudioProcessor::clearMacroTarget(int macroIndex)
+{
+    moduleParams_.clearMacroTarget(macroIndex);
+    persistEmbeddedStateToApvts();
+}
+
+uint32_t RazumovVocalChainAudioProcessor::getMacroTargetSlot(int macroIndex) const noexcept
+{
+    return moduleParams_.getMacroTargetSlot(macroIndex);
+}
+
+razumov::params::MacroTargetParam RazumovVocalChainAudioProcessor::getMacroTargetParam(int macroIndex) const noexcept
+{
+    return moduleParams_.getMacroTargetParam(macroIndex);
+}
+
+int RazumovVocalChainAudioProcessor::findMacroIndexForSlotParam(uint32_t slotId, const juce::String& paramId) const noexcept
+{
+    const auto mp = razumov::params::macroTargetParamFromParamId(paramId);
+    if (mp == razumov::params::MacroTargetParam::None)
+        return -1;
+    return moduleParams_.findMacroIndexForTarget(slotId, mp);
+}
+
+void RazumovVocalChainAudioProcessor::setMacroDisplayName(int macroIndex, const juce::String& name)
+{
+    moduleParams_.setMacroDisplayName(macroIndex, name);
+    persistEmbeddedStateToApvts();
+}
+
+juce::String RazumovVocalChainAudioProcessor::getMacroDisplayName(int macroIndex) const
+{
+    return moduleParams_.getMacroDisplayName(macroIndex);
+}
+
+void RazumovVocalChainAudioProcessor::pushMacroIntoAssignedModuleParam(int macroIndex)
+{
+    const uint32_t sid = moduleParams_.getMacroTargetSlot(macroIndex);
+    const auto mp = moduleParams_.getMacroTargetParam(macroIndex);
+    if (sid == 0 || mp == razumov::params::MacroTargetParam::None)
+        return;
+    const char* pid = razumov::params::macroTargetParamToParamId(mp);
+    if (pid == nullptr)
+        return;
+    const float m01 = getMacro01FromApvts(apvts, macroIndex);
+    const float v = razumov::params::macro01ToParamValue(mp, m01);
+    setModuleFloatParam(sid, juce::String(pid), v);
+}
+
+void RazumovVocalChainAudioProcessor::syncMacroApvtsFromAssignedModule(int macroIndex)
+{
+    const uint32_t sid = moduleParams_.getMacroTargetSlot(macroIndex);
+    const auto mp = moduleParams_.getMacroTargetParam(macroIndex);
+    if (sid == 0 || mp == razumov::params::MacroTargetParam::None)
+        return;
+    const char* pid = razumov::params::macroTargetParamToParamId(mp);
+    if (pid == nullptr)
+        return;
+    const float v = getModuleFloatParam(sid, juce::String(pid));
+    const float m01 = razumov::params::paramValueToMacro01(mp, v);
+    const char* apId = nullptr;
+    switch (macroIndex)
+    {
+        case 0:
+            apId = razumov::params::macroGlue;
+            break;
+        case 1:
+            apId = razumov::params::macroAir;
+            break;
+        case 2:
+            apId = razumov::params::macroSibilance;
+            break;
+        case 3:
+            apId = razumov::params::macroPresence;
+            break;
+        case 4:
+            apId = razumov::params::macroPunch;
+            break;
+        case 5:
+            apId = razumov::params::macroBody;
+            break;
+        case 6:
+            apId = razumov::params::macroSmooth;
+            break;
+        case 7:
+            apId = razumov::params::macroDensity;
+            break;
+        default:
+            return;
+    }
+    if (auto* p = apvts.getParameter(apId))
+        p->setValueNotifyingHost(m01);
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()

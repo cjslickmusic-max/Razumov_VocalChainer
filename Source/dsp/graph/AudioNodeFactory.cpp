@@ -7,7 +7,9 @@
 #include "GainNode.h"
 #include "LatencyNode.h"
 #include "MicCorrectionNode.h"
+#include "ParametricEqNode.h"
 #include "SpectralCompressorNode.h"
+#include "SpectrumAnalyzerNode.h"
 
 namespace razumov::graph
 {
@@ -40,6 +42,10 @@ std::unique_ptr<AudioNode> createAudioNodeFromModuleDesc(const FlexSlotDesc& d)
             return std::make_unique<ExciterNode>();
         case AudioNodeKind::SpectralCompressor:
             return std::make_unique<SpectralCompressorNode>();
+        case AudioNodeKind::ParametricEq:
+            return std::make_unique<ParametricEqNode>();
+        case AudioNodeKind::SpectrumAnalyzer:
+            return std::make_unique<SpectrumAnalyzerNode>();
         case AudioNodeKind::Latency:
             return std::make_unique<LatencyNode>(juce::jmax(0, d.latencySamples));
         default:

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <memory>
@@ -16,7 +17,9 @@ struct ModuleSectionBackdrop : juce::Component
     void paint(juce::Graphics&) override;
 };
 
-class RazumovVocalChainAudioProcessorEditor : public juce::AudioProcessorEditor, public juce::Label::Listener
+class RazumovVocalChainAudioProcessorEditor : public juce::AudioProcessorEditor,
+                                              public juce::Timer,
+                                              public juce::Label::Listener
 {
 public:
     explicit RazumovVocalChainAudioProcessorEditor(RazumovVocalChainAudioProcessor&);
@@ -24,6 +27,7 @@ public:
 
     void paint(juce::Graphics&) override;
     void resized() override;
+    void timerCallback() override;
 
 private:
     static void styleRotary(juce::Slider&, int textBoxW, int textBoxH);
@@ -71,6 +75,15 @@ private:
     private:
         RazumovVocalChainAudioProcessorEditor* parent_ { nullptr };
         int macroIndex_ { 0 };
+    };
+
+    struct SpectrumPanel : public juce::Component
+    {
+        void updateFrom(RazumovVocalChainAudioProcessor& proc, uint32_t slotId);
+        void paint(juce::Graphics& g) override;
+
+    private:
+        std::array<float, 256> bins_{};
     };
 
     struct ModuleTargetSlider : public juce::Slider
@@ -123,6 +136,21 @@ private:
     ModuleTargetSlider spectralMixSlider;
     ModuleTargetSlider spectralThreshSlider;
     ModuleTargetSlider spectralRatioSlider;
+
+    SpectrumPanel spectrumPanel;
+    juce::ToggleButton eqBypassToggle;
+    ModuleTargetSlider eq1FreqSlider;
+    ModuleTargetSlider eq1GainSlider;
+    ModuleTargetSlider eq1QSlider;
+    ModuleTargetSlider eq2FreqSlider;
+    ModuleTargetSlider eq2GainSlider;
+    ModuleTargetSlider eq2QSlider;
+    ModuleTargetSlider eq3FreqSlider;
+    ModuleTargetSlider eq3GainSlider;
+    ModuleTargetSlider eq3QSlider;
+    ModuleTargetSlider eq4FreqSlider;
+    ModuleTargetSlider eq4GainSlider;
+    ModuleTargetSlider eq4QSlider;
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> micProfileAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroGlueAttachment;

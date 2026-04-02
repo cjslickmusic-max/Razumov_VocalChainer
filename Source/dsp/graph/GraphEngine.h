@@ -37,15 +37,20 @@ public:
 
     int getReportedLatencySamples() const noexcept { return reportedLatency_; }
 
+    /** UI / message thread: копия 256 нормализованных бинов для slotId (false если нет ISpectrumSource). */
+    bool copySpectrumForSlot(uint32_t slotId, float* dst256) const;
+
 private:
     void swapAndPreparePendingPlan();
     void ensureBranchPool(int breadth);
     void processSegment(FlexSegment& seg, juce::AudioBuffer<float>& buffer, int splitDepth);
     void processSplit(FlexSlot& slot, juce::AudioBuffer<float>& buffer, int splitDepth);
 
+    static bool walkCopySpectrum(const FlexSegment& seg, uint32_t slotId, float* dst256) noexcept;
+
     std::function<void(int)> onLatency_;
 
-    std::mutex mutex_;
+    mutable std::mutex mutex_;
     std::shared_ptr<FlexGraphPlan> pendingPlan_;
     std::shared_ptr<FlexGraphPlan> activePlan_;
 

@@ -292,6 +292,10 @@ FlexSlotDesc GraphPlanFactory::makeModulePaletteSlot(AudioNodeKind kind)
             return module(AudioNodeKind::Exciter);
         case AudioNodeKind::SpectralCompressor:
             return module(AudioNodeKind::SpectralCompressor);
+        case AudioNodeKind::ParametricEq:
+            return module(AudioNodeKind::ParametricEq);
+        case AudioNodeKind::SpectrumAnalyzer:
+            return module(AudioNodeKind::SpectrumAnalyzer);
         case AudioNodeKind::Latency:
             return latencyModule(0);
         default:

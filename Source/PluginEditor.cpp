@@ -215,6 +215,52 @@ uint32_t referenceSlotForInsert(RazumovVocalChainAudioProcessor& proc, uint32_t 
 }
 } // namespace
 
+void RazumovVocalChainAudioProcessorEditor::SpectrumPanel::updateFrom(RazumovVocalChainAudioProcessor& proc,
+                                                                      uint32_t slotId)
+{
+    if (slotId == 0 || !proc.copySpectrumForSlot(slotId, bins_.data()))
+        bins_.fill(0.f);
+    repaint();
+}
+
+void RazumovVocalChainAudioProcessorEditor::SpectrumPanel::paint(juce::Graphics& g)
+{
+    auto r = getLocalBounds().toFloat().reduced(4.f);
+    g.setColour(juce::Colour(tkn::argb::backgroundNode));
+    g.fillRoundedRectangle(r, 6.f);
+    g.setColour(juce::Colour(tkn::argb::borderModulePanel));
+    g.drawRoundedRectangle(r, 6.f, 1.f);
+
+    juce::Path path;
+    const int n = 256;
+    const float w = r.getWidth();
+    const float h = r.getHeight();
+    const float base = r.getBottom() - 2.f;
+    for (int i = 0; i < n; ++i)
+    {
+        const float x = r.getX() + (float) i / (float) juce::jmax(1, n - 1) * w;
+        const float v = juce::jlimit(0.f, 1.f, bins_[(size_t) i]);
+        const float y = base - v * (h - 6.f);
+        if (i == 0)
+            path.startNewSubPath(x, y);
+        else
+            path.lineTo(x, y);
+    }
+    path.lineTo(r.getRight() - 1.f, base);
+    path.lineTo(r.getX() + 1.f, base);
+    path.closeSubPath();
+    g.setColour(juce::Colour(tkn::argb::accentSignal).withAlpha(0.35f));
+    g.fillPath(path);
+    g.setColour(juce::Colour(tkn::argb::accentSignal).withAlpha(0.85f));
+    g.strokePath(path, juce::PathStrokeType(1.2f));
+}
+
+void RazumovVocalChainAudioProcessorEditor::timerCallback()
+{
+    if (spectrumPanel.isVisible())
+        spectrumPanel.updateFrom(processor, selectedSlotId_);
+}
+
 void RazumovVocalChainAudioProcessorEditor::styleRotary(juce::Slider& s, int textBoxW, int textBoxH)
 {
     s.setSliderStyle(juce::Slider::RotaryVerticalDrag);
@@ -356,6 +402,18 @@ void RazumovVocalChainAudioProcessorEditor::refreshRotaryStyles()
     one(spectralMixSlider);
     one(spectralThreshSlider);
     one(spectralRatioSlider);
+    one(eq1FreqSlider);
+    one(eq1GainSlider);
+    one(eq1QSlider);
+    one(eq2FreqSlider);
+    one(eq2GainSlider);
+    one(eq2QSlider);
+    one(eq3FreqSlider);
+    one(eq3GainSlider);
+    one(eq3QSlider);
+    one(eq4FreqSlider);
+    one(eq4GainSlider);
+    one(eq4QSlider);
 }
 
 void RazumovVocalChainAudioProcessorEditor::populateComboBoxes()
@@ -377,6 +435,8 @@ void RazumovVocalChainAudioProcessorEditor::showAddModuleMenuForSlot(uint32_t re
     m.addItem(6, "VCA");
     m.addItem(7, "Exciter");
     m.addItem(8, "Spectral");
+    m.addItem(9, "Parametric EQ");
+    m.addItem(10, "Spectrum analyzer");
 
     m.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&chainStrip),
                     [this, referenceSlotId](int r) {
@@ -409,6 +469,12 @@ void RazumovVocalChainAudioProcessorEditor::showAddModuleMenuForSlot(uint32_t re
                                 break;
                             case 8:
                                 k = AK::SpectralCompressor;
+                                break;
+                            case 9:
+                                k = AK::ParametricEq;
+                                break;
+                            case 10:
+                                k = AK::SpectrumAnalyzer;
                                 break;
                             default:
                                 return;
@@ -431,6 +497,8 @@ void RazumovVocalChainAudioProcessorEditor::showParallelModuleMenuForSlot(uint32
     m.addItem(6, "VCA");
     m.addItem(7, "Exciter");
     m.addItem(8, "Spectral");
+    m.addItem(9, "Parametric EQ");
+    m.addItem(10, "Spectrum analyzer");
     m.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&chainStrip),
                     [this, referenceSlotId](int r) {
                         if (r <= 0)
@@ -462,6 +530,12 @@ void RazumovVocalChainAudioProcessorEditor::showParallelModuleMenuForSlot(uint32
                                 break;
                             case 8:
                                 k = AK::SpectralCompressor;
+                                break;
+                            case 9:
+                                k = AK::ParametricEq;
+                                break;
+                            case 10:
+                                k = AK::SpectrumAnalyzer;
                                 break;
                             default:
                                 return;
@@ -603,6 +677,19 @@ void RazumovVocalChainAudioProcessorEditor::reloadModuleParamsFromProcessor()
     spectralMixSlider.setValue(processor.getModuleFloatParam(id, spectralMix), juce::dontSendNotification);
     spectralThreshSlider.setValue(processor.getModuleFloatParam(id, spectralThresholdDb), juce::dontSendNotification);
     spectralRatioSlider.setValue(processor.getModuleFloatParam(id, spectralRatio), juce::dontSendNotification);
+    eqBypassToggle.setToggleState(processor.getModuleBoolParam(id, eqBypass), juce::dontSendNotification);
+    eq1FreqSlider.setValue(processor.getModuleFloatParam(id, eqBand1FreqHz), juce::dontSendNotification);
+    eq1GainSlider.setValue(processor.getModuleFloatParam(id, eqBand1GainDb), juce::dontSendNotification);
+    eq1QSlider.setValue(processor.getModuleFloatParam(id, eqBand1Q), juce::dontSendNotification);
+    eq2FreqSlider.setValue(processor.getModuleFloatParam(id, eqBand2FreqHz), juce::dontSendNotification);
+    eq2GainSlider.setValue(processor.getModuleFloatParam(id, eqBand2GainDb), juce::dontSendNotification);
+    eq2QSlider.setValue(processor.getModuleFloatParam(id, eqBand2Q), juce::dontSendNotification);
+    eq3FreqSlider.setValue(processor.getModuleFloatParam(id, eqBand3FreqHz), juce::dontSendNotification);
+    eq3GainSlider.setValue(processor.getModuleFloatParam(id, eqBand3GainDb), juce::dontSendNotification);
+    eq3QSlider.setValue(processor.getModuleFloatParam(id, eqBand3Q), juce::dontSendNotification);
+    eq4FreqSlider.setValue(processor.getModuleFloatParam(id, eqBand4FreqHz), juce::dontSendNotification);
+    eq4GainSlider.setValue(processor.getModuleFloatParam(id, eqBand4GainDb), juce::dontSendNotification);
+    eq4QSlider.setValue(processor.getModuleFloatParam(id, eqBand4Q), juce::dontSendNotification);
 }
 
 void RazumovVocalChainAudioProcessorEditor::refreshModulePanelVisibility()
@@ -672,6 +759,16 @@ void RazumovVocalChainAudioProcessorEditor::refreshModulePanelVisibility()
             case AK::SpectralCompressor:
                 moduleTitleLabel.setText("Spectral compressor", juce::dontSendNotification);
                 break;
+            case AK::ParametricEq:
+                moduleTitleLabel.setText("Parametric EQ", juce::dontSendNotification);
+                moduleHintLabel.setText("Spectrum: input (before EQ). Four peaking bands.", juce::dontSendNotification);
+                moduleHintLabel.setVisible(true);
+                break;
+            case AK::SpectrumAnalyzer:
+                moduleTitleLabel.setText("Spectrum analyzer", juce::dontSendNotification);
+                moduleHintLabel.setText("FFT of the input (pass-through).", juce::dontSendNotification);
+                moduleHintLabel.setVisible(true);
+                break;
             case AK::Latency:
                 moduleTitleLabel.setText("Latency", juce::dontSendNotification);
                 moduleHintLabel.setText("Utility delay line (tests / alignment).", juce::dontSendNotification);
@@ -697,6 +794,8 @@ void RazumovVocalChainAudioProcessorEditor::refreshModulePanelVisibility()
     const bool showSplitPanel = isSplit;
     const bool showMic = kind == AK::MicCorrection;
     const bool showGainKnob = kind == AK::Gain;
+    const bool showEq = kind == AK::ParametricEq;
+    const bool showSpectrumPlot = showEq || kind == AK::SpectrumAnalyzer;
 
     juce::ignoreUnused(showSplitPanel);
 
@@ -730,6 +829,26 @@ void RazumovVocalChainAudioProcessorEditor::refreshModulePanelVisibility()
     spectralRatioSlider.setVisible(showSpec);
 
     lowpassSlider.setVisible(showLp);
+
+    spectrumPanel.setVisible(showSpectrumPlot);
+    eqBypassToggle.setVisible(showEq);
+    eq1FreqSlider.setVisible(showEq);
+    eq1GainSlider.setVisible(showEq);
+    eq1QSlider.setVisible(showEq);
+    eq2FreqSlider.setVisible(showEq);
+    eq2GainSlider.setVisible(showEq);
+    eq2QSlider.setVisible(showEq);
+    eq3FreqSlider.setVisible(showEq);
+    eq3GainSlider.setVisible(showEq);
+    eq3QSlider.setVisible(showEq);
+    eq4FreqSlider.setVisible(showEq);
+    eq4GainSlider.setVisible(showEq);
+    eq4QSlider.setVisible(showEq);
+
+    if (showSpectrumPlot)
+        startTimerHz(30);
+    else
+        stopTimer();
 
     reloadModuleParamsFromProcessor();
     resized();
@@ -782,6 +901,31 @@ void RazumovVocalChainAudioProcessorEditor::layoutModuleViewport(int viewportWid
         moduleHintLabel.setBounds(x, y, W - 2 * pad, scaled(36));
         y += scaled(42);
     }
+
+    if (spectrumPanel.isVisible())
+    {
+        spectrumPanel.setBounds(x, y, W - 2 * pad, scaled(100));
+        y += scaled(108);
+    }
+
+    if (eqBypassToggle.isVisible())
+    {
+        eqBypassToggle.setBounds(x, y, scaled(140), scaled(28));
+        y += scaled(36);
+    }
+
+    auto rowEq = [&](juce::Slider& a, juce::Slider& b, juce::Slider& c) {
+        if (!a.isVisible())
+            return;
+        a.setBounds(x, y, kw, kh);
+        b.setBounds(x + (kw + gap), y, kw, kh);
+        c.setBounds(x + 2 * (kw + gap), y, kw, kh);
+        y += kh + gap + scaled(18);
+    };
+    rowEq(eq1FreqSlider, eq1GainSlider, eq1QSlider);
+    rowEq(eq2FreqSlider, eq2GainSlider, eq2QSlider);
+    rowEq(eq3FreqSlider, eq3GainSlider, eq3QSlider);
+    rowEq(eq4FreqSlider, eq4GainSlider, eq4QSlider);
 
     if (micBypassBtn.isVisible())
     {
@@ -1117,6 +1261,89 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     wireFloat(spectralThreshSlider, razumov::params::spectralThresholdDb);
     wireFloat(spectralRatioSlider, razumov::params::spectralRatio);
 
+    content.addAndMakeVisible(spectrumPanel);
+    spectrumPanel.setVisible(false);
+
+    eqBypassToggle.setButtonText("EQ bypass");
+    eqBypassToggle.setClickingTogglesState(true);
+    eqBypassToggle.setColour(juce::ToggleButton::textColourId, juce::Colour(tkn::argb::textLabel));
+    eqBypassToggle.setColour(juce::ToggleButton::tickColourId, juce::Colour(tkn::argb::accentSignal));
+    content.addAndMakeVisible(eqBypassToggle);
+    eqBypassToggle.setVisible(false);
+
+    auto addEqKnob = [this, addKnob](ModuleTargetSlider& s, const juce::Colour& c) {
+        addKnob(s, c);
+        s.setVisible(false);
+    };
+    const juce::Colour eqCol = juce::Colour(tkn::knob::lowpass);
+    addEqKnob(eq1FreqSlider, eqCol);
+    addEqKnob(eq1GainSlider, eqCol);
+    addEqKnob(eq1QSlider, eqCol);
+    addEqKnob(eq2FreqSlider, eqCol);
+    addEqKnob(eq2GainSlider, eqCol);
+    addEqKnob(eq2QSlider, eqCol);
+    addEqKnob(eq3FreqSlider, eqCol);
+    addEqKnob(eq3GainSlider, eqCol);
+    addEqKnob(eq3QSlider, eqCol);
+    addEqKnob(eq4FreqSlider, eqCol);
+    addEqKnob(eq4GainSlider, eqCol);
+    addEqKnob(eq4QSlider, eqCol);
+
+    auto setupEqFreq = [](ModuleTargetSlider& s) {
+        s.setRange(20.0, 20000.0, 1.0);
+        s.setSkewFactorFromMidPoint(1000.0);
+        s.setTextValueSuffix(" Hz");
+    };
+    auto setupEqGain = [](ModuleTargetSlider& s) {
+        s.setRange(-18.0, 18.0, 0.1);
+        s.setTextValueSuffix(" dB");
+    };
+    auto setupEqQ = [](ModuleTargetSlider& s) {
+        s.setRange(0.3, 10.0, 0.01);
+    };
+    setupEqFreq(eq1FreqSlider);
+    setupEqGain(eq1GainSlider);
+    setupEqQ(eq1QSlider);
+    setupEqFreq(eq2FreqSlider);
+    setupEqGain(eq2GainSlider);
+    setupEqQ(eq2QSlider);
+    setupEqFreq(eq3FreqSlider);
+    setupEqGain(eq3GainSlider);
+    setupEqQ(eq3QSlider);
+    setupEqFreq(eq4FreqSlider);
+    setupEqGain(eq4GainSlider);
+    setupEqQ(eq4QSlider);
+
+    eq1FreqSlider.setTargetContext(*this, razumov::params::eqBand1FreqHz);
+    eq1GainSlider.setTargetContext(*this, razumov::params::eqBand1GainDb);
+    eq1QSlider.setTargetContext(*this, razumov::params::eqBand1Q);
+    eq2FreqSlider.setTargetContext(*this, razumov::params::eqBand2FreqHz);
+    eq2GainSlider.setTargetContext(*this, razumov::params::eqBand2GainDb);
+    eq2QSlider.setTargetContext(*this, razumov::params::eqBand2Q);
+    eq3FreqSlider.setTargetContext(*this, razumov::params::eqBand3FreqHz);
+    eq3GainSlider.setTargetContext(*this, razumov::params::eqBand3GainDb);
+    eq3QSlider.setTargetContext(*this, razumov::params::eqBand3Q);
+    eq4FreqSlider.setTargetContext(*this, razumov::params::eqBand4FreqHz);
+    eq4GainSlider.setTargetContext(*this, razumov::params::eqBand4GainDb);
+    eq4QSlider.setTargetContext(*this, razumov::params::eqBand4Q);
+
+    wireFloat(eq1FreqSlider, razumov::params::eqBand1FreqHz);
+    wireFloat(eq1GainSlider, razumov::params::eqBand1GainDb);
+    wireFloat(eq1QSlider, razumov::params::eqBand1Q);
+    wireFloat(eq2FreqSlider, razumov::params::eqBand2FreqHz);
+    wireFloat(eq2GainSlider, razumov::params::eqBand2GainDb);
+    wireFloat(eq2QSlider, razumov::params::eqBand2Q);
+    wireFloat(eq3FreqSlider, razumov::params::eqBand3FreqHz);
+    wireFloat(eq3GainSlider, razumov::params::eqBand3GainDb);
+    wireFloat(eq3QSlider, razumov::params::eqBand3Q);
+    wireFloat(eq4FreqSlider, razumov::params::eqBand4FreqHz);
+    wireFloat(eq4GainSlider, razumov::params::eqBand4GainDb);
+    wireFloat(eq4QSlider, razumov::params::eqBand4Q);
+
+    eqBypassToggle.onClick = [this] {
+        processor.setModuleBoolParam(selectedSlotId_, razumov::params::eqBypass, eqBypassToggle.getToggleState());
+    };
+
     micBypassBtn.onClick = [this] {
         processor.setModuleBoolParam(selectedSlotId_, razumov::params::micBypass, micBypassBtn.getToggleState());
     };
@@ -1230,6 +1457,7 @@ void RazumovVocalChainAudioProcessorEditor::resized()
 
 RazumovVocalChainAudioProcessorEditor::~RazumovVocalChainAudioProcessorEditor()
 {
+    stopTimer();
     macroGlueLabel.removeListener(this);
     macroAirLabel.removeListener(this);
     macroSibilanceLabel.removeListener(this);

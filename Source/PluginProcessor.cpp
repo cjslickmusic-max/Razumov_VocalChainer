@@ -576,6 +576,11 @@ juce::String RazumovVocalChainAudioProcessor::getMacroDisplayName(int macroIndex
     return moduleParams_.getMacroDisplayName(macroIndex);
 }
 
+bool RazumovVocalChainAudioProcessor::copySpectrumForSlot(uint32_t slotId, float* dst256) const
+{
+    return graphEngine_.copySpectrumForSlot(slotId, dst256);
+}
+
 void RazumovVocalChainAudioProcessor::pushMacroIntoAssignedModuleParam(int macroIndex)
 {
     const uint32_t sid = moduleParams_.getMacroTargetSlot(macroIndex);

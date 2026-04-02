@@ -7,6 +7,7 @@ namespace razumov::graph
 
 class GainNode;
 class FilterNode;
+class ISpectrumSource;
 
 /** Тип узла для привязки параметров и отладки. */
 enum class AudioNodeKind : uint8_t
@@ -21,6 +22,8 @@ enum class AudioNodeKind : uint8_t
     Deesser,
     Exciter,
     SpectralCompressor,
+    ParametricEq,
+    SpectrumAnalyzer,
     Latency,
 };
 
@@ -34,6 +37,12 @@ public:
 
     virtual GainNode* asGain() noexcept { return nullptr; }
     virtual FilterNode* asFilter() noexcept { return nullptr; }
+
+    /** Привязка к slotId из плана (опционально; для отладки / UI). */
+    virtual void bindSlot(uint32_t slotId) noexcept { juce::ignoreUnused(slotId); }
+
+    /** Узел с тапом спектра для панели (иначе nullptr). */
+    virtual ISpectrumSource* asSpectrumSource() noexcept { return nullptr; }
 
     virtual void prepare(double sampleRate, int maxBlockSize, int numChannels) = 0;
     virtual void reset() = 0;

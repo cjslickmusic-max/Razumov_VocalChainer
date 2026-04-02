@@ -35,6 +35,20 @@ struct Phase3RealtimeParams
     float spectralMix { 0.75f };
     float spectralThresholdDb { -24.0f };
     float spectralRatio { 3.0f };
+
+    bool eqBypass { false };
+    float eqBand1FreqHz { 120.0f };
+    float eqBand1GainDb { 0.0f };
+    float eqBand1Q { 1.0f };
+    float eqBand2FreqHz { 400.0f };
+    float eqBand2GainDb { 0.0f };
+    float eqBand2Q { 1.0f };
+    float eqBand3FreqHz { 2500.0f };
+    float eqBand3GainDb { 0.0f };
+    float eqBand3Q { 1.0f };
+    float eqBand4FreqHz { 7000.0f };
+    float eqBand4GainDb { 0.0f };
+    float eqBand4Q { 1.0f };
 };
 
 } // namespace razumov::params

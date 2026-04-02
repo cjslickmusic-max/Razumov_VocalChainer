@@ -84,6 +84,9 @@ public:
     int findMacroIndexForSlotParam(uint32_t slotId, const juce::String& paramId) const noexcept;
     void setMacroDisplayName(int macroIndex, const juce::String& name);
     juce::String getMacroDisplayName(int macroIndex) const;
+
+    /** UI: 256 нормализованных бинов (0...1) для слота с ISpectrumSource. */
+    bool copySpectrumForSlot(uint32_t slotId, float* dst256) const;
     void pushMacroIntoAssignedModuleParam(int macroIndex);
     void syncMacroApvtsFromAssignedModule(int macroIndex);
 

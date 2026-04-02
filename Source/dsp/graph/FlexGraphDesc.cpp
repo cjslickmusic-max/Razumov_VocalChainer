@@ -26,6 +26,10 @@ const char* shortNameForKind(AudioNodeKind k) noexcept
             return "Exc";
         case AudioNodeKind::SpectralCompressor:
             return "Spec";
+        case AudioNodeKind::ParametricEq:
+            return "EQ";
+        case AudioNodeKind::SpectrumAnalyzer:
+            return "SpecAn";
         case AudioNodeKind::Latency:
             return "Lat";
         default:

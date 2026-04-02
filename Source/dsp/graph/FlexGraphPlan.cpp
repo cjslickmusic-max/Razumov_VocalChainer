@@ -93,6 +93,8 @@ FlexSlot FlexGraphPlan::buildSlotFromDesc(const FlexSlotDesc& d)
     {
         slot.type = FlexSlot::Type::Module;
         slot.node = createAudioNodeFromModuleDesc(d);
+        if (slot.node != nullptr)
+            slot.node->bindSlot(d.slotId);
         return slot;
     }
 

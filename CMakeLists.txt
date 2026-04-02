@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(RazumovVocalChain VERSION 0.9.20 LANGUAGES C CXX)
+project(RazumovVocalChain VERSION 0.9.21 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -70,6 +70,9 @@ target_sources(
         Source/dsp/graph/DeesserNode.cpp
         Source/dsp/graph/ExciterNode.cpp
         Source/dsp/graph/SpectralCompressorNode.cpp
+        Source/dsp/graph/SpectrumTap.cpp
+        Source/dsp/graph/ParametricEqNode.cpp
+        Source/dsp/graph/SpectrumAnalyzerNode.cpp
 )
 
 target_include_directories(
@@ -127,6 +130,9 @@ set(
     Source/dsp/graph/DeesserNode.cpp
     Source/dsp/graph/ExciterNode.cpp
     Source/dsp/graph/SpectralCompressorNode.cpp
+    Source/dsp/graph/SpectrumTap.cpp
+    Source/dsp/graph/ParametricEqNode.cpp
+    Source/dsp/graph/SpectrumAnalyzerNode.cpp
 )
 
 add_executable(

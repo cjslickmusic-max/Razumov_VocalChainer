@@ -7,6 +7,7 @@
 #include "GainNode.h"
 #include "MicCorrectionNode.h"
 #include "SpectralCompressorNode.h"
+#include "ParametricEqNode.h"
 #include "params/ModuleParamsRuntime.h"
 #include "params/Phase3RealtimeParams.h"
 
@@ -84,6 +85,9 @@ void applyPhase3ToNode(AudioNode& node, const razumov::params::Phase3RealtimePar
             n.setRatio(p.spectralRatio);
             break;
         }
+        case AudioNodeKind::ParametricEq:
+            static_cast<ParametricEqNode&>(node).applyPhase3(p);
+            break;
         default:
             break;
     }
@@ -117,6 +121,42 @@ void walkApplyPhase3Segment(FlexSegment& seg,
 }
 
 } // namespace
+
+bool GraphEngine::walkCopySpectrum(const FlexSegment& seg, uint32_t slotId, float* dst256) noexcept
+{
+    if (dst256 == nullptr)
+        return false;
+    for (const auto& s : seg)
+    {
+        if (s.type == FlexSlot::Type::Module)
+        {
+            if (s.slotId == slotId && s.node != nullptr)
+            {
+                if (auto* sp = s.node->asSpectrumSource())
+                {
+                    sp->copySpectrum256(dst256);
+                    return true;
+                }
+                return false;
+            }
+        }
+        else
+        {
+            for (const auto& br : s.branches)
+                if (walkCopySpectrum(br, slotId, dst256))
+                    return true;
+        }
+    }
+    return false;
+}
+
+bool GraphEngine::copySpectrumForSlot(uint32_t slotId, float* dst256) const
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (activePlan_ == nullptr)
+        return false;
+    return walkCopySpectrum(activePlan_->getRoot(), slotId, dst256);
+}
 
 void GraphEngine::ensureBranchPool(int breadth)
 {

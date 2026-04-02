@@ -34,6 +34,20 @@ inline constexpr const char* spectralMix = "spectralMix";
 inline constexpr const char* spectralThresholdDb = "spectralThresholdDb";
 inline constexpr const char* spectralRatio = "spectralRatio";
 
+inline constexpr const char* eqBypass = "eqBypass";
+inline constexpr const char* eqBand1FreqHz = "eqBand1FreqHz";
+inline constexpr const char* eqBand1GainDb = "eqBand1GainDb";
+inline constexpr const char* eqBand1Q = "eqBand1Q";
+inline constexpr const char* eqBand2FreqHz = "eqBand2FreqHz";
+inline constexpr const char* eqBand2GainDb = "eqBand2GainDb";
+inline constexpr const char* eqBand2Q = "eqBand2Q";
+inline constexpr const char* eqBand3FreqHz = "eqBand3FreqHz";
+inline constexpr const char* eqBand3GainDb = "eqBand3GainDb";
+inline constexpr const char* eqBand3Q = "eqBand3Q";
+inline constexpr const char* eqBand4FreqHz = "eqBand4FreqHz";
+inline constexpr const char* eqBand4GainDb = "eqBand4GainDb";
+inline constexpr const char* eqBand4Q = "eqBand4Q";
+
 /** Стартовая топология графа (фаза 4.2): Full / Compact / FET-forward. */
 inline constexpr const char* chainProfile = "chainProfile";
 

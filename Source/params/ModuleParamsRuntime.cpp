@@ -35,6 +35,20 @@ struct ModuleSlotBlock
     std::atomic<float> spectralMix { 0.75f };
     std::atomic<float> spectralThresholdDb { -24.0f };
     std::atomic<float> spectralRatio { 3.0f };
+
+    std::atomic<float> eqBypass { 0.0f };
+    std::atomic<float> eqBand1FreqHz { 120.0f };
+    std::atomic<float> eqBand1GainDb { 0.0f };
+    std::atomic<float> eqBand1Q { 1.0f };
+    std::atomic<float> eqBand2FreqHz { 400.0f };
+    std::atomic<float> eqBand2GainDb { 0.0f };
+    std::atomic<float> eqBand2Q { 1.0f };
+    std::atomic<float> eqBand3FreqHz { 2500.0f };
+    std::atomic<float> eqBand3GainDb { 0.0f };
+    std::atomic<float> eqBand3Q { 1.0f };
+    std::atomic<float> eqBand4FreqHz { 7000.0f };
+    std::atomic<float> eqBand4GainDb { 0.0f };
+    std::atomic<float> eqBand4Q { 1.0f };
 };
 
 inline void copyModuleSlotBlockState(const ModuleSlotBlock& src, ModuleSlotBlock& dst)
@@ -61,6 +75,19 @@ inline void copyModuleSlotBlockState(const ModuleSlotBlock& src, ModuleSlotBlock
     dst.spectralMix.store(src.spectralMix.load());
     dst.spectralThresholdDb.store(src.spectralThresholdDb.load());
     dst.spectralRatio.store(src.spectralRatio.load());
+    dst.eqBypass.store(src.eqBypass.load());
+    dst.eqBand1FreqHz.store(src.eqBand1FreqHz.load());
+    dst.eqBand1GainDb.store(src.eqBand1GainDb.load());
+    dst.eqBand1Q.store(src.eqBand1Q.load());
+    dst.eqBand2FreqHz.store(src.eqBand2FreqHz.load());
+    dst.eqBand2GainDb.store(src.eqBand2GainDb.load());
+    dst.eqBand2Q.store(src.eqBand2Q.load());
+    dst.eqBand3FreqHz.store(src.eqBand3FreqHz.load());
+    dst.eqBand3GainDb.store(src.eqBand3GainDb.load());
+    dst.eqBand3Q.store(src.eqBand3Q.load());
+    dst.eqBand4FreqHz.store(src.eqBand4FreqHz.load());
+    dst.eqBand4GainDb.store(src.eqBand4GainDb.load());
+    dst.eqBand4Q.store(src.eqBand4Q.load());
 }
 
 } // namespace detail
@@ -92,6 +119,19 @@ void storeFromPhase3(detail::ModuleSlotBlock& b, const Phase3RealtimeParams& p)
     b.spectralMix.store(p.spectralMix);
     b.spectralThresholdDb.store(p.spectralThresholdDb);
     b.spectralRatio.store(p.spectralRatio);
+    b.eqBypass.store(p.eqBypass ? 1.0f : 0.0f);
+    b.eqBand1FreqHz.store(p.eqBand1FreqHz);
+    b.eqBand1GainDb.store(p.eqBand1GainDb);
+    b.eqBand1Q.store(p.eqBand1Q);
+    b.eqBand2FreqHz.store(p.eqBand2FreqHz);
+    b.eqBand2GainDb.store(p.eqBand2GainDb);
+    b.eqBand2Q.store(p.eqBand2Q);
+    b.eqBand3FreqHz.store(p.eqBand3FreqHz);
+    b.eqBand3GainDb.store(p.eqBand3GainDb);
+    b.eqBand3Q.store(p.eqBand3Q);
+    b.eqBand4FreqHz.store(p.eqBand4FreqHz);
+    b.eqBand4GainDb.store(p.eqBand4GainDb);
+    b.eqBand4Q.store(p.eqBand4Q);
 }
 
 void loadToPhase3(const detail::ModuleSlotBlock& b, Phase3RealtimeParams& out)
@@ -118,6 +158,19 @@ void loadToPhase3(const detail::ModuleSlotBlock& b, Phase3RealtimeParams& out)
     out.spectralMix = b.spectralMix.load();
     out.spectralThresholdDb = b.spectralThresholdDb.load();
     out.spectralRatio = b.spectralRatio.load();
+    out.eqBypass = b.eqBypass.load() > 0.5f;
+    out.eqBand1FreqHz = b.eqBand1FreqHz.load();
+    out.eqBand1GainDb = b.eqBand1GainDb.load();
+    out.eqBand1Q = b.eqBand1Q.load();
+    out.eqBand2FreqHz = b.eqBand2FreqHz.load();
+    out.eqBand2GainDb = b.eqBand2GainDb.load();
+    out.eqBand2Q = b.eqBand2Q.load();
+    out.eqBand3FreqHz = b.eqBand3FreqHz.load();
+    out.eqBand3GainDb = b.eqBand3GainDb.load();
+    out.eqBand3Q = b.eqBand3Q.load();
+    out.eqBand4FreqHz = b.eqBand4FreqHz.load();
+    out.eqBand4GainDb = b.eqBand4GainDb.load();
+    out.eqBand4Q = b.eqBand4Q.load();
 }
 
 void initDefaults(detail::ModuleSlotBlock& b)
@@ -273,6 +326,30 @@ float ModuleParamsRuntime::getFloat(uint32_t slotId, const juce::String& paramId
         return b->spectralThresholdDb.load();
     if (paramId == spectralRatio)
         return b->spectralRatio.load();
+    if (paramId == eqBand1FreqHz)
+        return b->eqBand1FreqHz.load();
+    if (paramId == eqBand1GainDb)
+        return b->eqBand1GainDb.load();
+    if (paramId == eqBand1Q)
+        return b->eqBand1Q.load();
+    if (paramId == eqBand2FreqHz)
+        return b->eqBand2FreqHz.load();
+    if (paramId == eqBand2GainDb)
+        return b->eqBand2GainDb.load();
+    if (paramId == eqBand2Q)
+        return b->eqBand2Q.load();
+    if (paramId == eqBand3FreqHz)
+        return b->eqBand3FreqHz.load();
+    if (paramId == eqBand3GainDb)
+        return b->eqBand3GainDb.load();
+    if (paramId == eqBand3Q)
+        return b->eqBand3Q.load();
+    if (paramId == eqBand4FreqHz)
+        return b->eqBand4FreqHz.load();
+    if (paramId == eqBand4GainDb)
+        return b->eqBand4GainDb.load();
+    if (paramId == eqBand4Q)
+        return b->eqBand4Q.load();
     return 0.0f;
 }
 
@@ -323,6 +400,30 @@ void ModuleParamsRuntime::setFloat(uint32_t slotId, const juce::String& paramId,
         b->spectralThresholdDb.store(value);
     else if (paramId == spectralRatio)
         b->spectralRatio.store(value);
+    else if (paramId == eqBand1FreqHz)
+        b->eqBand1FreqHz.store(value);
+    else if (paramId == eqBand1GainDb)
+        b->eqBand1GainDb.store(value);
+    else if (paramId == eqBand1Q)
+        b->eqBand1Q.store(value);
+    else if (paramId == eqBand2FreqHz)
+        b->eqBand2FreqHz.store(value);
+    else if (paramId == eqBand2GainDb)
+        b->eqBand2GainDb.store(value);
+    else if (paramId == eqBand2Q)
+        b->eqBand2Q.store(value);
+    else if (paramId == eqBand3FreqHz)
+        b->eqBand3FreqHz.store(value);
+    else if (paramId == eqBand3GainDb)
+        b->eqBand3GainDb.store(value);
+    else if (paramId == eqBand3Q)
+        b->eqBand3Q.store(value);
+    else if (paramId == eqBand4FreqHz)
+        b->eqBand4FreqHz.store(value);
+    else if (paramId == eqBand4GainDb)
+        b->eqBand4GainDb.store(value);
+    else if (paramId == eqBand4Q)
+        b->eqBand4Q.store(value);
 }
 
 bool ModuleParamsRuntime::getBool(uint32_t slotId, const juce::String& paramId) const
@@ -336,6 +437,8 @@ bool ModuleParamsRuntime::getBool(uint32_t slotId, const juce::String& paramId) 
         return b->micBypass.load() > 0.5f;
     if (paramId == spectralBypass)
         return b->spectralBypass.load() > 0.5f;
+    if (paramId == eqBypass)
+        return b->eqBypass.load() > 0.5f;
     return false;
 }
 
@@ -351,6 +454,8 @@ void ModuleParamsRuntime::setBool(uint32_t slotId, const juce::String& paramId, 
         b->micBypass.store(v);
     else if (paramId == spectralBypass)
         b->spectralBypass.store(v);
+    else if (paramId == eqBypass)
+        b->eqBypass.store(v);
 }
 
 void ModuleParamsRuntime::seedAllSlotsWithSameParams(const Phase3RealtimeParams& p)
@@ -407,6 +512,19 @@ juce::ValueTree ModuleParamsRuntime::toValueTree() const
         slot.setProperty(spectralMix, b->spectralMix.load(), nullptr);
         slot.setProperty(spectralThresholdDb, b->spectralThresholdDb.load(), nullptr);
         slot.setProperty(spectralRatio, b->spectralRatio.load(), nullptr);
+        slot.setProperty(eqBypass, b->eqBypass.load(), nullptr);
+        slot.setProperty(eqBand1FreqHz, b->eqBand1FreqHz.load(), nullptr);
+        slot.setProperty(eqBand1GainDb, b->eqBand1GainDb.load(), nullptr);
+        slot.setProperty(eqBand1Q, b->eqBand1Q.load(), nullptr);
+        slot.setProperty(eqBand2FreqHz, b->eqBand2FreqHz.load(), nullptr);
+        slot.setProperty(eqBand2GainDb, b->eqBand2GainDb.load(), nullptr);
+        slot.setProperty(eqBand2Q, b->eqBand2Q.load(), nullptr);
+        slot.setProperty(eqBand3FreqHz, b->eqBand3FreqHz.load(), nullptr);
+        slot.setProperty(eqBand3GainDb, b->eqBand3GainDb.load(), nullptr);
+        slot.setProperty(eqBand3Q, b->eqBand3Q.load(), nullptr);
+        slot.setProperty(eqBand4FreqHz, b->eqBand4FreqHz.load(), nullptr);
+        slot.setProperty(eqBand4GainDb, b->eqBand4GainDb.load(), nullptr);
+        slot.setProperty(eqBand4Q, b->eqBand4Q.load(), nullptr);
         root.appendChild(slot, nullptr);
     }
 
@@ -468,6 +586,19 @@ void ModuleParamsRuntime::fromValueTree(const juce::ValueTree& v)
         b->spectralMix.store(gf(spectralMix, 0.75f));
         b->spectralThresholdDb.store(gf(spectralThresholdDb, -24.0f));
         b->spectralRatio.store(gf(spectralRatio, 3.0f));
+        b->eqBypass.store(gf(eqBypass, 0.0f));
+        b->eqBand1FreqHz.store(gf(eqBand1FreqHz, 120.0f));
+        b->eqBand1GainDb.store(gf(eqBand1GainDb, 0.0f));
+        b->eqBand1Q.store(gf(eqBand1Q, 1.0f));
+        b->eqBand2FreqHz.store(gf(eqBand2FreqHz, 400.0f));
+        b->eqBand2GainDb.store(gf(eqBand2GainDb, 0.0f));
+        b->eqBand2Q.store(gf(eqBand2Q, 1.0f));
+        b->eqBand3FreqHz.store(gf(eqBand3FreqHz, 2500.0f));
+        b->eqBand3GainDb.store(gf(eqBand3GainDb, 0.0f));
+        b->eqBand3Q.store(gf(eqBand3Q, 1.0f));
+        b->eqBand4FreqHz.store(gf(eqBand4FreqHz, 7000.0f));
+        b->eqBand4GainDb.store(gf(eqBand4GainDb, 0.0f));
+        b->eqBand4Q.store(gf(eqBand4Q, 1.0f));
     }
 
     juce::ValueTree mr = v.getChildWithName("MacroRouting");

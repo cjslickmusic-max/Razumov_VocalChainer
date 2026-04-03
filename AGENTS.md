@@ -49,6 +49,7 @@
 - `docs/PERF_CHECKPOINTS.md` — замеры CPU.
 - `docs/REFACTOR_SUSPICIOUS_LOG.md` — отложенные риски.
 - `docs/FFT_SPECTRUM_ARCHITECTURE.md` — FFT/спектр: тапы по узлам, потоки, SIMD; детали в skill `fft-spectrum-engineering`.
+- `docs/REEQ_PORT_REFERENCE.md` — референс ReEQ (ReJJ, MIT): `reference/ReJJ/` JSFX не собирается в VST; план порта в JUCE.
 
 ## Отличия от Razumov Ultimate Sampler
 

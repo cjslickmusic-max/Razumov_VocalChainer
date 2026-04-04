@@ -63,6 +63,14 @@ private:
     std::array<float, kNumBands> smoothQ_ { 1.f, 1.f, 1.f, 1.f, 1.f };
     std::array<float, kNumBands> smoothType_ {};
     bool smoothBypass_ { false };
+
+    /** Last coeffs pushed to filters (skip makeBandCoeffs when unchanged; RT-safe). */
+    std::array<float, kNumBands> lastCoeffFreq_{};
+    std::array<float, kNumBands> lastCoeffGainDb_{};
+    std::array<float, kNumBands> lastCoeffQ_{};
+    std::array<float, kNumBands> lastCoeffType_{};
+    bool coeffSnapshotValid_ { false };
+    bool prevBypass_ { false };
 };
 
 } // namespace razumov::graph

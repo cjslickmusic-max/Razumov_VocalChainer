@@ -21,8 +21,6 @@ void ParametricEqNode::prepare(double sampleRate, int maxBlockSize, int numChann
             f.prepare(spec);
 
     reset();
-    for (int i = 0; i < kNumBands; ++i)
-        smoothType_[(size_t) i] = tgtType_[(size_t) i];
     smoothStep();
     for (int b = 0; b < kNumBands; ++b)
         updateBandCoeffs(b);
@@ -34,6 +32,17 @@ void ParametricEqNode::reset()
     for (auto& band : bands_)
         for (auto& f : band)
             f.reset();
+
+    /** Align smoothing state with targets so graph rebuild / reset is deterministic. */
+    smoothFreq_ = tgtFreq_;
+    smoothGainDb_ = tgtGainDb_;
+    smoothQ_ = tgtQ_;
+    for (int i = 0; i < kNumBands; ++i)
+        smoothType_[(size_t) i] = tgtType_[(size_t) i];
+    smoothBypass_ = tgtBypass_;
+
+    coeffSnapshotValid_ = false;
+    prevBypass_ = tgtBypass_;
 }
 
 void ParametricEqNode::smoothStep() noexcept
@@ -58,10 +67,28 @@ void ParametricEqNode::updateBandCoeffs(int bandIndex) noexcept
         return;
 
     const size_t bi = (size_t) bandIndex;
+    constexpr float epsF = 2e-3f;
+    constexpr float epsG = 2e-4f;
+    constexpr float epsQ = 2e-4f;
+
+    if (coeffSnapshotValid_)
+    {
+        if (std::abs(smoothFreq_[bi] - lastCoeffFreq_[bi]) < epsF
+            && std::abs(smoothGainDb_[bi] - lastCoeffGainDb_[bi]) < epsG
+            && std::abs(smoothQ_[bi] - lastCoeffQ_[bi]) < epsQ && smoothType_[bi] == lastCoeffType_[bi])
+            return;
+    }
+
     const auto t = razumov::dsp::eq::EqTypeFromFloat(smoothType_[bi]);
     auto c = razumov::dsp::eq::makeBandCoeffs(t, sampleRate_, smoothFreq_[bi], smoothGainDb_[bi], smoothQ_[bi]);
     for (int ch = 0; ch < 2; ++ch)
         bands_[bi][(size_t) ch].coefficients = c;
+
+    lastCoeffFreq_[bi] = smoothFreq_[bi];
+    lastCoeffGainDb_[bi] = smoothGainDb_[bi];
+    lastCoeffQ_[bi] = smoothQ_[bi];
+    lastCoeffType_[bi] = smoothType_[bi];
+    coeffSnapshotValid_ = true;
 }
 
 void ParametricEqNode::processOneChannel(float* data, int numSamples, int channelIndex) noexcept
@@ -69,9 +96,8 @@ void ParametricEqNode::processOneChannel(float* data, int numSamples, int channe
     if (data == nullptr || numSamples <= 0 || channelIndex < 0 || channelIndex > 1)
         return;
 
-    float* channelData = data;
-    juce::AudioBuffer<float> wrap(&channelData, 1, numSamples);
-    juce::dsp::AudioBlock<float> block(wrap);
+    float* chans[1] = { data };
+    juce::dsp::AudioBlock<float> block(chans, 1, (size_t) numSamples);
     for (int b = 0; b < kNumBands; ++b)
     {
         juce::dsp::ProcessContextReplacing<float> ctx(block);
@@ -89,11 +115,21 @@ void ParametricEqNode::process(juce::AudioBuffer<float>& buffer)
     spectrumTap_.pushStereoBlock(L, R, n);
 
     smoothStep();
-    for (int b = 0; b < kNumBands; ++b)
-        updateBandCoeffs(b);
 
     if (smoothBypass_)
+    {
+        prevBypass_ = true;
         return;
+    }
+
+    if (prevBypass_)
+    {
+        coeffSnapshotValid_ = false;
+        prevBypass_ = false;
+    }
+
+    for (int b = 0; b < kNumBands; ++b)
+        updateBandCoeffs(b);
 
     processOneChannel(L, n, 0);
     if (ch > 1)

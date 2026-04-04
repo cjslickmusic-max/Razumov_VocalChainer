@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <juce_dsp/juce_dsp.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 
 class RazumovVocalChainAudioProcessor;
@@ -34,6 +35,9 @@ private:
     void showTypeMenuForBand(int bandIndex, juce::Point<int> screenPos);
     void pushBandParamsFromMouse(juce::Point<float> localPos, bool writeFreqGain);
 
+    uint64_t hashEqParams() const noexcept;
+    void rebuildMagPathIfNeeded(const juce::Rectangle<float>& plot, float nyq);
+
     RazumovVocalChainAudioProcessor* processor_ { nullptr };
     uint32_t slotId_ { 0 };
     double sampleRate_ { 48000.0 };
@@ -46,4 +50,11 @@ private:
 
     int selectedBand_ { -1 };
     int dragBand_ { -1 };
+
+    /** Avoid heap churn + redundant magnitude math when params/plot unchanged (UI thread only). */
+    std::array<juce::dsp::IIR::Coefficients<float>::Ptr, (size_t) kBands> coeffCache_{};
+    uint64_t lastCoeffHash_ { 0 };
+    juce::Rectangle<float> lastMagPlot_{};
+    juce::Path magPathCache_{};
+    bool magPathBypass_ { false };
 };

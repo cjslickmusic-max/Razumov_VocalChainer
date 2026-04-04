@@ -8,9 +8,12 @@
 #include <dsp/graph/LatencyNode.h>
 #include <dsp/graph/MergeDelayPad.h>
 #include <dsp/graph/MicCorrectionNode.h>
+#include <dsp/graph/ParametricEqNode.h>
 #include <dsp/graph/SpectralCompressorNode.h>
+#include <params/Phase3RealtimeParams.h>
 
 #include <cassert>
+#include <cmath>
 
 namespace
 {
@@ -236,6 +239,102 @@ void testConstantDcThroughGainLinear()
         assert(razumov::tests::nearAbs(buf.getSample(0, i), 0.2f, 1.0e-3f));
 }
 
+static bool bufferAllFinite(const juce::AudioBuffer<float>& buf) noexcept
+{
+    for (int c = 0; c < buf.getNumChannels(); ++c)
+        for (int i = 0; i < buf.getNumSamples(); ++i)
+            if (!std::isfinite((double) buf.getSample(c, i)))
+                return false;
+    return true;
+}
+
+void testParametricEqDeterminism()
+{
+    using namespace razumov::graph;
+    ParametricEqNode node;
+    node.prepare(kSr, kBlock, 2);
+    razumov::params::Phase3RealtimeParams p {};
+    p.eqBypass = false;
+    node.applyPhase3(p);
+
+    juce::AudioBuffer<float> in(2, kBlock);
+    razumov::tests::fillSine(in, kSr, 1000.0, 0.1f);
+
+    juce::AudioBuffer<float> a(2, kBlock);
+    juce::AudioBuffer<float> b(2, kBlock);
+    razumov::tests::copyBuffer(in, a);
+    node.process(a);
+
+    node.reset();
+    node.applyPhase3(p);
+    razumov::tests::copyBuffer(in, b);
+    node.process(b);
+
+    razumov::tests::assertBuffersNearEqual(a, b, 5.0e-4f);
+}
+
+void testParametricEqFiniteAndNotSilent()
+{
+    using namespace razumov::graph;
+    ParametricEqNode node;
+    node.prepare(kSr, kBlock, 2);
+    razumov::params::Phase3RealtimeParams p {};
+    p.eqBypass = false;
+    p.eqBand1FreqHz = 800.0f;
+    p.eqBand1GainDb = 3.0f;
+    p.eqBand1Q = 1.2f;
+    node.applyPhase3(p);
+
+    juce::AudioBuffer<float> buf(2, kBlock);
+    razumov::tests::fillSine(buf, kSr, 440.0, 0.25f);
+    node.process(buf);
+    assert(bufferAllFinite(buf));
+    float e = 0.0f;
+    for (int c = 0; c < 2; ++c)
+        for (int i = 0; i < kBlock; ++i)
+            e += buf.getSample(c, i) * buf.getSample(c, i);
+    assert(e > 1.0e-6f);
+}
+
+void testParametricEqBypassIdentity()
+{
+    using namespace razumov::graph;
+    ParametricEqNode node;
+    node.prepare(kSr, kBlock, 2);
+    razumov::params::Phase3RealtimeParams p {};
+    p.eqBypass = true;
+    node.applyPhase3(p);
+
+    juce::AudioBuffer<float> buf(2, kBlock);
+    razumov::tests::fillSine(buf, kSr, 333.0, 0.2f);
+    juce::AudioBuffer<float> ref(2, kBlock);
+    razumov::tests::copyBuffer(buf, ref);
+    node.process(buf);
+    assert(bufferAllFinite(buf));
+    razumov::tests::assertBuffersNearEqual(buf, ref, 1.0e-6f);
+}
+
+void testParametricEqMonoStereo()
+{
+    using namespace razumov::graph;
+    ParametricEqNode node;
+    node.prepare(kSr, kBlock, 2);
+    razumov::params::Phase3RealtimeParams p {};
+    p.eqBypass = false;
+    p.eqBand2GainDb = 2.0f;
+    node.applyPhase3(p);
+
+    juce::AudioBuffer<float> mono(1, kBlock);
+    razumov::tests::fillSine(mono, kSr, 200.0, 0.15f);
+    node.process(mono);
+    assert(bufferAllFinite(mono));
+
+    juce::AudioBuffer<float> stereo(2, kBlock);
+    razumov::tests::fillSine(stereo, kSr, 200.0, 0.15f);
+    node.process(stereo);
+    assert(bufferAllFinite(stereo));
+}
+
 void testSpectralCompressorDeterminism()
 {
     using namespace razumov::graph;
@@ -282,4 +381,9 @@ void runDspDeterminismTests()
     testMergeDelayPadDeterminism();
     testConstantDcThroughGainLinear();
     testSpectralCompressorDeterminism();
+
+    testParametricEqDeterminism();
+    testParametricEqFiniteAndNotSilent();
+    testParametricEqBypassIdentity();
+    testParametricEqMonoStereo();
 }

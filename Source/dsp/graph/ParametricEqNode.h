@@ -3,6 +3,7 @@
 #include "AudioNode.h"
 #include "ISpectrumSource.h"
 #include "SpectrumTap.h"
+#include "dsp/eq/EqBandShapes.h"
 
 #include <array>
 #include <juce_dsp/juce_dsp.h>
@@ -15,10 +16,12 @@ struct Phase3RealtimeParams;
 namespace razumov::graph
 {
 
-/** 4-band parametric peaking EQ (stereo linked), спектр с входа (до EQ). */
+/** 5-band EQ (stereo linked), RBJ/SVF-style per-band types; spectrum = input before EQ. */
 class ParametricEqNode final : public AudioNode, public ISpectrumSource
 {
 public:
+    static constexpr int kNumBands = 5;
+
     ParametricEqNode() = default;
 
     AudioNodeKind getKind() const noexcept override { return AudioNodeKind::ParametricEq; }
@@ -47,16 +50,18 @@ private:
     SpectrumTap spectrumTap_;
 
     /** [band][L/R] */
-    std::array<std::array<IIRFilter, 2>, 4> bands_ {};
+    std::array<std::array<IIRFilter, 2>, kNumBands> bands_ {};
 
-    std::array<float, 4> tgtFreq_ { 120.f, 400.f, 2500.f, 7000.f };
-    std::array<float, 4> tgtGainDb_ {};
-    std::array<float, 4> tgtQ_ { 1.f, 1.f, 1.f, 1.f };
+    std::array<float, kNumBands> tgtFreq_ { 120.f, 400.f, 2500.f, 7000.f, 10000.f };
+    std::array<float, kNumBands> tgtGainDb_ {};
+    std::array<float, kNumBands> tgtQ_ { 1.f, 1.f, 1.f, 1.f, 1.f };
+    std::array<float, kNumBands> tgtType_ {}; /** 0..5 EqBandType */
     bool tgtBypass_ { false };
 
-    std::array<float, 4> smoothFreq_ { 120.f, 400.f, 2500.f, 7000.f };
-    std::array<float, 4> smoothGainDb_ {};
-    std::array<float, 4> smoothQ_ { 1.f, 1.f, 1.f, 1.f };
+    std::array<float, kNumBands> smoothFreq_ { 120.f, 400.f, 2500.f, 7000.f, 10000.f };
+    std::array<float, kNumBands> smoothGainDb_ {};
+    std::array<float, kNumBands> smoothQ_ { 1.f, 1.f, 1.f, 1.f, 1.f };
+    std::array<float, kNumBands> smoothType_ {};
     bool smoothBypass_ { false };
 };
 

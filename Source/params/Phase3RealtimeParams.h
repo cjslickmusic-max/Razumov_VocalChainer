@@ -54,6 +54,15 @@ struct Phase3RealtimeParams
     float eqBand4FreqHz { 7000.0f };
     float eqBand4GainDb { 0.0f };
     float eqBand4Q { 1.0f };
+    float eqBand5FreqHz { 10000.0f };
+    float eqBand5GainDb { 0.0f };
+    float eqBand5Q { 1.0f };
+    /** EqBandType as float 0..5 (Peak, LowShelf, HighShelf, LowPass, HighPass, Notch). */
+    float eqBand1Type { 0.0f };
+    float eqBand2Type { 0.0f };
+    float eqBand3Type { 0.0f };
+    float eqBand4Type { 0.0f };
+    float eqBand5Type { 0.0f };
 };
 
 } // namespace razumov::params

@@ -52,6 +52,14 @@ inline constexpr const char* eqBand3Q = "eqBand3Q";
 inline constexpr const char* eqBand4FreqHz = "eqBand4FreqHz";
 inline constexpr const char* eqBand4GainDb = "eqBand4GainDb";
 inline constexpr const char* eqBand4Q = "eqBand4Q";
+inline constexpr const char* eqBand5FreqHz = "eqBand5FreqHz";
+inline constexpr const char* eqBand5GainDb = "eqBand5GainDb";
+inline constexpr const char* eqBand5Q = "eqBand5Q";
+inline constexpr const char* eqBand1Type = "eqBand1Type";
+inline constexpr const char* eqBand2Type = "eqBand2Type";
+inline constexpr const char* eqBand3Type = "eqBand3Type";
+inline constexpr const char* eqBand4Type = "eqBand4Type";
+inline constexpr const char* eqBand5Type = "eqBand5Type";
 
 /** Стартовая топология графа (фаза 4.2): Full / Compact / FET-forward. */
 inline constexpr const char* chainProfile = "chainProfile";

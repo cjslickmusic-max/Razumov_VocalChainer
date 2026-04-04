@@ -21,8 +21,10 @@ void ParametricEqNode::prepare(double sampleRate, int maxBlockSize, int numChann
             f.prepare(spec);
 
     reset();
+    for (int i = 0; i < kNumBands; ++i)
+        smoothType_[(size_t) i] = tgtType_[(size_t) i];
     smoothStep();
-    for (int b = 0; b < 4; ++b)
+    for (int b = 0; b < kNumBands; ++b)
         updateBandCoeffs(b);
 }
 
@@ -39,30 +41,25 @@ void ParametricEqNode::smoothStep() noexcept
     const float dt = (float) maxBlockSize_ / (float) juce::jmax(1.0, sampleRate_);
     constexpr float tau = 0.045f;
     const float a = 1.f - std::exp(-dt / tau);
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < kNumBands; ++i)
     {
         const size_t si = (size_t) i;
         smoothFreq_[si] += (tgtFreq_[si] - smoothFreq_[si]) * a;
         smoothGainDb_[si] += (tgtGainDb_[si] - smoothGainDb_[si]) * a;
         smoothQ_[si] += (tgtQ_[si] - smoothQ_[si]) * a;
+        smoothType_[si] = tgtType_[si];
     }
     smoothBypass_ = tgtBypass_;
 }
 
 void ParametricEqNode::updateBandCoeffs(int bandIndex) noexcept
 {
-    if (bandIndex < 0 || bandIndex >= 4)
+    if (bandIndex < 0 || bandIndex >= kNumBands)
         return;
 
-    const float sr = (float) sampleRate_;
-    const float nyq = sr * 0.48f;
     const size_t bi = (size_t) bandIndex;
-
-    float fc = juce::jlimit(20.f, nyq, smoothFreq_[bi]);
-    float q = juce::jlimit(0.3f, 10.f, smoothQ_[bi]);
-    float gdb = juce::jlimit(-18.f, 18.f, smoothGainDb_[bi]);
-
-    auto c = Coefficients::makePeakFilter((double) sr, (double) fc, (double) q, gdb);
+    const auto t = razumov::dsp::eq::EqTypeFromFloat(smoothType_[bi]);
+    auto c = razumov::dsp::eq::makeBandCoeffs(t, sampleRate_, smoothFreq_[bi], smoothGainDb_[bi], smoothQ_[bi]);
     for (int ch = 0; ch < 2; ++ch)
         bands_[bi][(size_t) ch].coefficients = c;
 }
@@ -75,7 +72,7 @@ void ParametricEqNode::processOneChannel(float* data, int numSamples, int channe
     float* channelData = data;
     juce::AudioBuffer<float> wrap(&channelData, 1, numSamples);
     juce::dsp::AudioBlock<float> block(wrap);
-    for (int b = 0; b < 4; ++b)
+    for (int b = 0; b < kNumBands; ++b)
     {
         juce::dsp::ProcessContextReplacing<float> ctx(block);
         bands_[(size_t) b][(size_t) channelIndex].process(ctx);
@@ -92,7 +89,7 @@ void ParametricEqNode::process(juce::AudioBuffer<float>& buffer)
     spectrumTap_.pushStereoBlock(L, R, n);
 
     smoothStep();
-    for (int b = 0; b < 4; ++b)
+    for (int b = 0; b < kNumBands; ++b)
         updateBandCoeffs(b);
 
     if (smoothBypass_)
@@ -110,14 +107,22 @@ void ParametricEqNode::applyPhase3(const razumov::params::Phase3RealtimeParams& 
     tgtFreq_[1] = p.eqBand2FreqHz;
     tgtFreq_[2] = p.eqBand3FreqHz;
     tgtFreq_[3] = p.eqBand4FreqHz;
+    tgtFreq_[4] = p.eqBand5FreqHz;
     tgtGainDb_[0] = p.eqBand1GainDb;
     tgtGainDb_[1] = p.eqBand2GainDb;
     tgtGainDb_[2] = p.eqBand3GainDb;
     tgtGainDb_[3] = p.eqBand4GainDb;
+    tgtGainDb_[4] = p.eqBand5GainDb;
     tgtQ_[0] = p.eqBand1Q;
     tgtQ_[1] = p.eqBand2Q;
     tgtQ_[2] = p.eqBand3Q;
     tgtQ_[3] = p.eqBand4Q;
+    tgtQ_[4] = p.eqBand5Q;
+    tgtType_[0] = p.eqBand1Type;
+    tgtType_[1] = p.eqBand2Type;
+    tgtType_[2] = p.eqBand3Type;
+    tgtType_[3] = p.eqBand4Type;
+    tgtType_[4] = p.eqBand5Type;
 }
 
 void ParametricEqNode::copySpectrum256(float* dst) const noexcept

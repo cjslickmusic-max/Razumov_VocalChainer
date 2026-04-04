@@ -7,6 +7,7 @@
 
 #include "dsp/graph/AudioNode.h"
 #include "ui/ChainStripComponent.h"
+#include "ui/ReEqPanelComponent.h"
 
 class RazumovVocalChainAudioProcessor;
 
@@ -172,18 +173,7 @@ private:
     GrMeterBar grMeterBar;
     SpectralCompPanel spectralCompPanel;
     juce::ToggleButton eqBypassToggle;
-    ModuleTargetSlider eq1FreqSlider;
-    ModuleTargetSlider eq1GainSlider;
-    ModuleTargetSlider eq1QSlider;
-    ModuleTargetSlider eq2FreqSlider;
-    ModuleTargetSlider eq2GainSlider;
-    ModuleTargetSlider eq2QSlider;
-    ModuleTargetSlider eq3FreqSlider;
-    ModuleTargetSlider eq3GainSlider;
-    ModuleTargetSlider eq3QSlider;
-    ModuleTargetSlider eq4FreqSlider;
-    ModuleTargetSlider eq4GainSlider;
-    ModuleTargetSlider eq4QSlider;
+    ReEqPanelComponent reEqPanel;
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> micProfileAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroGlueAttachment;

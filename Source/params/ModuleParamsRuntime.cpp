@@ -53,6 +53,14 @@ struct ModuleSlotBlock
     std::atomic<float> eqBand4FreqHz { 7000.0f };
     std::atomic<float> eqBand4GainDb { 0.0f };
     std::atomic<float> eqBand4Q { 1.0f };
+    std::atomic<float> eqBand5FreqHz { 10000.0f };
+    std::atomic<float> eqBand5GainDb { 0.0f };
+    std::atomic<float> eqBand5Q { 1.0f };
+    std::atomic<float> eqBand1Type { 0.0f };
+    std::atomic<float> eqBand2Type { 0.0f };
+    std::atomic<float> eqBand3Type { 0.0f };
+    std::atomic<float> eqBand4Type { 0.0f };
+    std::atomic<float> eqBand5Type { 0.0f };
 };
 
 inline void copyModuleSlotBlockState(const ModuleSlotBlock& src, ModuleSlotBlock& dst)
@@ -96,6 +104,14 @@ inline void copyModuleSlotBlockState(const ModuleSlotBlock& src, ModuleSlotBlock
     dst.eqBand4FreqHz.store(src.eqBand4FreqHz.load());
     dst.eqBand4GainDb.store(src.eqBand4GainDb.load());
     dst.eqBand4Q.store(src.eqBand4Q.load());
+    dst.eqBand5FreqHz.store(src.eqBand5FreqHz.load());
+    dst.eqBand5GainDb.store(src.eqBand5GainDb.load());
+    dst.eqBand5Q.store(src.eqBand5Q.load());
+    dst.eqBand1Type.store(src.eqBand1Type.load());
+    dst.eqBand2Type.store(src.eqBand2Type.load());
+    dst.eqBand3Type.store(src.eqBand3Type.load());
+    dst.eqBand4Type.store(src.eqBand4Type.load());
+    dst.eqBand5Type.store(src.eqBand5Type.load());
 }
 
 } // namespace detail
@@ -144,6 +160,14 @@ void storeFromPhase3(detail::ModuleSlotBlock& b, const Phase3RealtimeParams& p)
     b.eqBand4FreqHz.store(p.eqBand4FreqHz);
     b.eqBand4GainDb.store(p.eqBand4GainDb);
     b.eqBand4Q.store(p.eqBand4Q);
+    b.eqBand5FreqHz.store(p.eqBand5FreqHz);
+    b.eqBand5GainDb.store(p.eqBand5GainDb);
+    b.eqBand5Q.store(p.eqBand5Q);
+    b.eqBand1Type.store(p.eqBand1Type);
+    b.eqBand2Type.store(p.eqBand2Type);
+    b.eqBand3Type.store(p.eqBand3Type);
+    b.eqBand4Type.store(p.eqBand4Type);
+    b.eqBand5Type.store(p.eqBand5Type);
 }
 
 void loadToPhase3(const detail::ModuleSlotBlock& b, Phase3RealtimeParams& out)
@@ -187,6 +211,14 @@ void loadToPhase3(const detail::ModuleSlotBlock& b, Phase3RealtimeParams& out)
     out.eqBand4FreqHz = b.eqBand4FreqHz.load();
     out.eqBand4GainDb = b.eqBand4GainDb.load();
     out.eqBand4Q = b.eqBand4Q.load();
+    out.eqBand5FreqHz = b.eqBand5FreqHz.load();
+    out.eqBand5GainDb = b.eqBand5GainDb.load();
+    out.eqBand5Q = b.eqBand5Q.load();
+    out.eqBand1Type = b.eqBand1Type.load();
+    out.eqBand2Type = b.eqBand2Type.load();
+    out.eqBand3Type = b.eqBand3Type.load();
+    out.eqBand4Type = b.eqBand4Type.load();
+    out.eqBand5Type = b.eqBand5Type.load();
 }
 
 void initDefaults(detail::ModuleSlotBlock& b)
@@ -374,6 +406,22 @@ float ModuleParamsRuntime::getFloat(uint32_t slotId, const juce::String& paramId
         return b->eqBand4GainDb.load();
     if (paramId == eqBand4Q)
         return b->eqBand4Q.load();
+    if (paramId == eqBand5FreqHz)
+        return b->eqBand5FreqHz.load();
+    if (paramId == eqBand5GainDb)
+        return b->eqBand5GainDb.load();
+    if (paramId == eqBand5Q)
+        return b->eqBand5Q.load();
+    if (paramId == eqBand1Type)
+        return b->eqBand1Type.load();
+    if (paramId == eqBand2Type)
+        return b->eqBand2Type.load();
+    if (paramId == eqBand3Type)
+        return b->eqBand3Type.load();
+    if (paramId == eqBand4Type)
+        return b->eqBand4Type.load();
+    if (paramId == eqBand5Type)
+        return b->eqBand5Type.load();
     return 0.0f;
 }
 
@@ -456,6 +504,22 @@ void ModuleParamsRuntime::setFloat(uint32_t slotId, const juce::String& paramId,
         b->eqBand4GainDb.store(value);
     else if (paramId == eqBand4Q)
         b->eqBand4Q.store(value);
+    else if (paramId == eqBand5FreqHz)
+        b->eqBand5FreqHz.store(value);
+    else if (paramId == eqBand5GainDb)
+        b->eqBand5GainDb.store(value);
+    else if (paramId == eqBand5Q)
+        b->eqBand5Q.store(value);
+    else if (paramId == eqBand1Type)
+        b->eqBand1Type.store(value);
+    else if (paramId == eqBand2Type)
+        b->eqBand2Type.store(value);
+    else if (paramId == eqBand3Type)
+        b->eqBand3Type.store(value);
+    else if (paramId == eqBand4Type)
+        b->eqBand4Type.store(value);
+    else if (paramId == eqBand5Type)
+        b->eqBand5Type.store(value);
 }
 
 bool ModuleParamsRuntime::getBool(uint32_t slotId, const juce::String& paramId) const
@@ -561,6 +625,14 @@ juce::ValueTree ModuleParamsRuntime::toValueTree() const
         slot.setProperty(eqBand4FreqHz, b->eqBand4FreqHz.load(), nullptr);
         slot.setProperty(eqBand4GainDb, b->eqBand4GainDb.load(), nullptr);
         slot.setProperty(eqBand4Q, b->eqBand4Q.load(), nullptr);
+        slot.setProperty(eqBand5FreqHz, b->eqBand5FreqHz.load(), nullptr);
+        slot.setProperty(eqBand5GainDb, b->eqBand5GainDb.load(), nullptr);
+        slot.setProperty(eqBand5Q, b->eqBand5Q.load(), nullptr);
+        slot.setProperty(eqBand1Type, b->eqBand1Type.load(), nullptr);
+        slot.setProperty(eqBand2Type, b->eqBand2Type.load(), nullptr);
+        slot.setProperty(eqBand3Type, b->eqBand3Type.load(), nullptr);
+        slot.setProperty(eqBand4Type, b->eqBand4Type.load(), nullptr);
+        slot.setProperty(eqBand5Type, b->eqBand5Type.load(), nullptr);
         root.appendChild(slot, nullptr);
     }
 
@@ -639,6 +711,14 @@ void ModuleParamsRuntime::fromValueTree(const juce::ValueTree& v)
         b->eqBand4FreqHz.store(gf(eqBand4FreqHz, 7000.0f));
         b->eqBand4GainDb.store(gf(eqBand4GainDb, 0.0f));
         b->eqBand4Q.store(gf(eqBand4Q, 1.0f));
+        b->eqBand5FreqHz.store(gf(eqBand5FreqHz, 10000.0f));
+        b->eqBand5GainDb.store(gf(eqBand5GainDb, 0.0f));
+        b->eqBand5Q.store(gf(eqBand5Q, 1.0f));
+        b->eqBand1Type.store(gf(eqBand1Type, 0.0f));
+        b->eqBand2Type.store(gf(eqBand2Type, 0.0f));
+        b->eqBand3Type.store(gf(eqBand3Type, 0.0f));
+        b->eqBand4Type.store(gf(eqBand4Type, 0.0f));
+        b->eqBand5Type.store(gf(eqBand5Type, 0.0f));
     }
 
     juce::ValueTree mr = v.getChildWithName("MacroRouting");

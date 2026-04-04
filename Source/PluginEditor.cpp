@@ -10,6 +10,28 @@
 
 namespace tkn = razumov::ui::tokens;
 
+namespace
+{
+const char* eqFreqId(int b) noexcept
+{
+    using namespace razumov::params;
+    static const char* const ids[] = { eqBand1FreqHz, eqBand2FreqHz, eqBand3FreqHz, eqBand4FreqHz, eqBand5FreqHz };
+    return ids[(size_t) juce::jlimit(0, 4, b)];
+}
+const char* eqGainId(int b) noexcept
+{
+    using namespace razumov::params;
+    static const char* const ids[] = { eqBand1GainDb, eqBand2GainDb, eqBand3GainDb, eqBand4GainDb, eqBand5GainDb };
+    return ids[(size_t) juce::jlimit(0, 4, b)];
+}
+const char* eqQId(int b) noexcept
+{
+    using namespace razumov::params;
+    static const char* const ids[] = { eqBand1Q, eqBand2Q, eqBand3Q, eqBand4Q, eqBand5Q };
+    return ids[(size_t) juce::jlimit(0, 4, b)];
+}
+} // namespace
+
 void RazumovVocalChainAudioProcessorEditor::MacroLearnSlider::setLearnContext(
     RazumovVocalChainAudioProcessorEditor& ed, int macroIndex) noexcept
 {
@@ -557,6 +579,9 @@ void RazumovVocalChainAudioProcessorEditor::refreshRotaryStyles()
     one(spectralScQSlider);
     one(spectralAttackSlider);
     one(spectralReleaseSlider);
+    one(eqSelFreqSlider);
+    one(eqSelGainSlider);
+    one(eqSelQSlider);
 }
 
 void RazumovVocalChainAudioProcessorEditor::populateComboBoxes()
@@ -792,10 +817,16 @@ void RazumovVocalChainAudioProcessorEditor::reloadModuleParamsFromProcessor()
     using namespace razumov::params;
     const auto& desc = processor.getGraphDesc();
     if (razumov::graph::queryIsParallelSplitSlot(desc, selectedSlotId_))
+    {
+        refreshEqAuxSliders();
         return;
+    }
     const auto kind = razumov::graph::queryModuleKindForSlotId(desc, selectedSlotId_);
     if (!kind.has_value())
+    {
+        refreshEqAuxSliders();
         return;
+    }
 
     const uint32_t id = selectedSlotId_;
     micBypassBtn.setToggleState(processor.getModuleBoolParam(id, micBypass), juce::dontSendNotification);
@@ -825,6 +856,27 @@ void RazumovVocalChainAudioProcessorEditor::reloadModuleParamsFromProcessor()
     spectralAttackSlider.setValue(processor.getModuleFloatParam(id, spectralAttackMs), juce::dontSendNotification);
     spectralReleaseSlider.setValue(processor.getModuleFloatParam(id, spectralReleaseMs), juce::dontSendNotification);
     eqBypassToggle.setToggleState(processor.getModuleBoolParam(id, eqBypass), juce::dontSendNotification);
+    refreshEqAuxSliders();
+}
+
+void RazumovVocalChainAudioProcessorEditor::refreshEqAuxSliders()
+{
+    const int b = reEqPanel.getSelectedBand();
+    const bool show = reEqPanel.isVisible() && b >= 0;
+    eqSelFreqSlider.setVisible(show);
+    eqSelGainSlider.setVisible(show);
+    eqSelQSlider.setVisible(show);
+    if (!show)
+        return;
+
+    eqSelFreqSlider.setTargetContext(*this, eqFreqId(b));
+    eqSelGainSlider.setTargetContext(*this, eqGainId(b));
+    eqSelQSlider.setTargetContext(*this, eqQId(b));
+
+    const uint32_t slot = selectedSlotId_;
+    eqSelFreqSlider.setValue(processor.getModuleFloatParam(slot, eqFreqId(b)), juce::dontSendNotification);
+    eqSelGainSlider.setValue(processor.getModuleFloatParam(slot, eqGainId(b)), juce::dontSendNotification);
+    eqSelQSlider.setValue(processor.getModuleFloatParam(slot, eqQId(b)), juce::dontSendNotification);
 }
 
 void RazumovVocalChainAudioProcessorEditor::refreshModulePanelVisibility()
@@ -1054,6 +1106,13 @@ void RazumovVocalChainAudioProcessorEditor::layoutModuleViewport(int viewportWid
         }
         reEqPanel.setBounds(x, y, W - 2 * pad, scaled(220));
         y += scaled(228);
+        if (eqSelFreqSlider.isVisible())
+        {
+            eqSelFreqSlider.setBounds(x, y, kw, kh);
+            eqSelGainSlider.setBounds(x + (kw + gap), y, kw, kh);
+            eqSelQSlider.setBounds(x + 2 * (kw + gap), y, kw, kh);
+            y += kh + gap + scaled(18);
+        }
     }
     else if (spectrumPanel.isVisible())
     {
@@ -1326,6 +1385,9 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     addKnob(spectralScQSlider, juce::Colour(tkn::knob::spectral));
     addKnob(spectralAttackSlider, juce::Colour(tkn::knob::spectral));
     addKnob(spectralReleaseSlider, juce::Colour(tkn::knob::spectral));
+    addKnob(eqSelFreqSlider, juce::Colour(tkn::knob::lowpass));
+    addKnob(eqSelGainSlider, juce::Colour(tkn::knob::lowpass));
+    addKnob(eqSelQSlider, juce::Colour(tkn::knob::lowpass));
 
     micAmountSlider.setRange(0.0, 1.0, 0.01);
     gainSlider.setRange(-24.0, 12.0, 0.1);
@@ -1360,6 +1422,13 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     spectralReleaseSlider.setRange(5.0, 3000.0, 1.0);
     spectralReleaseSlider.setTextValueSuffix(" ms");
 
+    eqSelFreqSlider.setRange(20.0, 20000.0, 1.0);
+    eqSelFreqSlider.setSkewFactorFromMidPoint(1000.0);
+    eqSelFreqSlider.setTextValueSuffix(" Hz");
+    eqSelGainSlider.setRange(-18.0, 18.0, 0.1);
+    eqSelGainSlider.setTextValueSuffix(" dB");
+    eqSelQSlider.setRange(0.3, 20.0, 0.01);
+
     micAmountSlider.setTargetContext(*this, razumov::params::micAmount);
     gainSlider.setTargetContext(*this, razumov::params::gainDb);
     lowpassSlider.setTargetContext(*this, razumov::params::lowpassHz);
@@ -1384,6 +1453,10 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     spectralScQSlider.setTargetContext(*this, razumov::params::spectralScQ);
     spectralAttackSlider.setTargetContext(*this, razumov::params::spectralAttackMs);
     spectralReleaseSlider.setTargetContext(*this, razumov::params::spectralReleaseMs);
+
+    eqSelFreqSlider.setTargetContext(*this, razumov::params::eqBand1FreqHz);
+    eqSelGainSlider.setTargetContext(*this, razumov::params::eqBand1GainDb);
+    eqSelQSlider.setTargetContext(*this, razumov::params::eqBand1Q);
 
     auto wireFloat = [this](juce::Slider& s, const char* paramId) {
         s.onValueChange = [this, &s, paramId] {
@@ -1425,12 +1498,56 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     wireFloat(spectralAttackSlider, razumov::params::spectralAttackMs);
     wireFloat(spectralReleaseSlider, razumov::params::spectralReleaseMs);
 
+    auto wireEqSel = [this](ModuleTargetSlider& s, int kind) {
+        s.onValueChange = [this, &s, kind] {
+            const int b = reEqPanel.getSelectedBand();
+            if (b < 0 || !reEqPanel.isVisible())
+                return;
+            const char* paramId = nullptr;
+            switch (kind)
+            {
+                case 0:
+                    paramId = eqFreqId(b);
+                    break;
+                case 1:
+                    paramId = eqGainId(b);
+                    break;
+                case 2:
+                    paramId = eqQId(b);
+                    break;
+                default:
+                    return;
+            }
+            processor.setModuleFloatParam(selectedSlotId_, paramId, (float) s.getValue());
+            if (syncingMacroFromModule_)
+                return;
+            const int mi = processor.findMacroIndexForSlotParam(selectedSlotId_, juce::String(paramId));
+            if (mi >= 0)
+            {
+                syncingMacroFromModule_ = true;
+                processor.syncMacroApvtsFromAssignedModule(mi);
+                syncingMacroFromModule_ = false;
+            }
+        };
+    };
+    wireEqSel(eqSelFreqSlider, 0);
+    wireEqSel(eqSelGainSlider, 1);
+    wireEqSel(eqSelQSlider, 2);
+
     content.addAndMakeVisible(spectrumPanel);
     spectrumPanel.setVisible(false);
 
     content.addAndMakeVisible(reEqPanel);
     reEqPanel.setProcessor(&processor);
     reEqPanel.setVisible(false);
+    reEqPanel.setOnSelectionChanged([this] { refreshEqAuxSliders(); });
+
+    content.addAndMakeVisible(eqSelFreqSlider);
+    content.addAndMakeVisible(eqSelGainSlider);
+    content.addAndMakeVisible(eqSelQSlider);
+    eqSelFreqSlider.setVisible(false);
+    eqSelGainSlider.setVisible(false);
+    eqSelQSlider.setVisible(false);
 
     content.addAndMakeVisible(spectralCompPanel);
     spectralCompPanel.setVisible(false);

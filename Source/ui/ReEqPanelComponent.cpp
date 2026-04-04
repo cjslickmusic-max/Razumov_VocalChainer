@@ -6,21 +6,27 @@
 #include "ui/DesignTokens.h"
 
 #include <cmath>
+#include <cstring>
 
 namespace
 {
-namespace tkn = razumov::ui::tokens::argb;
+namespace eq = razumov::ui::tokens::eqPanel;
 
 constexpr float kDbMin = -18.f;
 constexpr float kDbMax = 18.f;
 
-const juce::Colour kBandColours[5] = {
-    juce::Colour(0xff5b82c8),
-    juce::Colour(0xff3cb878),
-    juce::Colour(0xffd9a23c),
-    juce::Colour(0xffa878d8),
-    juce::Colour(0xff4ab0c8),
-};
+static uint32_t floatBits(float x) noexcept
+{
+    uint32_t u = 0;
+    std::memcpy(&u, &x, sizeof(u));
+    return u;
+}
+
+static juce::Colour bandColour(int b) noexcept
+{
+    static const uint32_t c[5] = { eq::band0, eq::band1, eq::band2, eq::band3, eq::band4 };
+    return juce::Colour(c[(size_t) juce::jlimit(0, 4, b)]);
+}
 
 const char* const kFreqIds[5] = {
     razumov::params::eqBand1FreqHz,
@@ -65,6 +71,14 @@ static float tToHz(float t) noexcept
 
 } // namespace
 
+void ReEqPanelComponent::notifySelectionChanged(int previousSelection) noexcept
+{
+    if (selectedBand_ == previousSelection)
+        return;
+    if (onSelectionChanged_)
+        onSelectionChanged_();
+}
+
 void ReEqPanelComponent::updateFrom(RazumovVocalChainAudioProcessor& proc, uint32_t slotId)
 {
     slotId_ = slotId;
@@ -81,13 +95,21 @@ void ReEqPanelComponent::updateFrom(RazumovVocalChainAudioProcessor& proc, uint3
         q_[(size_t) i] = proc.getModuleFloatParam(slotId, kQIds[i]);
         type_[(size_t) i] = proc.getModuleFloatParam(slotId, kTypeIds[i]);
     }
+    lastResponseCacheHash_ = 0;
     repaint();
+}
+
+void ReEqPanelComponent::resized()
+{
+    lastResponseCacheHash_ = 0;
 }
 
 juce::Rectangle<float> ReEqPanelComponent::getPlotArea() const noexcept
 {
     auto r = getLocalBounds().toFloat().reduced(6.f, 6.f);
     r.removeFromBottom(22.f);
+    r.removeFromLeft(30.f);
+    r.removeFromBottom(20.f);
     return r;
 }
 
@@ -112,6 +134,99 @@ float ReEqPanelComponent::yToDb(float y, const juce::Rectangle<float>& plot) con
 {
     const float t = juce::jlimit(0.f, 1.f, (plot.getBottom() - y) / juce::jmax(1.f, plot.getHeight()));
     return kDbMin + t * (kDbMax - kDbMin);
+}
+
+uint64_t ReEqPanelComponent::computeResponseCacheHash(const juce::Rectangle<float>& plot) const noexcept
+{
+    uint64_t h = 1469598103934665603ull;
+    auto mix = [&](uint64_t v) {
+        h ^= v;
+        h *= 1099511628211ull;
+    };
+    mix((uint64_t) juce::roundToInt(plot.getWidth()));
+    mix((uint64_t) juce::roundToInt(plot.getHeight()));
+    mix(eqBypass_ ? 1ull : 0ull);
+    mix((uint64_t) juce::roundToInt(sampleRate_));
+    for (int i = 0; i < kBands; ++i)
+    {
+        mix((uint64_t) floatBits(freq_[(size_t) i]));
+        mix((uint64_t) floatBits(gainDb_[(size_t) i]));
+        mix((uint64_t) floatBits(q_[(size_t) i]));
+        mix((uint64_t) floatBits(type_[(size_t) i]));
+    }
+    return h;
+}
+
+void ReEqPanelComponent::rebuildResponsePaths(const juce::Rectangle<float>& plot, float nyq)
+{
+    cachedSumPath_.clear();
+    for (auto& p : cachedBandPaths_)
+        p.clear();
+
+    const int steps = juce::jmax(32, juce::jmin(384, juce::roundToInt(plot.getWidth())));
+
+    if (eqBypass_)
+    {
+        const float y0 = dbToY(0.f, plot);
+        cachedSumPath_.startNewSubPath(plot.getX(), y0);
+        cachedSumPath_.lineTo(plot.getRight(), y0);
+        return;
+    }
+
+    razumov::dsp::eq::Coeffs::Ptr coeffs[5];
+    for (int b = 0; b < kBands; ++b)
+    {
+        const auto t = razumov::dsp::eq::EqTypeFromFloat(type_[(size_t) b]);
+        coeffs[b] = razumov::dsp::eq::makeBandCoeffs(t, sampleRate_, freq_[(size_t) b], gainDb_[(size_t) b], q_[(size_t) b]);
+    }
+
+    for (int b = 0; b < kBands; ++b)
+    {
+        razumov::dsp::eq::Coeffs::Ptr one[5] = {};
+        one[b] = coeffs[b];
+        juce::Path& bp = cachedBandPaths_[(size_t) b];
+        bool started = false;
+        for (int s = 0; s <= steps; ++s)
+        {
+            const float tx = plot.getX() + (float) s / (float) steps * plot.getWidth();
+            const float hz = xToHz(tx, plot);
+            if (hz > nyq * 0.999f)
+                continue;
+            const double hzD = (double) juce::jlimit(1.f, (float) nyq * 0.999f, hz);
+            const float db = razumov::dsp::eq::sumCascadeMagDbAtHz(one, kBands, hzD, sampleRate_);
+            const float y = dbToY(db, plot);
+            if (!started)
+            {
+                bp.startNewSubPath(tx, y);
+                started = true;
+            }
+            else
+            {
+                bp.lineTo(tx, y);
+            }
+        }
+    }
+
+    bool sumStarted = false;
+    for (int s = 0; s <= steps; ++s)
+    {
+        const float tx = plot.getX() + (float) s / (float) steps * plot.getWidth();
+        const float hz = xToHz(tx, plot);
+        if (hz > nyq * 0.999f)
+            continue;
+        const double hzD = (double) juce::jlimit(1.f, (float) nyq * 0.999f, hz);
+        const float sumDb = razumov::dsp::eq::sumCascadeMagDbAtHz(coeffs, kBands, hzD, sampleRate_);
+        const float y = dbToY(sumDb, plot);
+        if (!sumStarted)
+        {
+            cachedSumPath_.startNewSubPath(tx, y);
+            sumStarted = true;
+        }
+        else
+        {
+            cachedSumPath_.lineTo(tx, y);
+        }
+    }
 }
 
 int ReEqPanelComponent::hitTestBand(juce::Point<float> pos) const noexcept
@@ -157,6 +272,7 @@ void ReEqPanelComponent::pushBandParamsFromMouse(juce::Point<float> localPos, bo
     freq_[(size_t) bi] = processor_->getModuleFloatParam(slotId_, kFreqIds[bi]);
     gainDb_[(size_t) bi] = processor_->getModuleFloatParam(slotId_, kGainIds[bi]);
     q_[(size_t) bi] = processor_->getModuleFloatParam(slotId_, kQIds[bi]);
+    lastResponseCacheHash_ = 0;
     repaint();
 }
 
@@ -180,6 +296,7 @@ void ReEqPanelComponent::showTypeMenuForBand(int bandIndex, juce::Point<int> scr
                         const float v = (float) (r - 1);
                         processor_->setModuleFloatParam(slotId_, kTypeIds[bandIndex], v);
                         type_[(size_t) bandIndex] = v;
+                        lastResponseCacheHash_ = 0;
                         repaint();
                     });
 }
@@ -187,27 +304,46 @@ void ReEqPanelComponent::showTypeMenuForBand(int bandIndex, juce::Point<int> scr
 void ReEqPanelComponent::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
-    g.setColour(juce::Colour(tkn::backgroundNode));
+
+    juce::ColourGradient bg(juce::Colour(eq::plotGradientTop),
+                            bounds.getX(),
+                            bounds.getY(),
+                            juce::Colour(eq::plotGradientBottom),
+                            bounds.getRight(),
+                            bounds.getBottom(),
+                            false);
+    g.setGradientFill(bg);
     g.fillRoundedRectangle(bounds.reduced(0.5f), 6.f);
-    g.setColour(juce::Colour(tkn::borderModulePanel));
+    g.setColour(juce::Colour(eq::frameBorder));
     g.drawRoundedRectangle(bounds.reduced(0.5f), 6.f, 1.f);
 
     const auto plot = getPlotArea();
     const float nyq = (float) (sampleRate_ * 0.5);
 
-    // Grid: 100, 1k, 10k Hz
-    g.setColour(juce::Colour(tkn::textTertiary).withAlpha(0.35f));
+    const uint64_t h = computeResponseCacheHash(plot);
+    if (h != lastResponseCacheHash_)
+    {
+        rebuildResponsePaths(plot, nyq);
+        lastResponseCacheHash_ = h;
+    }
+
+    g.setColour(juce::Colour(eq::gridLine));
     for (float hz : { 100.f, 1000.f, 10000.f })
     {
         const float x = hzToX(hz, plot);
         g.drawVerticalLine(juce::roundToInt(x), plot.getY(), plot.getBottom());
     }
-    // 0 dB line
     const float y0 = dbToY(0.f, plot);
-    g.setColour(juce::Colour(tkn::textSecondary).withAlpha(0.45f));
+    g.setColour(juce::Colour(eq::zeroDbLine));
     g.drawHorizontalLine(juce::roundToInt(y0), plot.getX(), plot.getRight());
 
-    // Spectrum (filled)
+    for (float db : { kDbMin, 0.f, kDbMax })
+    {
+        const float yy = dbToY(db, plot);
+        g.setColour(juce::Colour(eq::gridLine).withAlpha(0.55f));
+        g.drawHorizontalLine(juce::roundToInt(yy), plot.getX(), plot.getRight());
+    }
+
     juce::Path specPath;
     const float base = plot.getBottom() - 1.f;
     const float plotH = plot.getHeight();
@@ -221,69 +357,67 @@ void ReEqPanelComponent::paint(juce::Graphics& g)
     }
     specPath.lineTo(plot.getRight(), base);
     specPath.closeSubPath();
-    g.setColour(juce::Colour(tkn::accentSignal).withAlpha(0.22f));
+    juce::ColourGradient specGrad(juce::Colour(eq::spectrumFillHi).withAlpha(0.42f),
+                                  plot.getCentreX(),
+                                  plot.getY(),
+                                  juce::Colour(eq::spectrumFillLo).withAlpha(0.12f),
+                                  plot.getCentreX(),
+                                  plot.getBottom(),
+                                  false);
+    g.setGradientFill(specGrad);
     g.fillPath(specPath);
-    g.setColour(juce::Colour(tkn::accentSignal).withAlpha(0.55f));
+    g.setColour(juce::Colour(eq::spectrumLine).withAlpha(0.75f));
     g.strokePath(specPath, juce::PathStrokeType(1.0f));
 
-    // Magnitude response (flat 0 dB when EQ bypass)
-    juce::Path magPath;
-    const int steps = juce::jmin(320, juce::roundToInt(plot.getWidth()));
-    if (eqBypass_)
+    if (!eqBypass_)
     {
-        const float y0 = dbToY(0.f, plot);
-        magPath.startNewSubPath(plot.getX(), y0);
-        magPath.lineTo(plot.getRight(), y0);
-    }
-    else
-    {
-        razumov::dsp::eq::Coeffs::Ptr coeffs[5];
         for (int b = 0; b < kBands; ++b)
         {
-            const auto t = razumov::dsp::eq::EqTypeFromFloat(type_[(size_t) b]);
-            coeffs[b] = razumov::dsp::eq::makeBandCoeffs(t, sampleRate_, freq_[(size_t) b], gainDb_[(size_t) b], q_[(size_t) b]);
-        }
-
-        for (int s = 0; s <= steps; ++s)
-        {
-            const float tx = plot.getX() + (float) s / (float) steps * plot.getWidth();
-            const float hz = xToHz(tx, plot);
-            if (hz > nyq * 0.999f)
-                continue;
-            const double hzD = (double) juce::jlimit(1.f, (float) nyq * 0.999f, hz);
-            const float sumDb = razumov::dsp::eq::sumCascadeMagDbAtHz(coeffs, kBands, hzD, sampleRate_);
-            const float y = dbToY(sumDb, plot);
-            if (s == 0)
-                magPath.startNewSubPath(tx, y);
-            else
-                magPath.lineTo(tx, y);
+            g.setColour(bandColour(b).withAlpha(0.38f));
+            g.strokePath(cachedBandPaths_[(size_t) b], juce::PathStrokeType(1.0f));
         }
     }
-    g.setColour(juce::Colour(0xff1a2438).withAlpha(eqBypass_ ? 0.45f : 0.92f));
-    g.strokePath(magPath, juce::PathStrokeType(2.0f));
-    g.setColour(juce::Colour(tkn::accentSelection).withAlpha(eqBypass_ ? 0.35f : 0.88f));
-    g.strokePath(magPath, juce::PathStrokeType(1.2f));
 
-    // Nodes
+    g.setColour(juce::Colour(eq::curveGlow).withAlpha(eqBypass_ ? 0.25f : 0.55f));
+    g.strokePath(cachedSumPath_, juce::PathStrokeType(2.4f));
+    g.setColour(juce::Colour(eq::curveCore).withAlpha(eqBypass_ ? 0.35f : 0.95f));
+    g.strokePath(cachedSumPath_, juce::PathStrokeType(1.25f));
+
+    g.setColour(juce::Colour(eq::captionText));
+    g.setFont(juce::FontOptions(9.5f));
+    for (float hz : { 100.f, 1000.f, 10000.f })
+    {
+        const float x = hzToX(hz, plot);
+        juce::String lab = (hz >= 1000.f) ? juce::String(hz / 1000.f, (hz >= 10000.f ? 0 : 1)) + " k" : juce::String((int) hz);
+        g.drawText(lab, juce::Rectangle<int>((int) x - 18, (int) plot.getBottom() + 2, 36, 14), juce::Justification::centred);
+    }
+
+    g.setFont(juce::FontOptions(9.5f));
+    for (float db : { kDbMax, 0.f, kDbMin })
+    {
+        const float yy = dbToY(db, plot);
+        juce::String lab = (db > 0.f ? "+" : "") + juce::String(db, 0) + " dB";
+        g.drawText(lab, juce::Rectangle<int>((int) plot.getX() - 30, (int) yy - 7, 28, 14), juce::Justification::centredRight);
+    }
+
     for (int b = 0; b < kBands; ++b)
     {
         const float cx = hzToX(freq_[(size_t) b], plot);
         const float cy = dbToY(gainDb_[(size_t) b], plot);
-        const auto col = kBandColours[b];
+        const auto col = bandColour(b);
         const bool sel = (b == selectedBand_);
-        g.setColour(col.withAlpha(0.28f));
+        g.setColour(col.withAlpha(0.32f));
         g.fillEllipse(cx - 9.f, cy - 9.f, 18.f, 18.f);
-        g.setColour(col.withAlpha(sel ? 1.f : 0.88f));
+        g.setColour(col.withAlpha(sel ? 1.f : 0.9f));
         g.drawEllipse(cx - 9.f, cy - 9.f, 18.f, 18.f, sel ? 2.2f : 1.4f);
-        g.setColour(juce::Colours::white.withAlpha(0.9f));
+        g.setColour(juce::Colour(eq::nodeLabel).withAlpha(0.95f));
         g.setFont(juce::FontOptions(11.0f, juce::Font::bold));
         g.drawText(juce::String(b + 1), juce::Rectangle<int>((int) cx - 8, (int) cy - 8, 16, 16), juce::Justification::centred);
     }
 
-    // Caption
-    g.setColour(juce::Colour(tkn::textCaption));
+    g.setColour(juce::Colour(eq::captionText));
     g.setFont(juce::FontOptions(10.5f));
-    juce::String cap = "Drag nodes: freq + gain. Wheel: Q. RMB: type.";
+    juce::String cap = "Drag: freq + gain. Wheel: Q. RMB: type. Knobs: selected band.";
     if (selectedBand_ >= 0 && selectedBand_ < kBands)
     {
         cap += "  |  Band " + juce::String(selectedBand_ + 1) + "  "
@@ -300,12 +434,15 @@ void ReEqPanelComponent::mouseDown(const juce::MouseEvent& e)
         return;
 
     const auto pos = e.position;
+    const int prevSel = selectedBand_;
+
     if (e.mods.isPopupMenu())
     {
         const int hit = hitTestBand(pos);
         if (hit >= 0)
         {
             selectedBand_ = hit;
+            notifySelectionChanged(prevSel);
             showTypeMenuForBand(hit, e.getScreenPosition());
         }
         repaint();
@@ -314,6 +451,7 @@ void ReEqPanelComponent::mouseDown(const juce::MouseEvent& e)
 
     const int hit = hitTestBand(pos);
     selectedBand_ = hit;
+    notifySelectionChanged(prevSel);
     if (hit >= 0)
     {
         dragBand_ = hit;
@@ -353,5 +491,6 @@ void ReEqPanelComponent::mouseWheelMove(const juce::MouseEvent& e, const juce::M
     q = juce::jlimit(0.3f, 20.f, q * delta);
     processor_->setModuleFloatParam(slotId_, kQIds[band], q);
     q_[(size_t) band] = q;
+    lastResponseCacheHash_ = 0;
     repaint();
 }

@@ -49,6 +49,7 @@ private:
     void assignMacroFromLearn(const char* paramId);
     void updateMacroLearnVisuals();
     void refreshMacroLabelsFromProcessor();
+    void refreshEqAuxSliders();
     void wireMacroValueCallbacks();
 
     int scaled(int base) const noexcept { return juce::roundToInt((float) base * uiScale_); }
@@ -174,6 +175,9 @@ private:
     SpectralCompPanel spectralCompPanel;
     juce::ToggleButton eqBypassToggle;
     ReEqPanelComponent reEqPanel;
+    ModuleTargetSlider eqSelFreqSlider;
+    ModuleTargetSlider eqSelGainSlider;
+    ModuleTargetSlider eqSelQSlider;
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> micProfileAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroGlueAttachment;

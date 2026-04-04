@@ -2,20 +2,26 @@
 
 #include <array>
 #include <cstdint>
+#include <functional>
 #include <juce_dsp/juce_dsp.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 
 class RazumovVocalChainAudioProcessor;
 
-/** Spectrum + combined magnitude response + draggable EQ nodes (5 bands). */
+/** Spectrum + per-band + sum magnitude + draggable nodes (5 bands). */
 class ReEqPanelComponent : public juce::Component
 {
 public:
     void setProcessor(RazumovVocalChainAudioProcessor* p) noexcept { processor_ = p; }
 
+    void setOnSelectionChanged(std::function<void()> cb) { onSelectionChanged_ = std::move(cb); }
+
+    int getSelectedBand() const noexcept { return selectedBand_; }
+
     void updateFrom(RazumovVocalChainAudioProcessor& proc, uint32_t slotId);
 
     void paint(juce::Graphics& g) override;
+    void resized() override;
     void mouseDown(const juce::MouseEvent& e) override;
     void mouseDrag(const juce::MouseEvent& e) override;
     void mouseUp(const juce::MouseEvent& e) override;
@@ -31,12 +37,13 @@ private:
     float dbToY(float db, const juce::Rectangle<float>& plot) const noexcept;
     float yToDb(float y, const juce::Rectangle<float>& plot) const noexcept;
 
-    int hitTestBand(juce::Point<float> posInComponent) const noexcept;
+    int hitTestBand(juce::Point<float> pos) const noexcept;
     void showTypeMenuForBand(int bandIndex, juce::Point<int> screenPos);
     void pushBandParamsFromMouse(juce::Point<float> localPos, bool writeFreqGain);
+    void notifySelectionChanged(int previousSelection) noexcept;
 
-    uint64_t hashEqParams() const noexcept;
-    void rebuildMagPathIfNeeded(const juce::Rectangle<float>& plot, float nyq);
+    uint64_t computeResponseCacheHash(const juce::Rectangle<float>& plot) const noexcept;
+    void rebuildResponsePaths(const juce::Rectangle<float>& plot, float nyq);
 
     RazumovVocalChainAudioProcessor* processor_ { nullptr };
     uint32_t slotId_ { 0 };
@@ -51,10 +58,9 @@ private:
     int selectedBand_ { -1 };
     int dragBand_ { -1 };
 
-    /** Avoid heap churn + redundant magnitude math when params/plot unchanged (UI thread only). */
-    std::array<juce::dsp::IIR::Coefficients<float>::Ptr, (size_t) kBands> coeffCache_{};
-    uint64_t lastCoeffHash_ { 0 };
-    juce::Rectangle<float> lastMagPlot_{};
-    juce::Path magPathCache_{};
-    bool magPathBypass_ { false };
+    std::function<void()> onSelectionChanged_;
+
+    uint64_t lastResponseCacheHash_ { 0 };
+    juce::Path cachedSumPath_;
+    std::array<juce::Path, (size_t) kBands> cachedBandPaths_{};
 };

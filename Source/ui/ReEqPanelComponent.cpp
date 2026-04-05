@@ -77,6 +77,18 @@ const char* const kTypeIds[10] = {
     razumov::params::eqBand9Type,
     razumov::params::eqBand10Type,
 };
+const char* const kSlopeIds[10] = {
+    razumov::params::eqBand1Slope,
+    razumov::params::eqBand2Slope,
+    razumov::params::eqBand3Slope,
+    razumov::params::eqBand4Slope,
+    razumov::params::eqBand5Slope,
+    razumov::params::eqBand6Slope,
+    razumov::params::eqBand7Slope,
+    razumov::params::eqBand8Slope,
+    razumov::params::eqBand9Slope,
+    razumov::params::eqBand10Slope,
+};
 
 // Log scale 20 Hz..20 kHz with 100 / 1 k / 10 k as decade anchors (FabFilter-style center band).
 static constexpr float kFreqVisMin = 20.f;
@@ -124,6 +136,18 @@ static float tToHz(float t) noexcept
     return std::pow(10.f, std::log10(kFreqAnchorMin) + tm * (std::log10(kFreqAnchorMax) - std::log10(kFreqAnchorMin)));
 }
 
+/** Kirchhoff-style tick labels (compact). */
+static juce::String formatFreqTickLabel(float hz) noexcept
+{
+    if (hz < 999.5f)
+        return juce::String((int) juce::roundToInt(hz));
+    const float k = hz / 1000.f;
+    const float rk = std::round(k);
+    if (std::abs(k - rk) < 0.02f)
+        return juce::String((int) rk) + "k";
+    return juce::String(k, 1) + "k";
+}
+
 /** Map FFT display bin index from Hz (matches SpectrumTap kDisplayBins aggregation). */
 static int hzToSpectrumBinIndex(float hz, double sampleRate) noexcept
 {
@@ -146,6 +170,12 @@ void ReEqPanelComponent::notifySelectionChanged(int previousSelection) noexcept
         onSelectionChanged_();
 }
 
+void ReEqPanelComponent::notifyAuxRefreshNeeded() noexcept
+{
+    if (onSelectionChanged_)
+        onSelectionChanged_();
+}
+
 void ReEqPanelComponent::updateFrom(RazumovVocalChainAudioProcessor& proc, uint32_t slotId)
 {
     slotId_ = slotId;
@@ -164,6 +194,7 @@ void ReEqPanelComponent::updateFrom(RazumovVocalChainAudioProcessor& proc, uint3
         gainDb_[(size_t) i] = proc.getModuleFloatParam(slotId, kGainIds[i]);
         q_[(size_t) i] = proc.getModuleFloatParam(slotId, kQIds[i]);
         type_[(size_t) i] = proc.getModuleFloatParam(slotId, kTypeIds[i]);
+        slope_[(size_t) i] = proc.getModuleFloatParam(slotId, kSlopeIds[i]);
     }
     lastResponseCacheHash_ = 0;
     repaint();
@@ -224,6 +255,7 @@ uint64_t ReEqPanelComponent::computeResponseCacheHash(const juce::Rectangle<floa
         mix((uint64_t) floatBits(gainDb_[(size_t) i]));
         mix((uint64_t) floatBits(q_[(size_t) i]));
         mix((uint64_t) floatBits(type_[(size_t) i]));
+        mix((uint64_t) floatBits(slope_[(size_t) i]));
     }
     return h;
 }
@@ -253,17 +285,9 @@ void ReEqPanelComponent::rebuildResponsePaths(const juce::Rectangle<float>& plot
         return;
     }
 
-    razumov::dsp::eq::Coeffs::Ptr coeffs[kBands] = {};
     for (int b = 0; b < nActive; ++b)
     {
         const auto t = razumov::dsp::eq::EqTypeFromFloat(type_[(size_t) b]);
-        coeffs[b] = razumov::dsp::eq::makeBandCoeffs(t, sampleRate_, freq_[(size_t) b], gainDb_[(size_t) b], q_[(size_t) b]);
-    }
-
-    for (int b = 0; b < nActive; ++b)
-    {
-        razumov::dsp::eq::Coeffs::Ptr one[kBands] = {};
-        one[b] = coeffs[b];
         juce::Path& bp = cachedBandPaths_[(size_t) b];
         bool started = false;
         for (int s = 0; s <= steps; ++s)
@@ -273,7 +297,8 @@ void ReEqPanelComponent::rebuildResponsePaths(const juce::Rectangle<float>& plot
             if (hz > nyq * 0.999f)
                 continue;
             const double hzD = (double) juce::jlimit(1.f, (float) nyq * 0.999f, hz);
-            const float db = razumov::dsp::eq::sumCascadeMagDbAtHz(one, kBands, hzD, sampleRate_);
+            const float db = razumov::dsp::eq::bandMagDbAtHz(t, sampleRate_, freq_[(size_t) b], gainDb_[(size_t) b], q_[(size_t) b],
+                                                             slope_[(size_t) b], hzD);
             const float y = dbToY(db, plot);
             if (!started)
             {
@@ -295,7 +320,13 @@ void ReEqPanelComponent::rebuildResponsePaths(const juce::Rectangle<float>& plot
         if (hz > nyq * 0.999f)
             continue;
         const double hzD = (double) juce::jlimit(1.f, (float) nyq * 0.999f, hz);
-        const float sumDb = razumov::dsp::eq::sumCascadeMagDbAtHz(coeffs, kBands, hzD, sampleRate_);
+        float sumDb = 0.f;
+        for (int b = 0; b < nActive; ++b)
+        {
+            const auto t = razumov::dsp::eq::EqTypeFromFloat(type_[(size_t) b]);
+            sumDb += razumov::dsp::eq::bandMagDbAtHz(t, sampleRate_, freq_[(size_t) b], gainDb_[(size_t) b], q_[(size_t) b],
+                                                     slope_[(size_t) b], hzD);
+        }
         const float y = dbToY(sumDb, plot);
         if (!sumStarted)
         {
@@ -353,6 +384,7 @@ void ReEqPanelComponent::pushBandParamsFromMouse(juce::Point<float> localPos, bo
     freq_[(size_t) bi] = processor_->getModuleFloatParam(slotId_, kFreqIds[bi]);
     gainDb_[(size_t) bi] = processor_->getModuleFloatParam(slotId_, kGainIds[bi]);
     q_[(size_t) bi] = processor_->getModuleFloatParam(slotId_, kQIds[bi]);
+    slope_[(size_t) bi] = processor_->getModuleFloatParam(slotId_, kSlopeIds[bi]);
     lastResponseCacheHash_ = 0;
     repaint();
 }
@@ -379,6 +411,7 @@ void ReEqPanelComponent::showTypeMenuForBand(int bandIndex, juce::Point<int> scr
                         type_[(size_t) bandIndex] = v;
                         lastResponseCacheHash_ = 0;
                         repaint();
+                        notifyAuxRefreshNeeded();
                     });
 }
 
@@ -386,14 +419,7 @@ void ReEqPanelComponent::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
 
-    juce::ColourGradient bg(juce::Colour(eq::plotGradientTop),
-                            bounds.getX(),
-                            bounds.getY(),
-                            juce::Colour(eq::plotGradientBottom),
-                            bounds.getRight(),
-                            bounds.getBottom(),
-                            false);
-    g.setGradientFill(bg);
+    g.setColour(juce::Colour(eq::plotSolidFill));
     g.fillRoundedRectangle(bounds.reduced(0.5f), 6.f);
     g.setColour(juce::Colour(eq::frameBorder));
     g.drawRoundedRectangle(bounds.reduced(0.5f), 6.f, 1.f);
@@ -408,10 +434,15 @@ void ReEqPanelComponent::paint(juce::Graphics& g)
         lastResponseCacheHash_ = h;
     }
 
-    g.setColour(juce::Colour(eq::gridLine));
-    for (float hz : { 100.f, 1000.f, 10000.f })
+    static const float kVertGridHz[] = { 20.f,  30.f,  40.f,  50.f,  70.f,  100.f, 200.f, 300.f, 500.f, 700.f,
+                                         1000.f, 2000.f, 3000.f, 5000.f, 7000.f, 10000.f, 20000.f };
+    for (float hz : kVertGridHz)
     {
         const float x = hzToX(hz, plot);
+        if (x < plot.getX() || x > plot.getRight())
+            continue;
+        const bool major = (hz == 100.f || hz == 1000.f || hz == 10000.f);
+        g.setColour(juce::Colour(eq::gridLine).withAlpha(major ? 0.22f : 0.10f));
         g.drawVerticalLine(juce::roundToInt(x), plot.getY(), plot.getBottom());
     }
     const float y0 = dbToY(0.f, plot);
@@ -446,14 +477,7 @@ void ReEqPanelComponent::paint(juce::Graphics& g)
     }
     specPath.lineTo(plot.getRight(), base);
     specPath.closeSubPath();
-    juce::ColourGradient specGrad(juce::Colour(eq::spectrumFillHi).withAlpha(0.42f),
-                                  plot.getCentreX(),
-                                  plot.getY(),
-                                  juce::Colour(eq::spectrumFillLo).withAlpha(0.12f),
-                                  plot.getCentreX(),
-                                  plot.getBottom(),
-                                  false);
-    g.setGradientFill(specGrad);
+    g.setColour(juce::Colour(eq::spectrumFillSolid).withAlpha(0.38f));
     g.fillPath(specPath);
     g.setColour(juce::Colour(eq::spectrumLine).withAlpha(0.75f));
     g.strokePath(specPath, juce::PathStrokeType(1.0f));
@@ -474,12 +498,14 @@ void ReEqPanelComponent::paint(juce::Graphics& g)
     g.strokePath(cachedSumPath_, juce::PathStrokeType(1.25f));
 
     g.setColour(juce::Colour(eq::captionText));
-    g.setFont(juce::FontOptions(9.5f));
-    for (float hz : { 100.f, 1000.f, 10000.f })
+    g.setFont(juce::FontOptions(8.2f));
+    for (float hz : kVertGridHz)
     {
         const float x = hzToX(hz, plot);
-        juce::String lab = (hz >= 1000.f) ? juce::String(hz / 1000.f, (hz >= 10000.f ? 0 : 1)) + " k" : juce::String((int) hz);
-        g.drawText(lab, juce::Rectangle<int>((int) x - 18, (int) plot.getBottom() + 2, 36, 14), juce::Justification::centred);
+        if (x < plot.getX() - 8.f || x > plot.getRight() + 8.f)
+            continue;
+        const juce::String lab = formatFreqTickLabel(hz);
+        g.drawText(lab, juce::Rectangle<int>((int) x - 20, (int) plot.getBottom() + 1, 40, 12), juce::Justification::centred);
     }
 
     g.setFont(juce::FontOptions(9.5f));
@@ -510,13 +536,16 @@ void ReEqPanelComponent::paint(juce::Graphics& g)
 
     g.setColour(juce::Colour(eq::captionText));
     g.setFont(juce::FontOptions(10.5f));
-    juce::String cap = "Double-click plot: add band (max 10). Drag: freq + gain. Wheel: Q. RMB: type.";
+    juce::String cap = "Double-click plot: add band (max 10). Drag: freq + gain. Wheel: Q. RMB: type. LP/HP: Slope 0...96 dB/oct.";
     if (selectedBand_ >= 0 && selectedBand_ < kBands)
     {
         cap += "  |  Band " + juce::String(selectedBand_ + 1) + "  "
                + juce::String(freq_[(size_t) selectedBand_], 0) + " Hz  "
                + juce::String(gainDb_[(size_t) selectedBand_], 1) + " dB  Q "
                + juce::String(q_[(size_t) selectedBand_], 2);
+        const int t = juce::jlimit(0, 5, juce::roundToInt(type_[(size_t) selectedBand_]));
+        if (t == 3 || t == 4)
+            cap += "  Slope " + juce::String(slope_[(size_t) selectedBand_], 0) + " dB/oct";
     }
     g.drawText(cap, getLocalBounds().removeFromBottom(20).reduced(8, 0).toFloat(), juce::Justification::centredLeft);
 }
@@ -613,6 +642,7 @@ void ReEqPanelComponent::mouseDoubleClick(const juce::MouseEvent& e)
     processor_->setModuleFloatParam(slotId_, kGainIds[newIdx], db);
     processor_->setModuleFloatParam(slotId_, kQIds[newIdx], 1.0f);
     processor_->setModuleFloatParam(slotId_, kTypeIds[newIdx], 0.0f);
+    processor_->setModuleFloatParam(slotId_, kSlopeIds[newIdx], 48.0f);
     processor_->setModuleFloatParam(slotId_, razumov::params::eqActiveBandCount, (float) (newIdx + 1));
 
     updateFrom(*processor_, slotId_);

@@ -33,6 +33,20 @@ const char* eqQId(int b) noexcept
                                        eqBand6Q, eqBand7Q, eqBand8Q, eqBand9Q, eqBand10Q };
     return ids[(size_t) juce::jlimit(0, 9, b)];
 }
+const char* eqTypeId(int b) noexcept
+{
+    using namespace razumov::params;
+    static const char* const ids[] = { eqBand1Type, eqBand2Type, eqBand3Type, eqBand4Type, eqBand5Type,
+                                       eqBand6Type, eqBand7Type, eqBand8Type, eqBand9Type, eqBand10Type };
+    return ids[(size_t) juce::jlimit(0, 9, b)];
+}
+const char* eqSlopeId(int b) noexcept
+{
+    using namespace razumov::params;
+    static const char* const ids[] = { eqBand1Slope, eqBand2Slope, eqBand3Slope, eqBand4Slope, eqBand5Slope,
+                                       eqBand6Slope, eqBand7Slope, eqBand8Slope, eqBand9Slope, eqBand10Slope };
+    return ids[(size_t) juce::jlimit(0, 9, b)];
+}
 } // namespace
 
 void RazumovVocalChainAudioProcessorEditor::MacroLearnSlider::setLearnContext(
@@ -585,6 +599,7 @@ void RazumovVocalChainAudioProcessorEditor::refreshRotaryStyles()
     one(eqSelFreqSlider);
     one(eqSelGainSlider);
     one(eqSelQSlider);
+    one(eqSelSlopeSlider);
 }
 
 void RazumovVocalChainAudioProcessorEditor::populateComboBoxes()
@@ -870,16 +885,25 @@ void RazumovVocalChainAudioProcessorEditor::refreshEqAuxSliders()
     eqSelGainSlider.setVisible(show);
     eqSelQSlider.setVisible(show);
     if (!show)
+    {
+        eqSelSlopeSlider.setVisible(false);
         return;
+    }
+
+    const uint32_t slot = selectedSlotId_;
+    const int typeRounded = (int) std::lround((double) processor.getModuleFloatParam(slot, eqTypeId(b)));
+    const bool lpHp = (typeRounded == 3 || typeRounded == 4);
+    eqSelSlopeSlider.setVisible(lpHp);
 
     eqSelFreqSlider.setTargetContext(*this, eqFreqId(b));
     eqSelGainSlider.setTargetContext(*this, eqGainId(b));
     eqSelQSlider.setTargetContext(*this, eqQId(b));
+    eqSelSlopeSlider.setTargetContext(*this, eqSlopeId(b));
 
-    const uint32_t slot = selectedSlotId_;
     eqSelFreqSlider.setValue(processor.getModuleFloatParam(slot, eqFreqId(b)), juce::dontSendNotification);
     eqSelGainSlider.setValue(processor.getModuleFloatParam(slot, eqGainId(b)), juce::dontSendNotification);
     eqSelQSlider.setValue(processor.getModuleFloatParam(slot, eqQId(b)), juce::dontSendNotification);
+    eqSelSlopeSlider.setValue(processor.getModuleFloatParam(slot, eqSlopeId(b)), juce::dontSendNotification);
 }
 
 void RazumovVocalChainAudioProcessorEditor::refreshModulePanelVisibility()
@@ -1114,6 +1138,8 @@ void RazumovVocalChainAudioProcessorEditor::layoutModuleViewport(int viewportWid
             eqSelFreqSlider.setBounds(x, y, kw, kh);
             eqSelGainSlider.setBounds(x + (kw + gap), y, kw, kh);
             eqSelQSlider.setBounds(x + 2 * (kw + gap), y, kw, kh);
+            if (eqSelSlopeSlider.isVisible())
+                eqSelSlopeSlider.setBounds(x + 3 * (kw + gap), y, kw, kh);
             y += kh + gap + scaled(18);
         }
     }
@@ -1391,6 +1417,7 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     addKnob(eqSelFreqSlider, juce::Colour(tkn::knob::lowpass));
     addKnob(eqSelGainSlider, juce::Colour(tkn::knob::lowpass));
     addKnob(eqSelQSlider, juce::Colour(tkn::knob::lowpass));
+    addKnob(eqSelSlopeSlider, juce::Colour(tkn::knob::lowpass));
 
     micAmountSlider.setRange(0.0, 1.0, 0.01);
     gainSlider.setRange(-24.0, 12.0, 0.1);
@@ -1431,6 +1458,8 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     eqSelGainSlider.setRange(-12.0, 12.0, 0.1);
     eqSelGainSlider.setTextValueSuffix(" dB");
     eqSelQSlider.setRange(0.3, 20.0, 0.01);
+    eqSelSlopeSlider.setRange(0.0, 96.0, 0.5);
+    eqSelSlopeSlider.setTextValueSuffix(" dB/oct");
 
     micAmountSlider.setTargetContext(*this, razumov::params::micAmount);
     gainSlider.setTargetContext(*this, razumov::params::gainDb);
@@ -1460,6 +1489,7 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     eqSelFreqSlider.setTargetContext(*this, razumov::params::eqBand1FreqHz);
     eqSelGainSlider.setTargetContext(*this, razumov::params::eqBand1GainDb);
     eqSelQSlider.setTargetContext(*this, razumov::params::eqBand1Q);
+    eqSelSlopeSlider.setTargetContext(*this, razumov::params::eqBand1Slope);
 
     auto wireFloat = [this](juce::Slider& s, const char* paramId) {
         s.onValueChange = [this, &s, paramId] {
@@ -1518,6 +1548,9 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
                 case 2:
                     paramId = eqQId(b);
                     break;
+                case 3:
+                    paramId = eqSlopeId(b);
+                    break;
                 default:
                     return;
             }
@@ -1536,6 +1569,7 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     wireEqSel(eqSelFreqSlider, 0);
     wireEqSel(eqSelGainSlider, 1);
     wireEqSel(eqSelQSlider, 2);
+    wireEqSel(eqSelSlopeSlider, 3);
 
     content.addAndMakeVisible(spectrumPanel);
     spectrumPanel.setVisible(false);
@@ -1548,9 +1582,11 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     content.addAndMakeVisible(eqSelFreqSlider);
     content.addAndMakeVisible(eqSelGainSlider);
     content.addAndMakeVisible(eqSelQSlider);
+    content.addAndMakeVisible(eqSelSlopeSlider);
     eqSelFreqSlider.setVisible(false);
     eqSelGainSlider.setVisible(false);
     eqSelQSlider.setVisible(false);
+    eqSelSlopeSlider.setVisible(false);
 
     content.addAndMakeVisible(spectralCompPanel);
     spectralCompPanel.setVisible(false);

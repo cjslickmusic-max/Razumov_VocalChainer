@@ -85,6 +85,17 @@ struct Phase3RealtimeParams
     float eqBand8Type { 0.0f };
     float eqBand9Type { 0.0f };
     float eqBand10Type { 0.0f };
+    /** LowPass/HighPass: rolloff 0...96 dB/oct (other types: ignored in DSP). */
+    float eqBand1Slope { 48.0f };
+    float eqBand2Slope { 48.0f };
+    float eqBand3Slope { 48.0f };
+    float eqBand4Slope { 48.0f };
+    float eqBand5Slope { 48.0f };
+    float eqBand6Slope { 48.0f };
+    float eqBand7Slope { 48.0f };
+    float eqBand8Slope { 48.0f };
+    float eqBand9Slope { 48.0f };
+    float eqBand10Slope { 48.0f };
 };
 
 } // namespace razumov::params

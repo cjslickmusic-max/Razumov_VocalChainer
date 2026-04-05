@@ -17,8 +17,9 @@ void ParametricEqNode::prepare(double sampleRate, int maxBlockSize, int numChann
 
     juce::dsp::ProcessSpec spec { sampleRate, (juce::uint32) maxBlockSize, 1 };
     for (auto& band : bands_)
-        for (auto& f : band)
-            f.prepare(spec);
+        for (auto& st : band)
+            for (auto& f : st)
+                f.prepare(spec);
 
     reset();
     smoothStep();
@@ -30,13 +31,15 @@ void ParametricEqNode::reset()
 {
     spectrumTap_.reset();
     for (auto& band : bands_)
-        for (auto& f : band)
-            f.reset();
+        for (auto& st : band)
+            for (auto& f : st)
+                f.reset();
 
     /** Align smoothing state with targets so graph rebuild / reset is deterministic. */
     smoothFreq_ = tgtFreq_;
     smoothGainDb_ = tgtGainDb_;
     smoothQ_ = tgtQ_;
+    smoothSlopeDbPerOct_ = tgtSlopeDbPerOct_;
     for (int i = 0; i < kNumBands; ++i)
         smoothType_[(size_t) i] = tgtType_[(size_t) i];
     smoothBypass_ = tgtBypass_;
@@ -56,6 +59,7 @@ void ParametricEqNode::smoothStep() noexcept
         smoothFreq_[si] += (tgtFreq_[si] - smoothFreq_[si]) * a;
         smoothGainDb_[si] += (tgtGainDb_[si] - smoothGainDb_[si]) * a;
         smoothQ_[si] += (tgtQ_[si] - smoothQ_[si]) * a;
+        smoothSlopeDbPerOct_[si] += (tgtSlopeDbPerOct_[si] - smoothSlopeDbPerOct_[si]) * a;
         smoothType_[si] = tgtType_[si];
     }
     smoothBypass_ = tgtBypass_;
@@ -70,24 +74,38 @@ void ParametricEqNode::updateBandCoeffs(int bandIndex) noexcept
     constexpr float epsF = 2e-3f;
     constexpr float epsG = 2e-4f;
     constexpr float epsQ = 2e-4f;
+    constexpr float epsS = 0.05f;
 
     if (coeffSnapshotValid_)
     {
         if (std::abs(smoothFreq_[bi] - lastCoeffFreq_[bi]) < epsF
             && std::abs(smoothGainDb_[bi] - lastCoeffGainDb_[bi]) < epsG
-            && std::abs(smoothQ_[bi] - lastCoeffQ_[bi]) < epsQ && smoothType_[bi] == lastCoeffType_[bi])
+            && std::abs(smoothQ_[bi] - lastCoeffQ_[bi]) < epsQ && smoothType_[bi] == lastCoeffType_[bi]
+            && std::abs(smoothSlopeDbPerOct_[bi] - lastCoeffSlope_[bi]) < epsS)
             return;
     }
 
     const auto t = razumov::dsp::eq::EqTypeFromFloat(smoothType_[bi]);
-    auto c = razumov::dsp::eq::makeBandCoeffs(t, sampleRate_, smoothFreq_[bi], smoothGainDb_[bi], smoothQ_[bi]);
-    for (int ch = 0; ch < 2; ++ch)
-        bands_[bi][(size_t) ch].coefficients = c;
+    razumov::dsp::eq::Coeffs::Ptr stages[8] {};
+    int n = 0;
+    razumov::dsp::eq::assignStageCoeffs(t, sampleRate_, smoothFreq_[bi], smoothGainDb_[bi], smoothQ_[bi],
+                                        smoothSlopeDbPerOct_[bi], stages, n);
+    effectiveStagesPerBand_[bi] = n;
+
+    for (int s = 0; s < kMaxStagesPerBand; ++s)
+    {
+        if (s < n && stages[(size_t) s] != nullptr)
+        {
+            for (int ch = 0; ch < 2; ++ch)
+                bands_[bi][(size_t) s][(size_t) ch].coefficients = stages[(size_t) s];
+        }
+    }
 
     lastCoeffFreq_[bi] = smoothFreq_[bi];
     lastCoeffGainDb_[bi] = smoothGainDb_[bi];
     lastCoeffQ_[bi] = smoothQ_[bi];
     lastCoeffType_[bi] = smoothType_[bi];
+    lastCoeffSlope_[bi] = smoothSlopeDbPerOct_[bi];
     coeffSnapshotValid_ = true;
 }
 
@@ -100,8 +118,12 @@ void ParametricEqNode::processOneChannel(float* data, int numSamples, int channe
     juce::dsp::AudioBlock<float> block(chans, 1, (size_t) numSamples);
     for (int b = 0; b < tgtActiveCount_; ++b)
     {
-        juce::dsp::ProcessContextReplacing<float> ctx(block);
-        bands_[(size_t) b][(size_t) channelIndex].process(ctx);
+        const int nSt = effectiveStagesPerBand_[(size_t) b];
+        for (int s = 0; s < nSt; ++s)
+        {
+            juce::dsp::ProcessContextReplacing<float> ctx(block);
+            bands_[(size_t) b][(size_t) s][(size_t) channelIndex].process(ctx);
+        }
     }
 }
 
@@ -186,6 +208,16 @@ void ParametricEqNode::applyPhase3(const razumov::params::Phase3RealtimeParams& 
     tgtType_[7] = p.eqBand8Type;
     tgtType_[8] = p.eqBand9Type;
     tgtType_[9] = p.eqBand10Type;
+    tgtSlopeDbPerOct_[0] = p.eqBand1Slope;
+    tgtSlopeDbPerOct_[1] = p.eqBand2Slope;
+    tgtSlopeDbPerOct_[2] = p.eqBand3Slope;
+    tgtSlopeDbPerOct_[3] = p.eqBand4Slope;
+    tgtSlopeDbPerOct_[4] = p.eqBand5Slope;
+    tgtSlopeDbPerOct_[5] = p.eqBand6Slope;
+    tgtSlopeDbPerOct_[6] = p.eqBand7Slope;
+    tgtSlopeDbPerOct_[7] = p.eqBand8Slope;
+    tgtSlopeDbPerOct_[8] = p.eqBand9Slope;
+    tgtSlopeDbPerOct_[9] = p.eqBand10Slope;
 }
 
 void ParametricEqNode::copySpectrum256(float* dst) const noexcept

@@ -17,6 +17,12 @@ inline float clampEqGainDb(float v) noexcept
     return juce::jlimit(-kEqGainDbAbsMax, kEqGainDbAbsMax, v);
 }
 
+constexpr float kEqSlopeDbPerOctMax = 96.f;
+inline float clampEqSlopeDbPerOct(float v) noexcept
+{
+    return juce::jlimit(0.f, kEqSlopeDbPerOctMax, v);
+}
+
 struct ModuleSlotBlock
 {
     std::atomic<float> micBypass { 0.0f };
@@ -88,6 +94,16 @@ struct ModuleSlotBlock
     std::atomic<float> eqBand8Type { 0.0f };
     std::atomic<float> eqBand9Type { 0.0f };
     std::atomic<float> eqBand10Type { 0.0f };
+    std::atomic<float> eqBand1Slope { 48.0f };
+    std::atomic<float> eqBand2Slope { 48.0f };
+    std::atomic<float> eqBand3Slope { 48.0f };
+    std::atomic<float> eqBand4Slope { 48.0f };
+    std::atomic<float> eqBand5Slope { 48.0f };
+    std::atomic<float> eqBand6Slope { 48.0f };
+    std::atomic<float> eqBand7Slope { 48.0f };
+    std::atomic<float> eqBand8Slope { 48.0f };
+    std::atomic<float> eqBand9Slope { 48.0f };
+    std::atomic<float> eqBand10Slope { 48.0f };
 };
 
 inline void copyModuleSlotBlockState(const ModuleSlotBlock& src, ModuleSlotBlock& dst)
@@ -160,6 +176,16 @@ inline void copyModuleSlotBlockState(const ModuleSlotBlock& src, ModuleSlotBlock
     dst.eqBand8Type.store(src.eqBand8Type.load());
     dst.eqBand9Type.store(src.eqBand9Type.load());
     dst.eqBand10Type.store(src.eqBand10Type.load());
+    dst.eqBand1Slope.store(detail::clampEqSlopeDbPerOct(src.eqBand1Slope.load()));
+    dst.eqBand2Slope.store(detail::clampEqSlopeDbPerOct(src.eqBand2Slope.load()));
+    dst.eqBand3Slope.store(detail::clampEqSlopeDbPerOct(src.eqBand3Slope.load()));
+    dst.eqBand4Slope.store(detail::clampEqSlopeDbPerOct(src.eqBand4Slope.load()));
+    dst.eqBand5Slope.store(detail::clampEqSlopeDbPerOct(src.eqBand5Slope.load()));
+    dst.eqBand6Slope.store(detail::clampEqSlopeDbPerOct(src.eqBand6Slope.load()));
+    dst.eqBand7Slope.store(detail::clampEqSlopeDbPerOct(src.eqBand7Slope.load()));
+    dst.eqBand8Slope.store(detail::clampEqSlopeDbPerOct(src.eqBand8Slope.load()));
+    dst.eqBand9Slope.store(detail::clampEqSlopeDbPerOct(src.eqBand9Slope.load()));
+    dst.eqBand10Slope.store(detail::clampEqSlopeDbPerOct(src.eqBand10Slope.load()));
 }
 
 } // namespace detail
@@ -237,6 +263,16 @@ void storeFromPhase3(detail::ModuleSlotBlock& b, const Phase3RealtimeParams& p)
     b.eqBand8Type.store(p.eqBand8Type);
     b.eqBand9Type.store(p.eqBand9Type);
     b.eqBand10Type.store(p.eqBand10Type);
+    b.eqBand1Slope.store(detail::clampEqSlopeDbPerOct(p.eqBand1Slope));
+    b.eqBand2Slope.store(detail::clampEqSlopeDbPerOct(p.eqBand2Slope));
+    b.eqBand3Slope.store(detail::clampEqSlopeDbPerOct(p.eqBand3Slope));
+    b.eqBand4Slope.store(detail::clampEqSlopeDbPerOct(p.eqBand4Slope));
+    b.eqBand5Slope.store(detail::clampEqSlopeDbPerOct(p.eqBand5Slope));
+    b.eqBand6Slope.store(detail::clampEqSlopeDbPerOct(p.eqBand6Slope));
+    b.eqBand7Slope.store(detail::clampEqSlopeDbPerOct(p.eqBand7Slope));
+    b.eqBand8Slope.store(detail::clampEqSlopeDbPerOct(p.eqBand8Slope));
+    b.eqBand9Slope.store(detail::clampEqSlopeDbPerOct(p.eqBand9Slope));
+    b.eqBand10Slope.store(detail::clampEqSlopeDbPerOct(p.eqBand10Slope));
 }
 
 void loadToPhase3(const detail::ModuleSlotBlock& b, Phase3RealtimeParams& out)
@@ -309,6 +345,16 @@ void loadToPhase3(const detail::ModuleSlotBlock& b, Phase3RealtimeParams& out)
     out.eqBand8Type = b.eqBand8Type.load();
     out.eqBand9Type = b.eqBand9Type.load();
     out.eqBand10Type = b.eqBand10Type.load();
+    out.eqBand1Slope = detail::clampEqSlopeDbPerOct(b.eqBand1Slope.load());
+    out.eqBand2Slope = detail::clampEqSlopeDbPerOct(b.eqBand2Slope.load());
+    out.eqBand3Slope = detail::clampEqSlopeDbPerOct(b.eqBand3Slope.load());
+    out.eqBand4Slope = detail::clampEqSlopeDbPerOct(b.eqBand4Slope.load());
+    out.eqBand5Slope = detail::clampEqSlopeDbPerOct(b.eqBand5Slope.load());
+    out.eqBand6Slope = detail::clampEqSlopeDbPerOct(b.eqBand6Slope.load());
+    out.eqBand7Slope = detail::clampEqSlopeDbPerOct(b.eqBand7Slope.load());
+    out.eqBand8Slope = detail::clampEqSlopeDbPerOct(b.eqBand8Slope.load());
+    out.eqBand9Slope = detail::clampEqSlopeDbPerOct(b.eqBand9Slope.load());
+    out.eqBand10Slope = detail::clampEqSlopeDbPerOct(b.eqBand10Slope.load());
 }
 
 void initDefaults(detail::ModuleSlotBlock& b)
@@ -554,6 +600,26 @@ float ModuleParamsRuntime::getFloat(uint32_t slotId, const juce::String& paramId
         return b->eqBand9Type.load();
     if (paramId == eqBand10Type)
         return b->eqBand10Type.load();
+    if (paramId == eqBand1Slope)
+        return detail::clampEqSlopeDbPerOct(b->eqBand1Slope.load());
+    if (paramId == eqBand2Slope)
+        return detail::clampEqSlopeDbPerOct(b->eqBand2Slope.load());
+    if (paramId == eqBand3Slope)
+        return detail::clampEqSlopeDbPerOct(b->eqBand3Slope.load());
+    if (paramId == eqBand4Slope)
+        return detail::clampEqSlopeDbPerOct(b->eqBand4Slope.load());
+    if (paramId == eqBand5Slope)
+        return detail::clampEqSlopeDbPerOct(b->eqBand5Slope.load());
+    if (paramId == eqBand6Slope)
+        return detail::clampEqSlopeDbPerOct(b->eqBand6Slope.load());
+    if (paramId == eqBand7Slope)
+        return detail::clampEqSlopeDbPerOct(b->eqBand7Slope.load());
+    if (paramId == eqBand8Slope)
+        return detail::clampEqSlopeDbPerOct(b->eqBand8Slope.load());
+    if (paramId == eqBand9Slope)
+        return detail::clampEqSlopeDbPerOct(b->eqBand9Slope.load());
+    if (paramId == eqBand10Slope)
+        return detail::clampEqSlopeDbPerOct(b->eqBand10Slope.load());
     return 0.0f;
 }
 
@@ -694,6 +760,26 @@ void ModuleParamsRuntime::setFloat(uint32_t slotId, const juce::String& paramId,
         b->eqBand9Type.store(value);
     else if (paramId == eqBand10Type)
         b->eqBand10Type.store(value);
+    else if (paramId == eqBand1Slope)
+        b->eqBand1Slope.store(detail::clampEqSlopeDbPerOct(value));
+    else if (paramId == eqBand2Slope)
+        b->eqBand2Slope.store(detail::clampEqSlopeDbPerOct(value));
+    else if (paramId == eqBand3Slope)
+        b->eqBand3Slope.store(detail::clampEqSlopeDbPerOct(value));
+    else if (paramId == eqBand4Slope)
+        b->eqBand4Slope.store(detail::clampEqSlopeDbPerOct(value));
+    else if (paramId == eqBand5Slope)
+        b->eqBand5Slope.store(detail::clampEqSlopeDbPerOct(value));
+    else if (paramId == eqBand6Slope)
+        b->eqBand6Slope.store(detail::clampEqSlopeDbPerOct(value));
+    else if (paramId == eqBand7Slope)
+        b->eqBand7Slope.store(detail::clampEqSlopeDbPerOct(value));
+    else if (paramId == eqBand8Slope)
+        b->eqBand8Slope.store(detail::clampEqSlopeDbPerOct(value));
+    else if (paramId == eqBand9Slope)
+        b->eqBand9Slope.store(detail::clampEqSlopeDbPerOct(value));
+    else if (paramId == eqBand10Slope)
+        b->eqBand10Slope.store(detail::clampEqSlopeDbPerOct(value));
 }
 
 bool ModuleParamsRuntime::getBool(uint32_t slotId, const juce::String& paramId) const
@@ -828,6 +914,16 @@ juce::ValueTree ModuleParamsRuntime::toValueTree() const
         slot.setProperty(eqBand8Type, b->eqBand8Type.load(), nullptr);
         slot.setProperty(eqBand9Type, b->eqBand9Type.load(), nullptr);
         slot.setProperty(eqBand10Type, b->eqBand10Type.load(), nullptr);
+        slot.setProperty(eqBand1Slope, b->eqBand1Slope.load(), nullptr);
+        slot.setProperty(eqBand2Slope, b->eqBand2Slope.load(), nullptr);
+        slot.setProperty(eqBand3Slope, b->eqBand3Slope.load(), nullptr);
+        slot.setProperty(eqBand4Slope, b->eqBand4Slope.load(), nullptr);
+        slot.setProperty(eqBand5Slope, b->eqBand5Slope.load(), nullptr);
+        slot.setProperty(eqBand6Slope, b->eqBand6Slope.load(), nullptr);
+        slot.setProperty(eqBand7Slope, b->eqBand7Slope.load(), nullptr);
+        slot.setProperty(eqBand8Slope, b->eqBand8Slope.load(), nullptr);
+        slot.setProperty(eqBand9Slope, b->eqBand9Slope.load(), nullptr);
+        slot.setProperty(eqBand10Slope, b->eqBand10Slope.load(), nullptr);
         root.appendChild(slot, nullptr);
     }
 
@@ -935,6 +1031,16 @@ void ModuleParamsRuntime::fromValueTree(const juce::ValueTree& v)
         b->eqBand8Type.store(gf(eqBand8Type, 0.0f));
         b->eqBand9Type.store(gf(eqBand9Type, 0.0f));
         b->eqBand10Type.store(gf(eqBand10Type, 0.0f));
+        b->eqBand1Slope.store(detail::clampEqSlopeDbPerOct(gf(eqBand1Slope, 48.0f)));
+        b->eqBand2Slope.store(detail::clampEqSlopeDbPerOct(gf(eqBand2Slope, 48.0f)));
+        b->eqBand3Slope.store(detail::clampEqSlopeDbPerOct(gf(eqBand3Slope, 48.0f)));
+        b->eqBand4Slope.store(detail::clampEqSlopeDbPerOct(gf(eqBand4Slope, 48.0f)));
+        b->eqBand5Slope.store(detail::clampEqSlopeDbPerOct(gf(eqBand5Slope, 48.0f)));
+        b->eqBand6Slope.store(detail::clampEqSlopeDbPerOct(gf(eqBand6Slope, 48.0f)));
+        b->eqBand7Slope.store(detail::clampEqSlopeDbPerOct(gf(eqBand7Slope, 48.0f)));
+        b->eqBand8Slope.store(detail::clampEqSlopeDbPerOct(gf(eqBand8Slope, 48.0f)));
+        b->eqBand9Slope.store(detail::clampEqSlopeDbPerOct(gf(eqBand9Slope, 48.0f)));
+        b->eqBand10Slope.store(detail::clampEqSlopeDbPerOct(gf(eqBand10Slope, 48.0f)));
     }
 
     juce::ValueTree mr = v.getChildWithName("MacroRouting");

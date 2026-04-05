@@ -94,31 +94,35 @@ inline constexpr uint32_t spectral = 0xff8888d8;
  */
 namespace eqPanel
 {
-inline constexpr uint32_t plotGradientTop = 0x4d312e81;     /** indigo tint */
-inline constexpr uint32_t plotGradientMid = 0xee14141f;
-inline constexpr uint32_t plotGradientBottom = 0xff0a0a14;
-inline constexpr uint32_t plotInnerGlow = 0x1a6c9fd2;         /** wire glow */
-inline constexpr uint32_t spectrumFillHi = 0x556c9fd2;        /** accent-signal */
-inline constexpr uint32_t spectrumFillLo = 0x186c9fd2;
-inline constexpr uint32_t spectrumLine = 0xb0a8c8e8;
-inline constexpr uint32_t curveGlow = 0x559fd2ff;           /** accent-selection */
-inline constexpr uint32_t curveCore = 0xeec8e0ff;
-inline constexpr uint32_t gridLine = 0x1effffff;            /** border-subtle */
-inline constexpr uint32_t zeroDbLine = 0x5a9fd2ff;
+/** Single flat fill for plot (no vertical gradient). */
+inline constexpr uint32_t plotSolidFill = 0xff14141f;
+inline constexpr uint32_t plotGradientTop = 0xff14141f;     /** legacy: same as solid */
+inline constexpr uint32_t plotGradientMid = 0xff14141f;
+inline constexpr uint32_t plotGradientBottom = 0xff14141f;
+inline constexpr uint32_t plotInnerGlow = 0x1a6c9fd2;
+/** Spectrum: uniform dark fill (no light-to-dark gradient). */
+inline constexpr uint32_t spectrumFillSolid = 0xff1a2830;
+inline constexpr uint32_t spectrumFillHi = 0xff1a2830;
+inline constexpr uint32_t spectrumFillLo = 0xff1a2830;
+inline constexpr uint32_t spectrumLine = 0x884cc4d8;
+inline constexpr uint32_t curveGlow = 0x55e6c84a;             /** sum line glow (yellow-green) */
+inline constexpr uint32_t curveCore = 0xffe6e84a;             /** composite curve */
+inline constexpr uint32_t gridLine = 0x18ffffff;
+inline constexpr uint32_t zeroDbLine = 0x5590a4b8;
 inline constexpr uint32_t frameBorder = 0x55353d4a;
-inline constexpr uint32_t captionText = 0xff94a3b8;          /** text-muted */
-/** Band handles (distinct on dark; signal / CTA / merge / green / cyan). */
-inline constexpr uint32_t band0 = 0xff6c9fd2;
-inline constexpr uint32_t band1 = 0xfff97316;
-inline constexpr uint32_t band2 = 0xffa78bfa;
-inline constexpr uint32_t band3 = 0xff4ade80;
-inline constexpr uint32_t band4 = 0xff22d3ee;
-inline constexpr uint32_t band5 = 0xffe879f9;
+inline constexpr uint32_t captionText = 0xff94a3b8;
+/** Band handles (Kirchhoff-style distinct hues on dark). */
+inline constexpr uint32_t band0 = 0xff5cc8e8;
+inline constexpr uint32_t band1 = 0xff88e878;
+inline constexpr uint32_t band2 = 0xff22d3ee;
+inline constexpr uint32_t band3 = 0xffe879f9;
+inline constexpr uint32_t band4 = 0xffa78bfa;
+inline constexpr uint32_t band5 = 0xfffb7185;
 inline constexpr uint32_t band6 = 0xfffacc15;
-inline constexpr uint32_t band7 = 0xfffb7185;
-inline constexpr uint32_t band8 = 0xff34d399;
-inline constexpr uint32_t band9 = 0xff818cf8;
-inline constexpr uint32_t nodeLabel = 0xfff8fafc;            /** text-inverse */
+inline constexpr uint32_t band7 = 0xff34d399;
+inline constexpr uint32_t band8 = 0xff818cf8;
+inline constexpr uint32_t band9 = 0xff60a5fa;
+inline constexpr uint32_t nodeLabel = 0xfff8fafc;
 } // namespace eqPanel
 
 } // namespace razumov::ui::tokens

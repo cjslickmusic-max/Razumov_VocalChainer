@@ -179,6 +179,7 @@ private:
     ModuleTargetSlider eqSelFreqSlider;
     ModuleTargetSlider eqSelGainSlider;
     ModuleTargetSlider eqSelQSlider;
+    ModuleTargetSlider eqSelSlopeSlider;
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> micProfileAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> macroGlueAttachment;

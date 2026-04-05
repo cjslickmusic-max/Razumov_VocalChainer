@@ -82,6 +82,17 @@ inline constexpr const char* eqBand7Type = "eqBand7Type";
 inline constexpr const char* eqBand8Type = "eqBand8Type";
 inline constexpr const char* eqBand9Type = "eqBand9Type";
 inline constexpr const char* eqBand10Type = "eqBand10Type";
+/** LP/HP: slope 0...96 dB/oct (cascade stages). */
+inline constexpr const char* eqBand1Slope = "eqBand1Slope";
+inline constexpr const char* eqBand2Slope = "eqBand2Slope";
+inline constexpr const char* eqBand3Slope = "eqBand3Slope";
+inline constexpr const char* eqBand4Slope = "eqBand4Slope";
+inline constexpr const char* eqBand5Slope = "eqBand5Slope";
+inline constexpr const char* eqBand6Slope = "eqBand6Slope";
+inline constexpr const char* eqBand7Slope = "eqBand7Slope";
+inline constexpr const char* eqBand8Slope = "eqBand8Slope";
+inline constexpr const char* eqBand9Slope = "eqBand9Slope";
+inline constexpr const char* eqBand10Slope = "eqBand10Slope";
 
 /** Стартовая топология графа (фаза 4.2): Full / Compact / FET-forward. */
 inline constexpr const char* chainProfile = "chainProfile";

@@ -4,6 +4,14 @@
 
 ---
 
+## Quick check — v0.9.31 (2026-03-29) — EQ plot solid fill + slope UI + log freq ticks
+
+- `ReEqPanelComponent`: `plotSolidFill` / `spectrumFillSolid` (no vertical gradient); Kirchhoff-style Hz grid + labels; `bandMagDbAtHz` + slope in cache hash; new band default slope 48; `notifyAuxRefreshNeeded` on type change.
+- `PluginEditor`: `eqSelSlopeSlider` 0...96 dB/oct for LP/HP (types 3/4); `eqTypeId` / `eqSlopeId` helpers.
+- ReadLints scoped; `cmake --build` VST3 + `RazumovVocalChainTests`: OK.
+
+---
+
 ## Quick check — v0.9.23 (2026-04-02) — Spectral compressor sidechain band + Q + A/R + SpecCraft-like plot
 
 - `SpectralCompressorNode`: weighted band energy detector, envelope per frame (hop), GR applied as `1+w*(g-1)`; `scEnvDbUi_` for UI.

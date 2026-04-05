@@ -18,6 +18,9 @@ public:
 
     int getSelectedBand() const noexcept { return selectedBand_; }
 
+    /** Notify editor (e.g. show/hide Slope knob when filter type changes). */
+    void notifyAuxRefreshNeeded() noexcept;
+
     void updateFrom(RazumovVocalChainAudioProcessor& proc, uint32_t slotId);
 
     void paint(juce::Graphics& g) override;
@@ -54,6 +57,8 @@ private:
     std::array<float, (size_t) kBands> gainDb_{};
     std::array<float, (size_t) kBands> q_{};
     std::array<float, (size_t) kBands> type_{};
+    /** LP/HP: 0...96 dB/oct (cascade). */
+    std::array<float, (size_t) kBands> slope_{};
     bool eqBypass_ { false };
     int activeBandCount_ { 0 };
 

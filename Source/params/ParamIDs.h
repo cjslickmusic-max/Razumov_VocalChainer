@@ -60,6 +60,28 @@ inline constexpr const char* eqBand2Type = "eqBand2Type";
 inline constexpr const char* eqBand3Type = "eqBand3Type";
 inline constexpr const char* eqBand4Type = "eqBand4Type";
 inline constexpr const char* eqBand5Type = "eqBand5Type";
+/** 0...10: сколько полос EQ реально в каскаде (остальные не обрабатываются). */
+inline constexpr const char* eqActiveBandCount = "eqActiveBandCount";
+inline constexpr const char* eqBand6FreqHz = "eqBand6FreqHz";
+inline constexpr const char* eqBand6GainDb = "eqBand6GainDb";
+inline constexpr const char* eqBand6Q = "eqBand6Q";
+inline constexpr const char* eqBand7FreqHz = "eqBand7FreqHz";
+inline constexpr const char* eqBand7GainDb = "eqBand7GainDb";
+inline constexpr const char* eqBand7Q = "eqBand7Q";
+inline constexpr const char* eqBand8FreqHz = "eqBand8FreqHz";
+inline constexpr const char* eqBand8GainDb = "eqBand8GainDb";
+inline constexpr const char* eqBand8Q = "eqBand8Q";
+inline constexpr const char* eqBand9FreqHz = "eqBand9FreqHz";
+inline constexpr const char* eqBand9GainDb = "eqBand9GainDb";
+inline constexpr const char* eqBand9Q = "eqBand9Q";
+inline constexpr const char* eqBand10FreqHz = "eqBand10FreqHz";
+inline constexpr const char* eqBand10GainDb = "eqBand10GainDb";
+inline constexpr const char* eqBand10Q = "eqBand10Q";
+inline constexpr const char* eqBand6Type = "eqBand6Type";
+inline constexpr const char* eqBand7Type = "eqBand7Type";
+inline constexpr const char* eqBand8Type = "eqBand8Type";
+inline constexpr const char* eqBand9Type = "eqBand9Type";
+inline constexpr const char* eqBand10Type = "eqBand10Type";
 
 /** Стартовая топология графа (фаза 4.2): Full / Compact / FET-forward. */
 inline constexpr const char* chainProfile = "chainProfile";

@@ -280,6 +280,7 @@ void testParametricEqFiniteAndNotSilent()
     node.prepare(kSr, kBlock, 2);
     razumov::params::Phase3RealtimeParams p {};
     p.eqBypass = false;
+    p.eqActiveBandCount = 1.0f;
     p.eqBand1FreqHz = 800.0f;
     p.eqBand1GainDb = 3.0f;
     p.eqBand1Q = 1.2f;
@@ -321,6 +322,7 @@ void testParametricEqMonoStereo()
     node.prepare(kSr, kBlock, 2);
     razumov::params::Phase3RealtimeParams p {};
     p.eqBypass = false;
+    p.eqActiveBandCount = 2.0f;
     p.eqBand2GainDb = 2.0f;
     node.applyPhase3(p);
 

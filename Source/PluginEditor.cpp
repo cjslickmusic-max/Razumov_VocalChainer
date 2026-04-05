@@ -15,20 +15,23 @@ namespace
 const char* eqFreqId(int b) noexcept
 {
     using namespace razumov::params;
-    static const char* const ids[] = { eqBand1FreqHz, eqBand2FreqHz, eqBand3FreqHz, eqBand4FreqHz, eqBand5FreqHz };
-    return ids[(size_t) juce::jlimit(0, 4, b)];
+    static const char* const ids[] = { eqBand1FreqHz, eqBand2FreqHz, eqBand3FreqHz, eqBand4FreqHz, eqBand5FreqHz,
+                                       eqBand6FreqHz, eqBand7FreqHz, eqBand8FreqHz, eqBand9FreqHz, eqBand10FreqHz };
+    return ids[(size_t) juce::jlimit(0, 9, b)];
 }
 const char* eqGainId(int b) noexcept
 {
     using namespace razumov::params;
-    static const char* const ids[] = { eqBand1GainDb, eqBand2GainDb, eqBand3GainDb, eqBand4GainDb, eqBand5GainDb };
-    return ids[(size_t) juce::jlimit(0, 4, b)];
+    static const char* const ids[] = { eqBand1GainDb, eqBand2GainDb, eqBand3GainDb, eqBand4GainDb, eqBand5GainDb,
+                                       eqBand6GainDb, eqBand7GainDb, eqBand8GainDb, eqBand9GainDb, eqBand10GainDb };
+    return ids[(size_t) juce::jlimit(0, 9, b)];
 }
 const char* eqQId(int b) noexcept
 {
     using namespace razumov::params;
-    static const char* const ids[] = { eqBand1Q, eqBand2Q, eqBand3Q, eqBand4Q, eqBand5Q };
-    return ids[(size_t) juce::jlimit(0, 4, b)];
+    static const char* const ids[] = { eqBand1Q, eqBand2Q, eqBand3Q, eqBand4Q, eqBand5Q,
+                                       eqBand6Q, eqBand7Q, eqBand8Q, eqBand9Q, eqBand10Q };
+    return ids[(size_t) juce::jlimit(0, 9, b)];
 }
 } // namespace
 

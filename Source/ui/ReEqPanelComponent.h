@@ -8,7 +8,7 @@
 
 class RazumovVocalChainAudioProcessor;
 
-/** Spectrum + per-band + sum magnitude + draggable nodes (5 bands). */
+/** Spectrum + per-band + sum magnitude + draggable nodes (up to 10 bands; double-click plot to add). */
 class ReEqPanelComponent : public juce::Component
 {
 public:
@@ -26,9 +26,10 @@ public:
     void mouseDrag(const juce::MouseEvent& e) override;
     void mouseUp(const juce::MouseEvent& e) override;
     void mouseWheelMove(const juce::MouseEvent& e, const juce::MouseWheelDetails& wheel) override;
+    void mouseDoubleClick(const juce::MouseEvent& e) override;
 
 private:
-    static constexpr int kBands = 5;
+    static constexpr int kBands = 10;
     static constexpr int kBins = 256;
 
     juce::Rectangle<float> getPlotArea() const noexcept;
@@ -54,6 +55,7 @@ private:
     std::array<float, (size_t) kBands> q_{};
     std::array<float, (size_t) kBands> type_{};
     bool eqBypass_ { false };
+    int activeBandCount_ { 0 };
 
     int selectedBand_ { -1 };
     int dragBand_ { -1 };

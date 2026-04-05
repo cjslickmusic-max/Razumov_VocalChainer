@@ -16,11 +16,11 @@ struct Phase3RealtimeParams;
 namespace razumov::graph
 {
 
-/** 5-band EQ (stereo linked), RBJ/SVF-style per-band types; spectrum = input before EQ. */
+/** Up to 10 bands (stereo linked), RBJ-style per-band types; spectrum = input before EQ. */
 class ParametricEqNode final : public AudioNode, public ISpectrumSource
 {
 public:
-    static constexpr int kNumBands = 5;
+    static constexpr int kNumBands = 10;
 
     ParametricEqNode() = default;
 
@@ -52,15 +52,16 @@ private:
     /** [band][L/R] */
     std::array<std::array<IIRFilter, 2>, kNumBands> bands_ {};
 
-    std::array<float, kNumBands> tgtFreq_ { 120.f, 400.f, 2500.f, 7000.f, 10000.f };
+    std::array<float, kNumBands> tgtFreq_ { 120.f, 400.f, 2500.f, 7000.f, 10000.f, 12000.f, 13000.f, 15000.f, 16000.f, 18000.f };
     std::array<float, kNumBands> tgtGainDb_ {};
-    std::array<float, kNumBands> tgtQ_ { 1.f, 1.f, 1.f, 1.f, 1.f };
+    std::array<float, kNumBands> tgtQ_ { 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f };
     std::array<float, kNumBands> tgtType_ {}; /** 0..5 EqBandType */
     bool tgtBypass_ { false };
+    int tgtActiveCount_ { 0 };
 
-    std::array<float, kNumBands> smoothFreq_ { 120.f, 400.f, 2500.f, 7000.f, 10000.f };
+    std::array<float, kNumBands> smoothFreq_ { 120.f, 400.f, 2500.f, 7000.f, 10000.f, 12000.f, 13000.f, 15000.f, 16000.f, 18000.f };
     std::array<float, kNumBands> smoothGainDb_ {};
-    std::array<float, kNumBands> smoothQ_ { 1.f, 1.f, 1.f, 1.f, 1.f };
+    std::array<float, kNumBands> smoothQ_ { 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f };
     std::array<float, kNumBands> smoothType_ {};
     bool smoothBypass_ { false };
 

@@ -113,6 +113,11 @@ inline constexpr uint32_t band1 = 0xfff97316;
 inline constexpr uint32_t band2 = 0xffa78bfa;
 inline constexpr uint32_t band3 = 0xff4ade80;
 inline constexpr uint32_t band4 = 0xff22d3ee;
+inline constexpr uint32_t band5 = 0xffe879f9;
+inline constexpr uint32_t band6 = 0xfffacc15;
+inline constexpr uint32_t band7 = 0xfffb7185;
+inline constexpr uint32_t band8 = 0xff34d399;
+inline constexpr uint32_t band9 = 0xff818cf8;
 inline constexpr uint32_t nodeLabel = 0xfff8fafc;            /** text-inverse */
 } // namespace eqPanel
 

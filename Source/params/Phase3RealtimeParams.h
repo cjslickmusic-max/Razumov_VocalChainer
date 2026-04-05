@@ -42,6 +42,8 @@ struct Phase3RealtimeParams
     float spectralReleaseMs { 250.0f };
 
     bool eqBypass { false };
+    /** 0...10: number of EQ bands in cascade (new slots default 0; no dots until user adds). */
+    float eqActiveBandCount { 0.0f };
     float eqBand1FreqHz { 120.0f };
     float eqBand1GainDb { 0.0f };
     float eqBand1Q { 1.0f };
@@ -63,6 +65,26 @@ struct Phase3RealtimeParams
     float eqBand3Type { 0.0f };
     float eqBand4Type { 0.0f };
     float eqBand5Type { 0.0f };
+    float eqBand6FreqHz { 12000.0f };
+    float eqBand6GainDb { 0.0f };
+    float eqBand6Q { 1.0f };
+    float eqBand7FreqHz { 13000.0f };
+    float eqBand7GainDb { 0.0f };
+    float eqBand7Q { 1.0f };
+    float eqBand8FreqHz { 15000.0f };
+    float eqBand8GainDb { 0.0f };
+    float eqBand8Q { 1.0f };
+    float eqBand9FreqHz { 16000.0f };
+    float eqBand9GainDb { 0.0f };
+    float eqBand9Q { 1.0f };
+    float eqBand10FreqHz { 18000.0f };
+    float eqBand10GainDb { 0.0f };
+    float eqBand10Q { 1.0f };
+    float eqBand6Type { 0.0f };
+    float eqBand7Type { 0.0f };
+    float eqBand8Type { 0.0f };
+    float eqBand9Type { 0.0f };
+    float eqBand10Type { 0.0f };
 };
 
 } // namespace razumov::params

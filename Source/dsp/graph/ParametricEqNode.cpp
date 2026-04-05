@@ -22,7 +22,7 @@ void ParametricEqNode::prepare(double sampleRate, int maxBlockSize, int numChann
 
     reset();
     smoothStep();
-    for (int b = 0; b < kNumBands; ++b)
+    for (int b = 0; b < tgtActiveCount_; ++b)
         updateBandCoeffs(b);
 }
 
@@ -98,7 +98,7 @@ void ParametricEqNode::processOneChannel(float* data, int numSamples, int channe
 
     float* chans[1] = { data };
     juce::dsp::AudioBlock<float> block(chans, 1, (size_t) numSamples);
-    for (int b = 0; b < kNumBands; ++b)
+    for (int b = 0; b < tgtActiveCount_; ++b)
     {
         juce::dsp::ProcessContextReplacing<float> ctx(block);
         bands_[(size_t) b][(size_t) channelIndex].process(ctx);
@@ -128,7 +128,7 @@ void ParametricEqNode::process(juce::AudioBuffer<float>& buffer)
         prevBypass_ = false;
     }
 
-    for (int b = 0; b < kNumBands; ++b)
+    for (int b = 0; b < tgtActiveCount_; ++b)
         updateBandCoeffs(b);
 
     processOneChannel(L, n, 0);
@@ -138,27 +138,52 @@ void ParametricEqNode::process(juce::AudioBuffer<float>& buffer)
 
 void ParametricEqNode::applyPhase3(const razumov::params::Phase3RealtimeParams& p) noexcept
 {
+    const int newCount = juce::jlimit(0, kNumBands, (int) std::lround(p.eqActiveBandCount));
+    if (newCount != tgtActiveCount_)
+        coeffSnapshotValid_ = false;
+    tgtActiveCount_ = newCount;
+
     tgtBypass_ = p.eqBypass;
     tgtFreq_[0] = p.eqBand1FreqHz;
     tgtFreq_[1] = p.eqBand2FreqHz;
     tgtFreq_[2] = p.eqBand3FreqHz;
     tgtFreq_[3] = p.eqBand4FreqHz;
     tgtFreq_[4] = p.eqBand5FreqHz;
+    tgtFreq_[5] = p.eqBand6FreqHz;
+    tgtFreq_[6] = p.eqBand7FreqHz;
+    tgtFreq_[7] = p.eqBand8FreqHz;
+    tgtFreq_[8] = p.eqBand9FreqHz;
+    tgtFreq_[9] = p.eqBand10FreqHz;
     tgtGainDb_[0] = p.eqBand1GainDb;
     tgtGainDb_[1] = p.eqBand2GainDb;
     tgtGainDb_[2] = p.eqBand3GainDb;
     tgtGainDb_[3] = p.eqBand4GainDb;
     tgtGainDb_[4] = p.eqBand5GainDb;
+    tgtGainDb_[5] = p.eqBand6GainDb;
+    tgtGainDb_[6] = p.eqBand7GainDb;
+    tgtGainDb_[7] = p.eqBand8GainDb;
+    tgtGainDb_[8] = p.eqBand9GainDb;
+    tgtGainDb_[9] = p.eqBand10GainDb;
     tgtQ_[0] = p.eqBand1Q;
     tgtQ_[1] = p.eqBand2Q;
     tgtQ_[2] = p.eqBand3Q;
     tgtQ_[3] = p.eqBand4Q;
     tgtQ_[4] = p.eqBand5Q;
+    tgtQ_[5] = p.eqBand6Q;
+    tgtQ_[6] = p.eqBand7Q;
+    tgtQ_[7] = p.eqBand8Q;
+    tgtQ_[8] = p.eqBand9Q;
+    tgtQ_[9] = p.eqBand10Q;
     tgtType_[0] = p.eqBand1Type;
     tgtType_[1] = p.eqBand2Type;
     tgtType_[2] = p.eqBand3Type;
     tgtType_[3] = p.eqBand4Type;
     tgtType_[4] = p.eqBand5Type;
+    tgtType_[5] = p.eqBand6Type;
+    tgtType_[6] = p.eqBand7Type;
+    tgtType_[7] = p.eqBand8Type;
+    tgtType_[8] = p.eqBand9Type;
+    tgtType_[9] = p.eqBand10Type;
 }
 
 void ParametricEqNode::copySpectrum256(float* dst) const noexcept

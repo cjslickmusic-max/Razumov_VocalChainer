@@ -61,6 +61,27 @@ struct ModuleSlotBlock
     std::atomic<float> eqBand3Type { 0.0f };
     std::atomic<float> eqBand4Type { 0.0f };
     std::atomic<float> eqBand5Type { 0.0f };
+    std::atomic<float> eqActiveBandCount { 0.0f };
+    std::atomic<float> eqBand6FreqHz { 12000.0f };
+    std::atomic<float> eqBand6GainDb { 0.0f };
+    std::atomic<float> eqBand6Q { 1.0f };
+    std::atomic<float> eqBand7FreqHz { 13000.0f };
+    std::atomic<float> eqBand7GainDb { 0.0f };
+    std::atomic<float> eqBand7Q { 1.0f };
+    std::atomic<float> eqBand8FreqHz { 15000.0f };
+    std::atomic<float> eqBand8GainDb { 0.0f };
+    std::atomic<float> eqBand8Q { 1.0f };
+    std::atomic<float> eqBand9FreqHz { 16000.0f };
+    std::atomic<float> eqBand9GainDb { 0.0f };
+    std::atomic<float> eqBand9Q { 1.0f };
+    std::atomic<float> eqBand10FreqHz { 18000.0f };
+    std::atomic<float> eqBand10GainDb { 0.0f };
+    std::atomic<float> eqBand10Q { 1.0f };
+    std::atomic<float> eqBand6Type { 0.0f };
+    std::atomic<float> eqBand7Type { 0.0f };
+    std::atomic<float> eqBand8Type { 0.0f };
+    std::atomic<float> eqBand9Type { 0.0f };
+    std::atomic<float> eqBand10Type { 0.0f };
 };
 
 inline void copyModuleSlotBlockState(const ModuleSlotBlock& src, ModuleSlotBlock& dst)
@@ -112,6 +133,27 @@ inline void copyModuleSlotBlockState(const ModuleSlotBlock& src, ModuleSlotBlock
     dst.eqBand3Type.store(src.eqBand3Type.load());
     dst.eqBand4Type.store(src.eqBand4Type.load());
     dst.eqBand5Type.store(src.eqBand5Type.load());
+    dst.eqActiveBandCount.store(src.eqActiveBandCount.load());
+    dst.eqBand6FreqHz.store(src.eqBand6FreqHz.load());
+    dst.eqBand6GainDb.store(src.eqBand6GainDb.load());
+    dst.eqBand6Q.store(src.eqBand6Q.load());
+    dst.eqBand7FreqHz.store(src.eqBand7FreqHz.load());
+    dst.eqBand7GainDb.store(src.eqBand7GainDb.load());
+    dst.eqBand7Q.store(src.eqBand7Q.load());
+    dst.eqBand8FreqHz.store(src.eqBand8FreqHz.load());
+    dst.eqBand8GainDb.store(src.eqBand8GainDb.load());
+    dst.eqBand8Q.store(src.eqBand8Q.load());
+    dst.eqBand9FreqHz.store(src.eqBand9FreqHz.load());
+    dst.eqBand9GainDb.store(src.eqBand9GainDb.load());
+    dst.eqBand9Q.store(src.eqBand9Q.load());
+    dst.eqBand10FreqHz.store(src.eqBand10FreqHz.load());
+    dst.eqBand10GainDb.store(src.eqBand10GainDb.load());
+    dst.eqBand10Q.store(src.eqBand10Q.load());
+    dst.eqBand6Type.store(src.eqBand6Type.load());
+    dst.eqBand7Type.store(src.eqBand7Type.load());
+    dst.eqBand8Type.store(src.eqBand8Type.load());
+    dst.eqBand9Type.store(src.eqBand9Type.load());
+    dst.eqBand10Type.store(src.eqBand10Type.load());
 }
 
 } // namespace detail
@@ -168,6 +210,27 @@ void storeFromPhase3(detail::ModuleSlotBlock& b, const Phase3RealtimeParams& p)
     b.eqBand3Type.store(p.eqBand3Type);
     b.eqBand4Type.store(p.eqBand4Type);
     b.eqBand5Type.store(p.eqBand5Type);
+    b.eqActiveBandCount.store(p.eqActiveBandCount);
+    b.eqBand6FreqHz.store(p.eqBand6FreqHz);
+    b.eqBand6GainDb.store(p.eqBand6GainDb);
+    b.eqBand6Q.store(p.eqBand6Q);
+    b.eqBand7FreqHz.store(p.eqBand7FreqHz);
+    b.eqBand7GainDb.store(p.eqBand7GainDb);
+    b.eqBand7Q.store(p.eqBand7Q);
+    b.eqBand8FreqHz.store(p.eqBand8FreqHz);
+    b.eqBand8GainDb.store(p.eqBand8GainDb);
+    b.eqBand8Q.store(p.eqBand8Q);
+    b.eqBand9FreqHz.store(p.eqBand9FreqHz);
+    b.eqBand9GainDb.store(p.eqBand9GainDb);
+    b.eqBand9Q.store(p.eqBand9Q);
+    b.eqBand10FreqHz.store(p.eqBand10FreqHz);
+    b.eqBand10GainDb.store(p.eqBand10GainDb);
+    b.eqBand10Q.store(p.eqBand10Q);
+    b.eqBand6Type.store(p.eqBand6Type);
+    b.eqBand7Type.store(p.eqBand7Type);
+    b.eqBand8Type.store(p.eqBand8Type);
+    b.eqBand9Type.store(p.eqBand9Type);
+    b.eqBand10Type.store(p.eqBand10Type);
 }
 
 void loadToPhase3(const detail::ModuleSlotBlock& b, Phase3RealtimeParams& out)
@@ -219,6 +282,27 @@ void loadToPhase3(const detail::ModuleSlotBlock& b, Phase3RealtimeParams& out)
     out.eqBand3Type = b.eqBand3Type.load();
     out.eqBand4Type = b.eqBand4Type.load();
     out.eqBand5Type = b.eqBand5Type.load();
+    out.eqActiveBandCount = b.eqActiveBandCount.load();
+    out.eqBand6FreqHz = b.eqBand6FreqHz.load();
+    out.eqBand6GainDb = b.eqBand6GainDb.load();
+    out.eqBand6Q = b.eqBand6Q.load();
+    out.eqBand7FreqHz = b.eqBand7FreqHz.load();
+    out.eqBand7GainDb = b.eqBand7GainDb.load();
+    out.eqBand7Q = b.eqBand7Q.load();
+    out.eqBand8FreqHz = b.eqBand8FreqHz.load();
+    out.eqBand8GainDb = b.eqBand8GainDb.load();
+    out.eqBand8Q = b.eqBand8Q.load();
+    out.eqBand9FreqHz = b.eqBand9FreqHz.load();
+    out.eqBand9GainDb = b.eqBand9GainDb.load();
+    out.eqBand9Q = b.eqBand9Q.load();
+    out.eqBand10FreqHz = b.eqBand10FreqHz.load();
+    out.eqBand10GainDb = b.eqBand10GainDb.load();
+    out.eqBand10Q = b.eqBand10Q.load();
+    out.eqBand6Type = b.eqBand6Type.load();
+    out.eqBand7Type = b.eqBand7Type.load();
+    out.eqBand8Type = b.eqBand8Type.load();
+    out.eqBand9Type = b.eqBand9Type.load();
+    out.eqBand10Type = b.eqBand10Type.load();
 }
 
 void initDefaults(detail::ModuleSlotBlock& b)
@@ -422,6 +506,48 @@ float ModuleParamsRuntime::getFloat(uint32_t slotId, const juce::String& paramId
         return b->eqBand4Type.load();
     if (paramId == eqBand5Type)
         return b->eqBand5Type.load();
+    if (paramId == eqActiveBandCount)
+        return b->eqActiveBandCount.load();
+    if (paramId == eqBand6FreqHz)
+        return b->eqBand6FreqHz.load();
+    if (paramId == eqBand6GainDb)
+        return b->eqBand6GainDb.load();
+    if (paramId == eqBand6Q)
+        return b->eqBand6Q.load();
+    if (paramId == eqBand7FreqHz)
+        return b->eqBand7FreqHz.load();
+    if (paramId == eqBand7GainDb)
+        return b->eqBand7GainDb.load();
+    if (paramId == eqBand7Q)
+        return b->eqBand7Q.load();
+    if (paramId == eqBand8FreqHz)
+        return b->eqBand8FreqHz.load();
+    if (paramId == eqBand8GainDb)
+        return b->eqBand8GainDb.load();
+    if (paramId == eqBand8Q)
+        return b->eqBand8Q.load();
+    if (paramId == eqBand9FreqHz)
+        return b->eqBand9FreqHz.load();
+    if (paramId == eqBand9GainDb)
+        return b->eqBand9GainDb.load();
+    if (paramId == eqBand9Q)
+        return b->eqBand9Q.load();
+    if (paramId == eqBand10FreqHz)
+        return b->eqBand10FreqHz.load();
+    if (paramId == eqBand10GainDb)
+        return b->eqBand10GainDb.load();
+    if (paramId == eqBand10Q)
+        return b->eqBand10Q.load();
+    if (paramId == eqBand6Type)
+        return b->eqBand6Type.load();
+    if (paramId == eqBand7Type)
+        return b->eqBand7Type.load();
+    if (paramId == eqBand8Type)
+        return b->eqBand8Type.load();
+    if (paramId == eqBand9Type)
+        return b->eqBand9Type.load();
+    if (paramId == eqBand10Type)
+        return b->eqBand10Type.load();
     return 0.0f;
 }
 
@@ -520,6 +646,48 @@ void ModuleParamsRuntime::setFloat(uint32_t slotId, const juce::String& paramId,
         b->eqBand4Type.store(value);
     else if (paramId == eqBand5Type)
         b->eqBand5Type.store(value);
+    else if (paramId == eqActiveBandCount)
+        b->eqActiveBandCount.store(value);
+    else if (paramId == eqBand6FreqHz)
+        b->eqBand6FreqHz.store(value);
+    else if (paramId == eqBand6GainDb)
+        b->eqBand6GainDb.store(value);
+    else if (paramId == eqBand6Q)
+        b->eqBand6Q.store(value);
+    else if (paramId == eqBand7FreqHz)
+        b->eqBand7FreqHz.store(value);
+    else if (paramId == eqBand7GainDb)
+        b->eqBand7GainDb.store(value);
+    else if (paramId == eqBand7Q)
+        b->eqBand7Q.store(value);
+    else if (paramId == eqBand8FreqHz)
+        b->eqBand8FreqHz.store(value);
+    else if (paramId == eqBand8GainDb)
+        b->eqBand8GainDb.store(value);
+    else if (paramId == eqBand8Q)
+        b->eqBand8Q.store(value);
+    else if (paramId == eqBand9FreqHz)
+        b->eqBand9FreqHz.store(value);
+    else if (paramId == eqBand9GainDb)
+        b->eqBand9GainDb.store(value);
+    else if (paramId == eqBand9Q)
+        b->eqBand9Q.store(value);
+    else if (paramId == eqBand10FreqHz)
+        b->eqBand10FreqHz.store(value);
+    else if (paramId == eqBand10GainDb)
+        b->eqBand10GainDb.store(value);
+    else if (paramId == eqBand10Q)
+        b->eqBand10Q.store(value);
+    else if (paramId == eqBand6Type)
+        b->eqBand6Type.store(value);
+    else if (paramId == eqBand7Type)
+        b->eqBand7Type.store(value);
+    else if (paramId == eqBand8Type)
+        b->eqBand8Type.store(value);
+    else if (paramId == eqBand9Type)
+        b->eqBand9Type.store(value);
+    else if (paramId == eqBand10Type)
+        b->eqBand10Type.store(value);
 }
 
 bool ModuleParamsRuntime::getBool(uint32_t slotId, const juce::String& paramId) const
@@ -633,6 +801,27 @@ juce::ValueTree ModuleParamsRuntime::toValueTree() const
         slot.setProperty(eqBand3Type, b->eqBand3Type.load(), nullptr);
         slot.setProperty(eqBand4Type, b->eqBand4Type.load(), nullptr);
         slot.setProperty(eqBand5Type, b->eqBand5Type.load(), nullptr);
+        slot.setProperty(eqActiveBandCount, b->eqActiveBandCount.load(), nullptr);
+        slot.setProperty(eqBand6FreqHz, b->eqBand6FreqHz.load(), nullptr);
+        slot.setProperty(eqBand6GainDb, b->eqBand6GainDb.load(), nullptr);
+        slot.setProperty(eqBand6Q, b->eqBand6Q.load(), nullptr);
+        slot.setProperty(eqBand7FreqHz, b->eqBand7FreqHz.load(), nullptr);
+        slot.setProperty(eqBand7GainDb, b->eqBand7GainDb.load(), nullptr);
+        slot.setProperty(eqBand7Q, b->eqBand7Q.load(), nullptr);
+        slot.setProperty(eqBand8FreqHz, b->eqBand8FreqHz.load(), nullptr);
+        slot.setProperty(eqBand8GainDb, b->eqBand8GainDb.load(), nullptr);
+        slot.setProperty(eqBand8Q, b->eqBand8Q.load(), nullptr);
+        slot.setProperty(eqBand9FreqHz, b->eqBand9FreqHz.load(), nullptr);
+        slot.setProperty(eqBand9GainDb, b->eqBand9GainDb.load(), nullptr);
+        slot.setProperty(eqBand9Q, b->eqBand9Q.load(), nullptr);
+        slot.setProperty(eqBand10FreqHz, b->eqBand10FreqHz.load(), nullptr);
+        slot.setProperty(eqBand10GainDb, b->eqBand10GainDb.load(), nullptr);
+        slot.setProperty(eqBand10Q, b->eqBand10Q.load(), nullptr);
+        slot.setProperty(eqBand6Type, b->eqBand6Type.load(), nullptr);
+        slot.setProperty(eqBand7Type, b->eqBand7Type.load(), nullptr);
+        slot.setProperty(eqBand8Type, b->eqBand8Type.load(), nullptr);
+        slot.setProperty(eqBand9Type, b->eqBand9Type.load(), nullptr);
+        slot.setProperty(eqBand10Type, b->eqBand10Type.load(), nullptr);
         root.appendChild(slot, nullptr);
     }
 
@@ -719,6 +908,27 @@ void ModuleParamsRuntime::fromValueTree(const juce::ValueTree& v)
         b->eqBand3Type.store(gf(eqBand3Type, 0.0f));
         b->eqBand4Type.store(gf(eqBand4Type, 0.0f));
         b->eqBand5Type.store(gf(eqBand5Type, 0.0f));
+        b->eqActiveBandCount.store(gf(eqActiveBandCount, 5.0f));
+        b->eqBand6FreqHz.store(gf(eqBand6FreqHz, 12000.0f));
+        b->eqBand6GainDb.store(gf(eqBand6GainDb, 0.0f));
+        b->eqBand6Q.store(gf(eqBand6Q, 1.0f));
+        b->eqBand7FreqHz.store(gf(eqBand7FreqHz, 13000.0f));
+        b->eqBand7GainDb.store(gf(eqBand7GainDb, 0.0f));
+        b->eqBand7Q.store(gf(eqBand7Q, 1.0f));
+        b->eqBand8FreqHz.store(gf(eqBand8FreqHz, 15000.0f));
+        b->eqBand8GainDb.store(gf(eqBand8GainDb, 0.0f));
+        b->eqBand8Q.store(gf(eqBand8Q, 1.0f));
+        b->eqBand9FreqHz.store(gf(eqBand9FreqHz, 16000.0f));
+        b->eqBand9GainDb.store(gf(eqBand9GainDb, 0.0f));
+        b->eqBand9Q.store(gf(eqBand9Q, 1.0f));
+        b->eqBand10FreqHz.store(gf(eqBand10FreqHz, 18000.0f));
+        b->eqBand10GainDb.store(gf(eqBand10GainDb, 0.0f));
+        b->eqBand10Q.store(gf(eqBand10Q, 1.0f));
+        b->eqBand6Type.store(gf(eqBand6Type, 0.0f));
+        b->eqBand7Type.store(gf(eqBand7Type, 0.0f));
+        b->eqBand8Type.store(gf(eqBand8Type, 0.0f));
+        b->eqBand9Type.store(gf(eqBand9Type, 0.0f));
+        b->eqBand10Type.store(gf(eqBand10Type, 0.0f));
     }
 
     juce::ValueTree mr = v.getChildWithName("MacroRouting");

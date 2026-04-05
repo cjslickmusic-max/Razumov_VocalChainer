@@ -24,37 +24,58 @@ static uint32_t floatBits(float x) noexcept
 
 static juce::Colour bandColour(int b) noexcept
 {
-    static const uint32_t c[5] = { eq::band0, eq::band1, eq::band2, eq::band3, eq::band4 };
-    return juce::Colour(c[(size_t) juce::jlimit(0, 4, b)]);
+    static const uint32_t c[10] = { eq::band0, eq::band1, eq::band2, eq::band3, eq::band4,
+                                    eq::band5, eq::band6, eq::band7, eq::band8, eq::band9 };
+    return juce::Colour(c[(size_t) juce::jlimit(0, 9, b)]);
 }
 
-const char* const kFreqIds[5] = {
+const char* const kFreqIds[10] = {
     razumov::params::eqBand1FreqHz,
     razumov::params::eqBand2FreqHz,
     razumov::params::eqBand3FreqHz,
     razumov::params::eqBand4FreqHz,
     razumov::params::eqBand5FreqHz,
+    razumov::params::eqBand6FreqHz,
+    razumov::params::eqBand7FreqHz,
+    razumov::params::eqBand8FreqHz,
+    razumov::params::eqBand9FreqHz,
+    razumov::params::eqBand10FreqHz,
 };
-const char* const kGainIds[5] = {
+const char* const kGainIds[10] = {
     razumov::params::eqBand1GainDb,
     razumov::params::eqBand2GainDb,
     razumov::params::eqBand3GainDb,
     razumov::params::eqBand4GainDb,
     razumov::params::eqBand5GainDb,
+    razumov::params::eqBand6GainDb,
+    razumov::params::eqBand7GainDb,
+    razumov::params::eqBand8GainDb,
+    razumov::params::eqBand9GainDb,
+    razumov::params::eqBand10GainDb,
 };
-const char* const kQIds[5] = {
+const char* const kQIds[10] = {
     razumov::params::eqBand1Q,
     razumov::params::eqBand2Q,
     razumov::params::eqBand3Q,
     razumov::params::eqBand4Q,
     razumov::params::eqBand5Q,
+    razumov::params::eqBand6Q,
+    razumov::params::eqBand7Q,
+    razumov::params::eqBand8Q,
+    razumov::params::eqBand9Q,
+    razumov::params::eqBand10Q,
 };
-const char* const kTypeIds[5] = {
+const char* const kTypeIds[10] = {
     razumov::params::eqBand1Type,
     razumov::params::eqBand2Type,
     razumov::params::eqBand3Type,
     razumov::params::eqBand4Type,
     razumov::params::eqBand5Type,
+    razumov::params::eqBand6Type,
+    razumov::params::eqBand7Type,
+    razumov::params::eqBand8Type,
+    razumov::params::eqBand9Type,
+    razumov::params::eqBand10Type,
 };
 
 static float hzToT(float hz) noexcept
@@ -88,6 +109,9 @@ void ReEqPanelComponent::updateFrom(RazumovVocalChainAudioProcessor& proc, uint3
 
     using namespace razumov::params;
     eqBypass_ = proc.getModuleBoolParam(slotId, eqBypass);
+    activeBandCount_ = juce::jlimit(0, kBands, (int) std::lround(proc.getModuleFloatParam(slotId, eqActiveBandCount)));
+    if (selectedBand_ >= activeBandCount_)
+        selectedBand_ = activeBandCount_ > 0 ? activeBandCount_ - 1 : -1;
     for (int i = 0; i < kBands; ++i)
     {
         freq_[(size_t) i] = proc.getModuleFloatParam(slotId, kFreqIds[i]);
@@ -147,6 +171,7 @@ uint64_t ReEqPanelComponent::computeResponseCacheHash(const juce::Rectangle<floa
     mix((uint64_t) juce::roundToInt(plot.getHeight()));
     mix(eqBypass_ ? 1ull : 0ull);
     mix((uint64_t) juce::roundToInt(sampleRate_));
+    mix((uint64_t) juce::jlimit(0, kBands, activeBandCount_));
     for (int i = 0; i < kBands; ++i)
     {
         mix((uint64_t) floatBits(freq_[(size_t) i]));
@@ -173,16 +198,25 @@ void ReEqPanelComponent::rebuildResponsePaths(const juce::Rectangle<float>& plot
         return;
     }
 
-    razumov::dsp::eq::Coeffs::Ptr coeffs[5];
-    for (int b = 0; b < kBands; ++b)
+    const int nActive = juce::jlimit(0, kBands, activeBandCount_);
+    if (nActive <= 0)
+    {
+        const float y0 = dbToY(0.f, plot);
+        cachedSumPath_.startNewSubPath(plot.getX(), y0);
+        cachedSumPath_.lineTo(plot.getRight(), y0);
+        return;
+    }
+
+    razumov::dsp::eq::Coeffs::Ptr coeffs[kBands] = {};
+    for (int b = 0; b < nActive; ++b)
     {
         const auto t = razumov::dsp::eq::EqTypeFromFloat(type_[(size_t) b]);
         coeffs[b] = razumov::dsp::eq::makeBandCoeffs(t, sampleRate_, freq_[(size_t) b], gainDb_[(size_t) b], q_[(size_t) b]);
     }
 
-    for (int b = 0; b < kBands; ++b)
+    for (int b = 0; b < nActive; ++b)
     {
-        razumov::dsp::eq::Coeffs::Ptr one[5] = {};
+        razumov::dsp::eq::Coeffs::Ptr one[kBands] = {};
         one[b] = coeffs[b];
         juce::Path& bp = cachedBandPaths_[(size_t) b];
         bool started = false;
@@ -237,7 +271,8 @@ int ReEqPanelComponent::hitTestBand(juce::Point<float> pos) const noexcept
 
     float bestD2 = 400.f;
     int best = -1;
-    for (int b = 0; b < kBands; ++b)
+    const int n = juce::jlimit(0, kBands, activeBandCount_);
+    for (int b = 0; b < n; ++b)
     {
         const float x = hzToX(freq_[(size_t) b], plot);
         const float y = dbToY(gainDb_[(size_t) b], plot);
@@ -371,7 +406,8 @@ void ReEqPanelComponent::paint(juce::Graphics& g)
 
     if (!eqBypass_)
     {
-        for (int b = 0; b < kBands; ++b)
+        const int nDraw = juce::jlimit(0, kBands, activeBandCount_);
+        for (int b = 0; b < nDraw; ++b)
         {
             g.setColour(bandColour(b).withAlpha(0.38f));
             g.strokePath(cachedBandPaths_[(size_t) b], juce::PathStrokeType(1.0f));
@@ -400,24 +436,27 @@ void ReEqPanelComponent::paint(juce::Graphics& g)
         g.drawText(lab, juce::Rectangle<int>((int) plot.getX() - 30, (int) yy - 7, 28, 14), juce::Justification::centredRight);
     }
 
-    for (int b = 0; b < kBands; ++b)
     {
-        const float cx = hzToX(freq_[(size_t) b], plot);
-        const float cy = dbToY(gainDb_[(size_t) b], plot);
-        const auto col = bandColour(b);
-        const bool sel = (b == selectedBand_);
-        g.setColour(col.withAlpha(0.32f));
-        g.fillEllipse(cx - 9.f, cy - 9.f, 18.f, 18.f);
-        g.setColour(col.withAlpha(sel ? 1.f : 0.9f));
-        g.drawEllipse(cx - 9.f, cy - 9.f, 18.f, 18.f, sel ? 2.2f : 1.4f);
-        g.setColour(juce::Colour(eq::nodeLabel).withAlpha(0.95f));
-        g.setFont(juce::FontOptions(11.0f, juce::Font::bold));
-        g.drawText(juce::String(b + 1), juce::Rectangle<int>((int) cx - 8, (int) cy - 8, 16, 16), juce::Justification::centred);
+        const int nDraw = juce::jlimit(0, kBands, activeBandCount_);
+        for (int b = 0; b < nDraw; ++b)
+        {
+            const float cx = hzToX(freq_[(size_t) b], plot);
+            const float cy = dbToY(gainDb_[(size_t) b], plot);
+            const auto col = bandColour(b);
+            const bool sel = (b == selectedBand_);
+            g.setColour(col.withAlpha(0.32f));
+            g.fillEllipse(cx - 9.f, cy - 9.f, 18.f, 18.f);
+            g.setColour(col.withAlpha(sel ? 1.f : 0.9f));
+            g.drawEllipse(cx - 9.f, cy - 9.f, 18.f, 18.f, sel ? 2.2f : 1.4f);
+            g.setColour(juce::Colour(eq::nodeLabel).withAlpha(0.95f));
+            g.setFont(juce::FontOptions(11.0f, juce::Font::bold));
+            g.drawText(juce::String(b + 1), juce::Rectangle<int>((int) cx - 8, (int) cy - 8, 16, 16), juce::Justification::centred);
+        }
     }
 
     g.setColour(juce::Colour(eq::captionText));
     g.setFont(juce::FontOptions(10.5f));
-    juce::String cap = "Drag: freq + gain. Wheel: Q. RMB: type. Knobs: selected band.";
+    juce::String cap = "Double-click plot: add band (max 10). Drag: freq + gain. Wheel: Q. RMB: type.";
     if (selectedBand_ >= 0 && selectedBand_ < kBands)
     {
         cap += "  |  Band " + juce::String(selectedBand_ + 1) + "  "
@@ -492,5 +531,39 @@ void ReEqPanelComponent::mouseWheelMove(const juce::MouseEvent& e, const juce::M
     processor_->setModuleFloatParam(slotId_, kQIds[band], q);
     q_[(size_t) band] = q;
     lastResponseCacheHash_ = 0;
+    repaint();
+}
+
+void ReEqPanelComponent::mouseDoubleClick(const juce::MouseEvent& e)
+{
+    if (processor_ == nullptr || slotId_ == 0)
+        return;
+
+    const auto pos = e.position;
+    if (hitTestBand(pos) >= 0)
+        return;
+
+    const auto plot = getPlotArea();
+    if (!plot.contains(pos))
+        return;
+
+    const int n = juce::jlimit(0, kBands, activeBandCount_);
+    if (n >= kBands)
+        return;
+
+    const float hz = juce::jlimit(20.f, 20000.f, xToHz(pos.x, plot));
+    const float db = juce::jlimit(kDbMin, kDbMax, yToDb(pos.y, plot));
+    const int newIdx = n;
+
+    processor_->setModuleFloatParam(slotId_, kFreqIds[newIdx], hz);
+    processor_->setModuleFloatParam(slotId_, kGainIds[newIdx], db);
+    processor_->setModuleFloatParam(slotId_, kQIds[newIdx], 1.0f);
+    processor_->setModuleFloatParam(slotId_, kTypeIds[newIdx], 0.0f);
+    processor_->setModuleFloatParam(slotId_, razumov::params::eqActiveBandCount, (float) (newIdx + 1));
+
+    updateFrom(*processor_, slotId_);
+    const int prevSel = selectedBand_;
+    selectedBand_ = newIdx;
+    notifySelectionChanged(prevSel);
     repaint();
 }

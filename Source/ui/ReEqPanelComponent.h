@@ -53,6 +53,8 @@ private:
     uint32_t slotId_ { 0 };
     double sampleRate_ { 48000.0 };
     std::array<float, (size_t) kBins> bins_{};
+    /** UI-thread smoothed spectrum (attack/release) for display; same layout as SpectrumTap bins. */
+    std::array<float, (size_t) kBins> spectrumDisplay_{};
     std::array<float, (size_t) kBands> freq_{};
     std::array<float, (size_t) kBands> gainDb_{};
     std::array<float, (size_t) kBands> q_{};

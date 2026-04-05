@@ -148,16 +148,29 @@ static juce::String formatFreqTickLabel(float hz) noexcept
     return juce::String(k, 1) + "k";
 }
 
-/** Map FFT display bin index from Hz (matches SpectrumTap kDisplayBins aggregation). */
-static int hzToSpectrumBinIndex(float hz, double sampleRate) noexcept
+/**
+ * Fractional display-bin index for Hz (same linear mapping as SpectrumTap::pushStereoBlock).
+ * Using float + linear interpolation removes the "staircase" on a log-frequency X axis
+ * (many pixels mapped to one integer bin before).
+ */
+static float hzToSpectrumBinFloat(float hz, double sampleRate) noexcept
 {
     constexpr int fftSize = 1024;
     constexpr int half = fftSize / 2;
     constexpr int kDisplayBins = 256;
     const float kf = (float) hz * (float) fftSize / (float) sampleRate;
-    const int k = juce::jlimit(0, half, (int) kf);
-    const int b = k * kDisplayBins / (half + 1);
-    return juce::jlimit(0, kDisplayBins - 1, b);
+    const float k = juce::jlimit(0.f, (float) half, kf);
+    const float b = k * (float) kDisplayBins / (float) (half + 1);
+    return juce::jlimit(0.f, (float) (kDisplayBins - 1) - 1e-5f, b);
+}
+
+static float sampleSpectrumLinear(float binFloat, const float* bins, int nBins) noexcept
+{
+    const float bi = juce::jlimit(0.f, (float) (nBins - 1) - 1e-6f, binFloat);
+    const int i0 = (int) bi;
+    const int i1 = juce::jmin(i0 + 1, nBins - 1);
+    const float f = bi - (float) i0;
+    return bins[(size_t) i0] * (1.f - f) + bins[(size_t) i1] * f;
 }
 
 } // namespace
@@ -182,6 +195,15 @@ void ReEqPanelComponent::updateFrom(RazumovVocalChainAudioProcessor& proc, uint3
     sampleRate_ = proc.getSampleRate() > 1.0 ? proc.getSampleRate() : 48000.0;
     if (slotId == 0 || !proc.copySpectrumForSlot(slotId, bins_.data()))
         bins_.fill(0.f);
+
+    constexpr float kSpecAttack = 0.42f;
+    constexpr float kSpecRelease = 0.20f;
+    for (int i = 0; i < kBins; ++i)
+    {
+        const float x = bins_[(size_t) i];
+        const float a = x > spectrumDisplay_[(size_t) i] ? kSpecAttack : kSpecRelease;
+        spectrumDisplay_[(size_t) i] = spectrumDisplay_[(size_t) i] * (1.f - a) + x * a;
+    }
 
     using namespace razumov::params;
     eqBypass_ = proc.getModuleBoolParam(slotId, eqBypass);
@@ -465,13 +487,14 @@ void ReEqPanelComponent::paint(juce::Graphics& g)
     juce::Path specPath;
     const float base = plot.getBottom() - 1.f;
     const float plotH = plot.getHeight();
+    constexpr int kSpecPoints = 640;
     specPath.startNewSubPath(plot.getX(), base);
-    for (int i = 0; i < kBins; ++i)
+    for (int s = 0; s <= kSpecPoints; ++s)
     {
-        const float x = plot.getX() + (float) i / (float) juce::jmax(1, kBins - 1) * plot.getWidth();
+        const float x = plot.getX() + (float) s / (float) kSpecPoints * plot.getWidth();
         const float hz = xToHz(x, plot);
-        const int bi = hzToSpectrumBinIndex(hz, sampleRate_);
-        const float v = juce::jlimit(0.f, 1.f, bins_[(size_t) bi]);
+        const float binF = hzToSpectrumBinFloat(hz, sampleRate_);
+        const float v = juce::jlimit(0.f, 1.f, sampleSpectrumLinear(binF, spectrumDisplay_.data(), kBins));
         const float y = base - v * (plotH - 4.f);
         specPath.lineTo(x, y);
     }

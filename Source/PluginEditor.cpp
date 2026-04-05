@@ -1428,7 +1428,7 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     eqSelFreqSlider.setRange(20.0, 20000.0, 1.0);
     eqSelFreqSlider.setSkewFactorFromMidPoint(1000.0);
     eqSelFreqSlider.setTextValueSuffix(" Hz");
-    eqSelGainSlider.setRange(-18.0, 18.0, 0.1);
+    eqSelGainSlider.setRange(-12.0, 12.0, 0.1);
     eqSelGainSlider.setTextValueSuffix(" dB");
     eqSelQSlider.setRange(0.3, 20.0, 0.01);
 
@@ -1584,6 +1584,10 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     chainStrip.setSelectedSlotId(selectedSlotId_);
     refreshMacroLabelsFromProcessor();
     refreshModulePanelVisibility();
+
+    openGLContext_.setMultisamplingEnabled(true);
+    openGLContext_.setComponentPaintingEnabled(true);
+    openGLContext_.attachTo(*this);
 }
 
 void RazumovVocalChainAudioProcessorEditor::paint(juce::Graphics& g)
@@ -1682,6 +1686,7 @@ void RazumovVocalChainAudioProcessorEditor::resized()
 
 RazumovVocalChainAudioProcessorEditor::~RazumovVocalChainAudioProcessorEditor()
 {
+    openGLContext_.detach();
     stopTimer();
     macroGlueLabel.removeListener(this);
     macroAirLabel.removeListener(this);

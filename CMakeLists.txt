@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(RazumovVocalChain VERSION 0.9.28 LANGUAGES C CXX)
+project(RazumovVocalChain VERSION 0.9.30 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -97,6 +97,7 @@ target_link_libraries(
         juce::juce_audio_utils
         juce::juce_audio_processors
         juce::juce_dsp
+        juce::juce_opengl
         juce::juce_gui_extra
         juce::juce_data_structures
 )

@@ -164,6 +164,8 @@ void ParametricEqNode::applyPhase3(const razumov::params::Phase3RealtimeParams& 
     tgtGainDb_[7] = p.eqBand8GainDb;
     tgtGainDb_[8] = p.eqBand9GainDb;
     tgtGainDb_[9] = p.eqBand10GainDb;
+    for (int i = 0; i < kNumBands; ++i)
+        tgtGainDb_[(size_t) i] = juce::jlimit(-12.f, 12.f, tgtGainDb_[(size_t) i]);
     tgtQ_[0] = p.eqBand1Q;
     tgtQ_[1] = p.eqBand2Q;
     tgtQ_[2] = p.eqBand3Q;

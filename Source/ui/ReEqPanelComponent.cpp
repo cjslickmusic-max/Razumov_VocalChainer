@@ -12,8 +12,8 @@ namespace
 {
 namespace eq = razumov::ui::tokens::eqPanel;
 
-constexpr float kDbMin = -18.f;
-constexpr float kDbMax = 18.f;
+constexpr float kDbMin = -12.f;
+constexpr float kDbMax = 12.f;
 
 static uint32_t floatBits(float x) noexcept
 {
@@ -78,16 +78,62 @@ const char* const kTypeIds[10] = {
     razumov::params::eqBand10Type,
 };
 
+// Log scale 20 Hz..20 kHz with 100 / 1 k / 10 k as decade anchors (FabFilter-style center band).
+static constexpr float kFreqVisMin = 20.f;
+static constexpr float kFreqVisMax = 20000.f;
+static constexpr float kFreqAnchorMin = 100.f;
+static constexpr float kFreqAnchorMax = 10000.f;
+static constexpr float kLeftMarginFrac = 0.08f;
+static constexpr float kRightMarginFrac = 0.08f;
+static constexpr float kMidFrac = 1.f - kLeftMarginFrac - kRightMarginFrac;
+
 static float hzToT(float hz) noexcept
 {
-    const float h = juce::jlimit(20.f, 20000.f, hz);
-    return std::log(h / 20.f) / std::log(20000.f / 20.f);
+    const float h = juce::jlimit(kFreqVisMin, kFreqVisMax, hz);
+    if (h < kFreqAnchorMin)
+    {
+        const float tEdge = (std::log10(h) - std::log10(kFreqVisMin))
+            / (std::log10(kFreqAnchorMin) - std::log10(kFreqVisMin));
+        return tEdge * kLeftMarginFrac;
+    }
+    if (h > kFreqAnchorMax)
+    {
+        const float tEdge = (std::log10(h) - std::log10(kFreqAnchorMax))
+            / (std::log10(kFreqVisMax) - std::log10(kFreqAnchorMax));
+        return (1.f - kRightMarginFrac) + tEdge * kRightMarginFrac;
+    }
+    const float tMid = (std::log10(h) - std::log10(kFreqAnchorMin))
+        / (std::log10(kFreqAnchorMax) - std::log10(kFreqAnchorMin));
+    return kLeftMarginFrac + tMid * kMidFrac;
 }
 
 static float tToHz(float t) noexcept
 {
     const float u = juce::jlimit(0.f, 1.f, t);
-    return 20.f * std::pow(20000.f / 20.f, u);
+    if (u < kLeftMarginFrac)
+    {
+        const float tEdge = u / kLeftMarginFrac;
+        return std::pow(10.f, std::log10(kFreqVisMin) + tEdge * (std::log10(kFreqAnchorMin) - std::log10(kFreqVisMin)));
+    }
+    if (u > 1.f - kRightMarginFrac)
+    {
+        const float tEdge = (u - (1.f - kRightMarginFrac)) / kRightMarginFrac;
+        return std::pow(10.f, std::log10(kFreqAnchorMax) + tEdge * (std::log10(kFreqVisMax) - std::log10(kFreqAnchorMax)));
+    }
+    const float tm = (u - kLeftMarginFrac) / kMidFrac;
+    return std::pow(10.f, std::log10(kFreqAnchorMin) + tm * (std::log10(kFreqAnchorMax) - std::log10(kFreqAnchorMin)));
+}
+
+/** Map FFT display bin index from Hz (matches SpectrumTap kDisplayBins aggregation). */
+static int hzToSpectrumBinIndex(float hz, double sampleRate) noexcept
+{
+    constexpr int fftSize = 1024;
+    constexpr int half = fftSize / 2;
+    constexpr int kDisplayBins = 256;
+    const float kf = (float) hz * (float) fftSize / (float) sampleRate;
+    const int k = juce::jlimit(0, half, (int) kf);
+    const int b = k * kDisplayBins / (half + 1);
+    return juce::jlimit(0, kDisplayBins - 1, b);
 }
 
 } // namespace
@@ -372,6 +418,12 @@ void ReEqPanelComponent::paint(juce::Graphics& g)
     g.setColour(juce::Colour(eq::zeroDbLine));
     g.drawHorizontalLine(juce::roundToInt(y0), plot.getX(), plot.getRight());
 
+    for (float db : { -9.f, -6.f, -3.f, 3.f, 6.f, 9.f })
+    {
+        const float yy = dbToY(db, plot);
+        g.setColour(juce::Colour(eq::gridLine).withAlpha(0.30f));
+        g.drawHorizontalLine(juce::roundToInt(yy), plot.getX(), plot.getRight());
+    }
     for (float db : { kDbMin, 0.f, kDbMax })
     {
         const float yy = dbToY(db, plot);
@@ -386,7 +438,9 @@ void ReEqPanelComponent::paint(juce::Graphics& g)
     for (int i = 0; i < kBins; ++i)
     {
         const float x = plot.getX() + (float) i / (float) juce::jmax(1, kBins - 1) * plot.getWidth();
-        const float v = juce::jlimit(0.f, 1.f, bins_[(size_t) i]);
+        const float hz = xToHz(x, plot);
+        const int bi = hzToSpectrumBinIndex(hz, sampleRate_);
+        const float v = juce::jlimit(0.f, 1.f, bins_[(size_t) bi]);
         const float y = base - v * (plotH - 4.f);
         specPath.lineTo(x, y);
     }
@@ -429,7 +483,7 @@ void ReEqPanelComponent::paint(juce::Graphics& g)
     }
 
     g.setFont(juce::FontOptions(9.5f));
-    for (float db : { kDbMax, 0.f, kDbMin })
+    for (float db = kDbMax; db >= kDbMin - 0.1f; db -= 3.f)
     {
         const float yy = dbToY(db, plot);
         juce::String lab = (db > 0.f ? "+" : "") + juce::String(db, 0) + " dB";

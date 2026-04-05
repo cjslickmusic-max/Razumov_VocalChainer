@@ -3,6 +3,7 @@
 #include <array>
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <juce_opengl/juce_opengl.h>
 #include <memory>
 
 #include "dsp/graph/AudioNode.h"
@@ -193,6 +194,9 @@ private:
 
     float uiScale_ { 1.f };
     uint32_t selectedSlotId_ { 0 };
+
+    /** OpenGL MSAA for smoother strokes (same pattern as Razumov ShaperX editor). */
+    juce::OpenGLContext openGLContext_;
     int macroLearnPendingIndex_ { -1 };
     bool syncingMacroFromModule_ { false };
 

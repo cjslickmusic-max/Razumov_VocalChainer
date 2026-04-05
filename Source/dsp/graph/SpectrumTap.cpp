@@ -56,7 +56,10 @@ void SpectrumTap::pushStereoBlock(const float* L, const float* R, int numSamples
             mx = juce::jmax(mx, mag);
         }
         const float db = 20.0f * std::log10(mx + 1.0e-15f);
-        const float norm = juce::jlimit(0.f, 1.f, (db + 90.f) / 90.f);
+        // Map ~90 dB span; headroom so typical material does not pin to the top of the plot.
+        constexpr float floorDb = -90.f;
+        constexpr float spanDb = 108.f;
+        const float norm = juce::jlimit(0.f, 1.f, (db - floorDb) / spanDb);
         bins_[(size_t) b].store(norm, std::memory_order_relaxed);
     }
 }

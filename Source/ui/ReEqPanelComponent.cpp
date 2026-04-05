@@ -536,7 +536,7 @@ void ReEqPanelComponent::paint(juce::Graphics& g)
 
     g.setColour(juce::Colour(eq::captionText));
     g.setFont(juce::FontOptions(10.5f));
-    juce::String cap = "Double-click plot: add band (max 10). Drag: freq + gain. Wheel: Q. RMB: type. LP/HP: Slope 0...96 dB/oct.";
+    juce::String cap = "Double-click empty plot: add band. Double-click dot: remove band. Drag: freq + gain. Wheel: Q. RMB: type. LP/HP: Slope 0...96 dB/oct.";
     if (selectedBand_ >= 0 && selectedBand_ < kBands)
     {
         cap += "  |  Band " + juce::String(selectedBand_ + 1) + "  "
@@ -623,14 +623,46 @@ void ReEqPanelComponent::mouseDoubleClick(const juce::MouseEvent& e)
         return;
 
     const auto pos = e.position;
-    if (hitTestBand(pos) >= 0)
+    const int hit = hitTestBand(pos);
+    const int n = juce::jlimit(0, kBands, activeBandCount_);
+
+    if (hit >= 0)
+    {
+        if (n <= 0 || hit >= n)
+            return;
+
+        for (int i = hit; i < n - 1; ++i)
+        {
+            const int j = i + 1;
+            processor_->setModuleFloatParam(slotId_, kFreqIds[i], processor_->getModuleFloatParam(slotId_, kFreqIds[j]));
+            processor_->setModuleFloatParam(slotId_, kGainIds[i], processor_->getModuleFloatParam(slotId_, kGainIds[j]));
+            processor_->setModuleFloatParam(slotId_, kQIds[i], processor_->getModuleFloatParam(slotId_, kQIds[j]));
+            processor_->setModuleFloatParam(slotId_, kTypeIds[i], processor_->getModuleFloatParam(slotId_, kTypeIds[j]));
+            processor_->setModuleFloatParam(slotId_, kSlopeIds[i], processor_->getModuleFloatParam(slotId_, kSlopeIds[j]));
+        }
+        processor_->setModuleFloatParam(slotId_, razumov::params::eqActiveBandCount, (float) (n - 1));
+
+        const int newCount = n - 1;
+        int newSel = selectedBand_;
+        if (newSel == hit)
+            newSel = newCount > 0 ? juce::jmin(hit, newCount - 1) : -1;
+        else if (newSel > hit)
+            newSel--;
+
+        const int prevSel = selectedBand_;
+        updateFrom(*processor_, slotId_);
+        selectedBand_ = newSel;
+        notifySelectionChanged(prevSel);
+        if (selectedBand_ == prevSel)
+            notifyAuxRefreshNeeded();
+        repaint();
         return;
+    }
 
     const auto plot = getPlotArea();
     if (!plot.contains(pos))
         return;
 
-    const int n = juce::jlimit(0, kBands, activeBandCount_);
     if (n >= kBands)
         return;
 

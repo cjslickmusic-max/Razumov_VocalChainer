@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_dsp/juce_dsp.h>
 
 namespace razumov::dsp::eq
@@ -30,7 +31,8 @@ inline float EqTypeToFloat(EqBandType t) noexcept
 
 using Coeffs = juce::dsp::IIR::Coefficients<float>;
 
-/** RBJ biquads for stereo-linked EQ; same formulas as ParametricEqNode. */
+/** RBJ biquads for stereo-linked EQ; same formulas as ParametricEqNode.
+    JUCE makePeakFilter / makeLowShelf / makeHighShelf expect linear gain (1.0 = 0 dB), not dB. */
 inline Coeffs::Ptr makeBandCoeffs(EqBandType t, double sampleRate, float fcHz, float gainDb, float q) noexcept
 {
     const float sr = (float) sampleRate;
@@ -38,15 +40,16 @@ inline Coeffs::Ptr makeBandCoeffs(EqBandType t, double sampleRate, float fcHz, f
     const float fc = juce::jlimit(20.f, nyq, fcHz);
     const float qq = juce::jlimit(0.3f, 20.f, q);
     const double srd = sampleRate;
+    const float gainLinear = juce::Decibels::decibelsToGain(gainDb);
 
     switch (t)
     {
         case EqBandType::Peak:
-            return Coeffs::makePeakFilter(srd, (double) fc, (double) qq, gainDb);
+            return Coeffs::makePeakFilter(srd, (double) fc, (double) qq, (double) gainLinear);
         case EqBandType::LowShelf:
-            return Coeffs::makeLowShelf(srd, (double) fc, (double) qq, gainDb);
+            return Coeffs::makeLowShelf(srd, (double) fc, (double) qq, (double) gainLinear);
         case EqBandType::HighShelf:
-            return Coeffs::makeHighShelf(srd, (double) fc, (double) qq, gainDb);
+            return Coeffs::makeHighShelf(srd, (double) fc, (double) qq, (double) gainLinear);
         case EqBandType::LowPass:
             return Coeffs::makeLowPass(srd, (double) fc, (double) qq);
         case EqBandType::HighPass:
@@ -54,7 +57,7 @@ inline Coeffs::Ptr makeBandCoeffs(EqBandType t, double sampleRate, float fcHz, f
         case EqBandType::Notch:
             return Coeffs::makeNotch(srd, (double) fc, (double) qq);
         default:
-            return Coeffs::makePeakFilter(srd, (double) fc, (double) qq, gainDb);
+            return Coeffs::makePeakFilter(srd, (double) fc, (double) qq, (double) gainLinear);
     }
 }
 

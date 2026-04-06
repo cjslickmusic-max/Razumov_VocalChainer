@@ -55,6 +55,11 @@ private:
     std::array<float, (size_t) kBins> bins_{};
     /** UI-thread smoothed spectrum (attack/release) for display; same layout as SpectrumTap bins. */
     std::array<float, (size_t) kBins> spectrumDisplay_{};
+    /** Peak decay layer (FabFilter-style spectral trail): holds recent peaks, soft layer behind main spectrum. */
+    std::array<float, (size_t) kBins> spectrumTrail_{};
+
+    void fillSpectrumPath(juce::Path& p, const juce::Rectangle<float>& plot, float base, float plotH,
+                          const float* spectrumData) const noexcept;
     std::array<float, (size_t) kBands> freq_{};
     std::array<float, (size_t) kBands> gainDb_{};
     std::array<float, (size_t) kBands> q_{};

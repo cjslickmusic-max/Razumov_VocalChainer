@@ -19,6 +19,9 @@ class SpectrumTap
 {
 public:
     static constexpr int kDisplayBins = 256;
+    /** FFT size = 2^kFftOrder (2048): finer frequency resolution than 1024 for smoother display). */
+    static constexpr int kFftOrder = 11;
+    static constexpr int kFftSize = 1 << kFftOrder;
 
     void prepare(double sampleRate, int maxBlockHint);
     void reset() noexcept;
@@ -30,10 +33,10 @@ public:
 
 private:
     double sampleRate_ { 44100.0 };
-    int fftOrder_ { 10 };
-    int fftSize_ { 1024 };
+    int fftOrder_ { kFftOrder };
+    int fftSize_ { kFftSize };
 
-    juce::dsp::FFT fft_ { 10 };
+    juce::dsp::FFT fft_ { kFftOrder };
 
     std::vector<float> window_;
     std::vector<juce::dsp::Complex<float>> time_;

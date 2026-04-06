@@ -2,6 +2,7 @@
 
 #include "PluginProcessor.h"
 #include "dsp/eq/EqBandShapes.h"
+#include "dsp/graph/SpectrumTap.h"
 #include "params/ParamIDs.h"
 #include "ui/DesignTokens.h"
 
@@ -155,7 +156,7 @@ static juce::String formatFreqTickLabel(float hz) noexcept
  */
 static float hzToSpectrumBinFloat(float hz, double sampleRate) noexcept
 {
-    constexpr int fftSize = 1024;
+    constexpr int fftSize = razumov::graph::SpectrumTap::kFftSize;
     constexpr int half = fftSize / 2;
     constexpr int kDisplayBins = 256;
     const float kf = (float) hz * (float) fftSize / (float) sampleRate;
@@ -204,6 +205,11 @@ void ReEqPanelComponent::updateFrom(RazumovVocalChainAudioProcessor& proc, uint3
         const float a = x > spectrumDisplay_[(size_t) i] ? kSpecAttack : kSpecRelease;
         spectrumDisplay_[(size_t) i] = spectrumDisplay_[(size_t) i] * (1.f - a) + x * a;
     }
+
+    constexpr float kTrailDecay = 0.987f;
+    for (int i = 0; i < kBins; ++i)
+        spectrumTrail_[(size_t) i] =
+            juce::jmax(spectrumDisplay_[(size_t) i], spectrumTrail_[(size_t) i] * kTrailDecay);
 
     using namespace razumov::params;
     eqBypass_ = proc.getModuleBoolParam(slotId, eqBypass);
@@ -362,6 +368,25 @@ void ReEqPanelComponent::rebuildResponsePaths(const juce::Rectangle<float>& plot
     }
 }
 
+void ReEqPanelComponent::fillSpectrumPath(juce::Path& p, const juce::Rectangle<float>& plot, float base, float plotH,
+                                          const float* spectrumData) const noexcept
+{
+    constexpr int kSpecPoints = 640;
+    p.clear();
+    p.startNewSubPath(plot.getX(), base);
+    for (int s = 0; s <= kSpecPoints; ++s)
+    {
+        const float x = plot.getX() + (float) s / (float) kSpecPoints * plot.getWidth();
+        const float hz = xToHz(x, plot);
+        const float binF = hzToSpectrumBinFloat(hz, sampleRate_);
+        const float v = juce::jlimit(0.f, 1.f, sampleSpectrumLinear(binF, spectrumData, kBins));
+        const float y = base - v * (plotH - 4.f);
+        p.lineTo(x, y);
+    }
+    p.lineTo(plot.getRight(), base);
+    p.closeSubPath();
+}
+
 int ReEqPanelComponent::hitTestBand(juce::Point<float> pos) const noexcept
 {
     const auto plot = getPlotArea();
@@ -484,22 +509,20 @@ void ReEqPanelComponent::paint(juce::Graphics& g)
         g.drawHorizontalLine(juce::roundToInt(yy), plot.getX(), plot.getRight());
     }
 
-    juce::Path specPath;
     const float base = plot.getBottom() - 1.f;
     const float plotH = plot.getHeight();
-    constexpr int kSpecPoints = 640;
-    specPath.startNewSubPath(plot.getX(), base);
-    for (int s = 0; s <= kSpecPoints; ++s)
-    {
-        const float x = plot.getX() + (float) s / (float) kSpecPoints * plot.getWidth();
-        const float hz = xToHz(x, plot);
-        const float binF = hzToSpectrumBinFloat(hz, sampleRate_);
-        const float v = juce::jlimit(0.f, 1.f, sampleSpectrumLinear(binF, spectrumDisplay_.data(), kBins));
-        const float y = base - v * (plotH - 4.f);
-        specPath.lineTo(x, y);
-    }
-    specPath.lineTo(plot.getRight(), base);
-    specPath.closeSubPath();
+
+    juce::Path trailPath;
+    fillSpectrumPath(trailPath, plot, base, plotH, spectrumTrail_.data());
+    g.setColour(juce::Colour(eq::spectrumFillSolid).withAlpha(0.13f));
+    g.fillPath(trailPath);
+    g.setColour(juce::Colour(eq::spectrumLine).withAlpha(0.09f));
+    g.strokePath(trailPath, juce::PathStrokeType(4.2f));
+    g.setColour(juce::Colour(eq::spectrumLine).withAlpha(0.16f));
+    g.strokePath(trailPath, juce::PathStrokeType(2.0f));
+
+    juce::Path specPath;
+    fillSpectrumPath(specPath, plot, base, plotH, spectrumDisplay_.data());
     g.setColour(juce::Colour(eq::spectrumFillSolid).withAlpha(0.38f));
     g.fillPath(specPath);
     g.setColour(juce::Colour(eq::spectrumLine).withAlpha(0.75f));

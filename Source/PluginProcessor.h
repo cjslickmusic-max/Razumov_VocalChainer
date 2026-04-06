@@ -88,6 +88,9 @@ public:
     /** UI: 256 нормализованных бинов (0...1) для слота с ISpectrumSource. */
     bool copySpectrumForSlot(uint32_t slotId, float* dst256) const;
 
+    /** UI: Parametric EQ — входной и выходной спектр; иначе in=out из copySpectrumForSlot или нули. */
+    bool copySpectrumInOutForSlot(uint32_t slotId, float* in256, float* out256) const;
+
     /** UI: gain reduction (dB) для Opto/FET/VCA по slotId. */
     float getGainReductionDbForSlot(uint32_t slotId) const;
 

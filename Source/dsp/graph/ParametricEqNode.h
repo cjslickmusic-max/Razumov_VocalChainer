@@ -16,7 +16,7 @@ struct Phase3RealtimeParams;
 namespace razumov::graph
 {
 
-/** Up to 10 bands (stereo linked), RBJ-style per-band types; spectrum = input before EQ.
+/** Up to 10 bands (stereo linked), RBJ-style per-band types; spectrum taps: in pre-EQ, out post-EQ.
     LP/HP: up to 8 cascaded 2nd-order sections from Slope (dB/oct). */
 class ParametricEqNode final : public AudioNode, public ISpectrumSource
 {
@@ -30,13 +30,19 @@ public:
 
     ISpectrumSource* asSpectrumSource() noexcept override { return this; }
 
+    ParametricEqNode* asParametricEq() noexcept override { return this; }
+
     void prepare(double sampleRate, int maxBlockSize, int numChannels) override;
     void reset() override;
     void process(juce::AudioBuffer<float>& buffer) override;
 
     void applyPhase3(const razumov::params::Phase3RealtimeParams& p) noexcept;
 
+    /** ISpectrumSource: post-EQ (same as copySpectrumOut256). */
     void copySpectrum256(float* dst) const noexcept override;
+
+    void copySpectrumIn256(float* dst) const noexcept;
+    void copySpectrumOut256(float* dst) const noexcept;
 
 private:
     using IIRFilter = juce::dsp::IIR::Filter<float>;
@@ -49,7 +55,8 @@ private:
     double sampleRate_ { 44100.0 };
     int maxBlockSize_ { 512 };
 
-    SpectrumTap spectrumTap_;
+    SpectrumTap spectrumTapIn_;
+    SpectrumTap spectrumTapOut_;
 
     /** [band][stage 0..7][L/R] */
     std::array<std::array<std::array<IIRFilter, 2>, kMaxStagesPerBand>, kNumBands> bands_ {};

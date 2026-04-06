@@ -585,6 +585,22 @@ bool RazumovVocalChainAudioProcessor::copySpectrumForSlot(uint32_t slotId, float
     return graphEngine_.copySpectrumForSlot(slotId, dst256);
 }
 
+bool RazumovVocalChainAudioProcessor::copySpectrumInOutForSlot(uint32_t slotId, float* in256, float* out256) const
+{
+    if (in256 == nullptr || out256 == nullptr)
+        return false;
+    if (graphEngine_.copySpectrumInOutForSlot(slotId, in256, out256))
+        return true;
+    if (copySpectrumForSlot(slotId, out256))
+    {
+        juce::FloatVectorOperations::copy(in256, out256, 256);
+        return true;
+    }
+    juce::FloatVectorOperations::clear(in256, 256);
+    juce::FloatVectorOperations::clear(out256, 256);
+    return false;
+}
+
 float RazumovVocalChainAudioProcessor::getGainReductionDbForSlot(uint32_t slotId) const
 {
     return graphEngine_.getGainReductionDbForSlot(slotId);

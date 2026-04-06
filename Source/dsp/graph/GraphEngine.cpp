@@ -154,12 +154,49 @@ bool GraphEngine::walkCopySpectrum(const FlexSegment& seg, uint32_t slotId, floa
     return false;
 }
 
+bool GraphEngine::walkCopySpectrumInOut(const FlexSegment& seg, uint32_t slotId, float* in256, float* out256) noexcept
+{
+    if (in256 == nullptr || out256 == nullptr)
+        return false;
+    for (const auto& s : seg)
+    {
+        if (s.type == FlexSlot::Type::Module)
+        {
+            if (s.slotId == slotId && s.node != nullptr)
+            {
+                if (auto* peq = s.node->asParametricEq())
+                {
+                    peq->copySpectrumIn256(in256);
+                    peq->copySpectrumOut256(out256);
+                    return true;
+                }
+                return false;
+            }
+        }
+        else
+        {
+            for (const auto& br : s.branches)
+                if (walkCopySpectrumInOut(br, slotId, in256, out256))
+                    return true;
+        }
+    }
+    return false;
+}
+
 bool GraphEngine::copySpectrumForSlot(uint32_t slotId, float* dst256) const
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (activePlan_ == nullptr)
         return false;
     return walkCopySpectrum(activePlan_->getRoot(), slotId, dst256);
+}
+
+bool GraphEngine::copySpectrumInOutForSlot(uint32_t slotId, float* in256, float* out256) const
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (activePlan_ == nullptr)
+        return false;
+    return walkCopySpectrumInOut(activePlan_->getRoot(), slotId, in256, out256);
 }
 
 bool GraphEngine::walkGainReduction(const FlexSegment& seg, uint32_t slotId, float& outDb) noexcept

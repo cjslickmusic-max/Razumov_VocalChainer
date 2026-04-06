@@ -40,6 +40,9 @@ public:
     /** UI / message thread: копия 256 нормализованных бинов для slotId (false если нет ISpectrumSource). */
     bool copySpectrumForSlot(uint32_t slotId, float* dst256) const;
 
+    /** UI: Parametric EQ only — входной и выходной спектр (256 бинов 0...1). */
+    bool copySpectrumInOutForSlot(uint32_t slotId, float* in256, float* out256) const;
+
     /** UI: сглаженный GR (dB) для Opto/FET/VCA по slotId. */
     float getGainReductionDbForSlot(uint32_t slotId) const;
 
@@ -56,6 +59,7 @@ private:
     void processSplit(FlexSlot& slot, juce::AudioBuffer<float>& buffer, int splitDepth);
 
     static bool walkCopySpectrum(const FlexSegment& seg, uint32_t slotId, float* dst256) noexcept;
+    static bool walkCopySpectrumInOut(const FlexSegment& seg, uint32_t slotId, float* in256, float* out256) noexcept;
     static bool walkGainReduction(const FlexSegment& seg, uint32_t slotId, float& outDb) noexcept;
     static bool walkSpectralCompressionDisplay(const FlexSegment& seg,
                                                uint32_t slotId,

@@ -143,6 +143,10 @@ static float sampleSpectrumLinear(float binFloat, const float* bins, int nBins) 
     return bins[(size_t) i0] * (1.f - f) + bins[(size_t) i1] * f;
 }
 
+/** Matches SpectrumTap norm: 0...1 -> 0...-120 dB (Kirchhoff-style inner scale). */
+static constexpr float kAnalyserFloorDb = -120.f;
+static constexpr float kAnalyserCeilDb = 0.f;
+
 } // namespace
 
 void ReEqPanelComponent::notifySelectionChanged(int previousSelection) noexcept
@@ -163,22 +167,33 @@ void ReEqPanelComponent::updateFrom(RazumovVocalChainAudioProcessor& proc, uint3
 {
     slotId_ = slotId;
     sampleRate_ = proc.getSampleRate() > 1.0 ? proc.getSampleRate() : 48000.0;
-    if (slotId == 0 || !proc.copySpectrumForSlot(slotId, bins_.data()))
-        bins_.fill(0.f);
-
-    constexpr float kSpecAttack = 0.42f;
-    constexpr float kSpecRelease = 0.20f;
-    for (int i = 0; i < kBins; ++i)
+    if (slotId == 0 || !proc.copySpectrumInOutForSlot(slotId, binsIn_.data(), binsOut_.data()))
     {
-        const float x = bins_[(size_t) i];
-        const float a = x > spectrumDisplay_[(size_t) i] ? kSpecAttack : kSpecRelease;
-        spectrumDisplay_[(size_t) i] = spectrumDisplay_[(size_t) i] * (1.f - a) + x * a;
+        binsIn_.fill(0.f);
+        binsOut_.fill(0.f);
     }
 
-    constexpr float kTrailDecay = 0.987f;
+    constexpr float kSpecAttackOut = 0.62f;
+    constexpr float kSpecReleaseOut = 0.24f;
+    constexpr float kSpecAttackIn = 0.42f;
+    constexpr float kSpecReleaseIn = 0.22f;
     for (int i = 0; i < kBins; ++i)
-        spectrumTrail_[(size_t) i] =
-            juce::jmax(spectrumDisplay_[(size_t) i], spectrumTrail_[(size_t) i] * kTrailDecay);
+    {
+        const float x = binsOut_[(size_t) i];
+        const float a = x > spectrumDisplayOut_[(size_t) i] ? kSpecAttackOut : kSpecReleaseOut;
+        spectrumDisplayOut_[(size_t) i] = spectrumDisplayOut_[(size_t) i] * (1.f - a) + x * a;
+    }
+    for (int i = 0; i < kBins; ++i)
+    {
+        const float x = binsIn_[(size_t) i];
+        const float a = x > spectrumDisplayIn_[(size_t) i] ? kSpecAttackIn : kSpecReleaseIn;
+        spectrumDisplayIn_[(size_t) i] = spectrumDisplayIn_[(size_t) i] * (1.f - a) + x * a;
+    }
+
+    constexpr float kTrailDecay = 0.988f;
+    for (int i = 0; i < kBins; ++i)
+        spectrumTrailOut_[(size_t) i] =
+            juce::jmax(spectrumDisplayOut_[(size_t) i], spectrumTrailOut_[(size_t) i] * kTrailDecay);
 
     using namespace razumov::params;
     eqBypass_ = proc.getModuleBoolParam(slotId, eqBypass);
@@ -207,6 +222,7 @@ juce::Rectangle<float> ReEqPanelComponent::getPlotArea() const noexcept
     auto r = getLocalBounds().toFloat().reduced(6.f, 6.f);
     r.removeFromBottom(22.f);
     r.removeFromLeft(30.f);
+    r.removeFromRight(26.f);
     r.removeFromBottom(20.f);
     return r;
 }
@@ -232,6 +248,12 @@ float ReEqPanelComponent::yToDb(float y, const juce::Rectangle<float>& plot) con
 {
     const float t = juce::jlimit(0.f, 1.f, (plot.getBottom() - y) / juce::jmax(1.f, plot.getHeight()));
     return kDbMin + t * (kDbMax - kDbMin);
+}
+
+float ReEqPanelComponent::analyzerDbToY(float dbAnalyser, const juce::Rectangle<float>& plot) const noexcept
+{
+    const float t = (dbAnalyser - kAnalyserFloorDb) / (kAnalyserCeilDb - kAnalyserFloorDb);
+    return plot.getBottom() - juce::jlimit(0.f, 1.f, t) * plot.getHeight();
 }
 
 uint64_t ReEqPanelComponent::computeResponseCacheHash(const juce::Rectangle<float>& plot) const noexcept
@@ -337,22 +359,24 @@ void ReEqPanelComponent::rebuildResponsePaths(const juce::Rectangle<float>& plot
     }
 }
 
-void ReEqPanelComponent::fillSpectrumPath(juce::Path& p, const juce::Rectangle<float>& plot, float base, float plotH,
+void ReEqPanelComponent::fillSpectrumPath(juce::Path& p, const juce::Rectangle<float>& plot,
                                           const float* spectrumData) const noexcept
 {
     constexpr int kSpecPoints = 640;
     p.clear();
-    p.startNewSubPath(plot.getX(), base);
+    const float yBottom = analyzerDbToY(kAnalyserFloorDb, plot);
+    p.startNewSubPath(plot.getX(), yBottom);
     for (int s = 0; s <= kSpecPoints; ++s)
     {
         const float x = plot.getX() + (float) s / (float) kSpecPoints * plot.getWidth();
         const float hz = xToHz(x, plot);
         const float binF = hzToSpectrumBinFloat(hz, sampleRate_);
         const float v = juce::jlimit(0.f, 1.f, sampleSpectrumLinear(binF, spectrumData, kBins));
-        const float y = base - v * (plotH - 4.f);
+        const float db = kAnalyserFloorDb + v * (kAnalyserCeilDb - kAnalyserFloorDb);
+        const float y = analyzerDbToY(db, plot);
         p.lineTo(x, y);
     }
-    p.lineTo(plot.getRight(), base);
+    p.lineTo(plot.getRight(), yBottom);
     p.closeSubPath();
 }
 
@@ -478,23 +502,27 @@ void ReEqPanelComponent::paint(juce::Graphics& g)
         g.drawHorizontalLine(juce::roundToInt(yy), plot.getX(), plot.getRight());
     }
 
-    const float base = plot.getBottom() - 1.f;
-    const float plotH = plot.getHeight();
-
     juce::Path trailPath;
-    fillSpectrumPath(trailPath, plot, base, plotH, spectrumTrail_.data());
-    g.setColour(juce::Colour(eq::spectrumFillSolid).withAlpha(0.13f));
+    fillSpectrumPath(trailPath, plot, spectrumTrailOut_.data());
+    g.setColour(juce::Colour(eq::spectrumFillSolid).withAlpha(0.11f));
     g.fillPath(trailPath);
-    g.setColour(juce::Colour(eq::spectrumLine).withAlpha(0.09f));
+    g.setColour(juce::Colour(eq::spectrumLine).withAlpha(0.08f));
     g.strokePath(trailPath, juce::PathStrokeType(4.2f));
-    g.setColour(juce::Colour(eq::spectrumLine).withAlpha(0.16f));
+    g.setColour(juce::Colour(eq::spectrumLine).withAlpha(0.14f));
     g.strokePath(trailPath, juce::PathStrokeType(2.0f));
 
+    juce::Path inPath;
+    fillSpectrumPath(inPath, plot, spectrumDisplayIn_.data());
+    g.setColour(juce::Colour(eq::spectrumFillSolid).withAlpha(0.17f));
+    g.fillPath(inPath);
+    g.setColour(juce::Colour(eq::spectrumLine).withAlpha(0.30f));
+    g.strokePath(inPath, juce::PathStrokeType(1.0f));
+
     juce::Path specPath;
-    fillSpectrumPath(specPath, plot, base, plotH, spectrumDisplay_.data());
-    g.setColour(juce::Colour(eq::spectrumFillSolid).withAlpha(0.38f));
+    fillSpectrumPath(specPath, plot, spectrumDisplayOut_.data());
+    g.setColour(juce::Colour(eq::spectrumFillSolid).withAlpha(0.40f));
     g.fillPath(specPath);
-    g.setColour(juce::Colour(eq::spectrumLine).withAlpha(0.75f));
+    g.setColour(juce::Colour(eq::spectrumLine).withAlpha(0.82f));
     g.strokePath(specPath, juce::PathStrokeType(1.0f));
 
     if (!eqBypass_)
@@ -529,6 +557,16 @@ void ReEqPanelComponent::paint(juce::Graphics& g)
         const float yy = dbToY(db, plot);
         juce::String lab = (db > 0.f ? "+" : "") + juce::String(db, 0) + " dB";
         g.drawText(lab, juce::Rectangle<int>((int) plot.getX() - 30, (int) yy - 7, 28, 14), juce::Justification::centredRight);
+    }
+
+    g.setFont(juce::FontOptions(8.0f));
+    g.setColour(juce::Colour(eq::captionText).withAlpha(0.55f));
+    for (float adb = 0.f; adb >= -120.1f; adb -= 24.f)
+    {
+        const float yy = analyzerDbToY(adb, plot);
+        g.drawText(juce::String((int) adb),
+                   juce::Rectangle<int>((int) plot.getRight() + 2, (int) yy - 6, 26, 12),
+                   juce::Justification::centredLeft);
     }
 
     {

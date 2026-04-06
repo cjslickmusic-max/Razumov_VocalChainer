@@ -73,7 +73,8 @@ void SpectrumTap::pushStereoBlock(const float* L, const float* R, int numSamples
         /** Unnormalized FFT grows with N; map to ~amplitude then dB so music sits in -90..0 dB band. */
         const float magLin = mx / (float) fftSize_;
         const float db = 20.0f * std::log10(magLin + 1.0e-15f);
-        constexpr float floorDb = -90.f;
+        /** Kirchhoff-style analyzer band: full plot maps ~0...-120 dBFS (norm 0...1). */
+        constexpr float floorDb = -120.f;
         constexpr float ceilDb = 0.f;
         const float norm = juce::jlimit(0.f, 1.f, (db - floorDb) / (ceilDb - floorDb));
         bins_[(size_t) b].store(norm, std::memory_order_relaxed);

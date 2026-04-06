@@ -1131,8 +1131,8 @@ void RazumovVocalChainAudioProcessorEditor::layoutModuleViewport(int viewportWid
             eqBypassToggle.setBounds(x, y, scaled(140), scaled(28));
             y += scaled(36);
         }
-        reEqPanel.setBounds(x, y, W - 2 * pad, scaled(220));
-        y += scaled(228);
+        reEqPanel.setBounds(x, y, W - 2 * pad, scaled(320));
+        y += scaled(328);
         if (eqSelFreqSlider.isVisible())
         {
             eqSelFreqSlider.setBounds(x, y, kw, kh);

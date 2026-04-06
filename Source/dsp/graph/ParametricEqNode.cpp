@@ -13,7 +13,8 @@ void ParametricEqNode::prepare(double sampleRate, int maxBlockSize, int numChann
     maxBlockSize_ = juce::jmax(1, maxBlockSize);
     juce::ignoreUnused(numChannels);
 
-    spectrumTap_.prepare(sampleRate, maxBlockSize);
+    spectrumTapIn_.prepare(sampleRate, maxBlockSize);
+    spectrumTapOut_.prepare(sampleRate, maxBlockSize);
 
     juce::dsp::ProcessSpec spec { sampleRate, (juce::uint32) maxBlockSize, 1 };
     for (auto& band : bands_)
@@ -29,7 +30,8 @@ void ParametricEqNode::prepare(double sampleRate, int maxBlockSize, int numChann
 
 void ParametricEqNode::reset()
 {
-    spectrumTap_.reset();
+    spectrumTapIn_.reset();
+    spectrumTapOut_.reset();
     for (auto& band : bands_)
         for (auto& st : band)
             for (auto& f : st)
@@ -134,13 +136,14 @@ void ParametricEqNode::process(juce::AudioBuffer<float>& buffer)
     float* L = buffer.getWritePointer(0);
     float* R = ch > 1 ? buffer.getWritePointer(1) : L;
 
-    spectrumTap_.pushStereoBlock(L, R, n);
+    spectrumTapIn_.pushStereoBlock(L, R, n);
 
     smoothStep();
 
     if (smoothBypass_)
     {
         prevBypass_ = true;
+        spectrumTapOut_.pushStereoBlock(L, R, n);
         return;
     }
 
@@ -156,6 +159,8 @@ void ParametricEqNode::process(juce::AudioBuffer<float>& buffer)
     processOneChannel(L, n, 0);
     if (ch > 1)
         processOneChannel(R, n, 1);
+
+    spectrumTapOut_.pushStereoBlock(L, R, n);
 }
 
 void ParametricEqNode::applyPhase3(const razumov::params::Phase3RealtimeParams& p) noexcept
@@ -222,7 +227,17 @@ void ParametricEqNode::applyPhase3(const razumov::params::Phase3RealtimeParams& 
 
 void ParametricEqNode::copySpectrum256(float* dst) const noexcept
 {
-    spectrumTap_.copyDisplayBins(dst, ISpectrumSource::kSpectrumBins);
+    copySpectrumOut256(dst);
+}
+
+void ParametricEqNode::copySpectrumIn256(float* dst) const noexcept
+{
+    spectrumTapIn_.copyDisplayBins(dst, ISpectrumSource::kSpectrumBins);
+}
+
+void ParametricEqNode::copySpectrumOut256(float* dst) const noexcept
+{
+    spectrumTapOut_.copyDisplayBins(dst, ISpectrumSource::kSpectrumBins);
 }
 
 } // namespace razumov::graph

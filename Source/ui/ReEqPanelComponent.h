@@ -40,6 +40,8 @@ private:
     float xToHz(float x, const juce::Rectangle<float>& plot) const noexcept;
     float dbToY(float db, const juce::Rectangle<float>& plot) const noexcept;
     float yToDb(float y, const juce::Rectangle<float>& plot) const noexcept;
+    /** Analyzer overlay: norm 0...1 maps to ~0...-120 dB (same plot rect as EQ curve). */
+    float analyzerDbToY(float dbAnalyser, const juce::Rectangle<float>& plot) const noexcept;
 
     int hitTestBand(juce::Point<float> pos) const noexcept;
     void showTypeMenuForBand(int bandIndex, juce::Point<int> screenPos);
@@ -52,14 +54,15 @@ private:
     RazumovVocalChainAudioProcessor* processor_ { nullptr };
     uint32_t slotId_ { 0 };
     double sampleRate_ { 48000.0 };
-    std::array<float, (size_t) kBins> bins_{};
-    /** UI-thread smoothed spectrum (attack/release) for display; same layout as SpectrumTap bins. */
-    std::array<float, (size_t) kBins> spectrumDisplay_{};
-    /** Peak decay layer (FabFilter-style spectral trail): holds recent peaks, soft layer behind main spectrum. */
-    std::array<float, (size_t) kBins> spectrumTrail_{};
+    std::array<float, (size_t) kBins> binsIn_{};
+    std::array<float, (size_t) kBins> binsOut_{};
+    /** UI-thread smoothed spectrum (attack/release); post-EQ is primary visual. */
+    std::array<float, (size_t) kBins> spectrumDisplayIn_{};
+    std::array<float, (size_t) kBins> spectrumDisplayOut_{};
+    /** Peak decay on post-EQ spectrum only. */
+    std::array<float, (size_t) kBins> spectrumTrailOut_{};
 
-    void fillSpectrumPath(juce::Path& p, const juce::Rectangle<float>& plot, float base, float plotH,
-                          const float* spectrumData) const noexcept;
+    void fillSpectrumPath(juce::Path& p, const juce::Rectangle<float>& plot, const float* spectrumData) const noexcept;
     std::array<float, (size_t) kBands> freq_{};
     std::array<float, (size_t) kBands> gainDb_{};
     std::array<float, (size_t) kBands> q_{};

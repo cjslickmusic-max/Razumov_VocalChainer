@@ -35,6 +35,13 @@ struct FlexSlotDesc
     /** Только для Split: доп. задержка на ветку (phase align, сэмплы), размер = branches.size(). */
     std::vector<int> branchPhaseAlignSamples;
 
+    /**
+     * Только для Split: линейный коэффициент на ветку перед суммированием (после PDC).
+     * Пусто или размер != branches -> при сборке плана подставляется 1.0 на ветку (совместимость с явными Gain в ветках).
+     * NY-parallel без Gain-узлов: например {0.5, 0.5} для двух веток.
+     */
+    std::vector<float> branchMixLinear;
+
     std::vector<std::vector<FlexSlotDesc>> branches;
 };
 

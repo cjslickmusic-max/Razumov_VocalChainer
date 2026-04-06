@@ -105,6 +105,12 @@ FlexSlot FlexGraphPlan::buildSlotFromDesc(const FlexSlotDesc& d)
         const int v = (bi < d.branchPhaseAlignSamples.size()) ? d.branchPhaseAlignSamples[bi] : 0;
         slot.branchPhaseAlignSamples[bi] = juce::jlimit(0, kMaxBranchPhaseAlignSamples, v);
     }
+    slot.branchMixLinear.resize(d.branches.size(), 1.0f);
+    for (size_t bi = 0; bi < d.branches.size(); ++bi)
+    {
+        if (bi < d.branchMixLinear.size())
+            slot.branchMixLinear[bi] = d.branchMixLinear[bi];
+    }
     for (const auto& branchDesc : d.branches)
     {
         FlexSegment branch;

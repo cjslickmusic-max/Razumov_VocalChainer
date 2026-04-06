@@ -25,6 +25,17 @@ juce::ValueTree slotToTree(const FlexSlotDesc& s)
     }
 
     t.setProperty("shape", "split", nullptr);
+    if (s.branchMixLinear.size() == s.branches.size() && !s.branches.empty())
+    {
+        juce::String mixStr;
+        for (size_t bi = 0; bi < s.branchMixLinear.size(); ++bi)
+        {
+            if (bi > 0)
+                mixStr += ",";
+            mixStr += juce::String(s.branchMixLinear[(size_t) bi], 8);
+        }
+        t.setProperty("branchMix", mixStr, nullptr);
+    }
     for (size_t bi = 0; bi < s.branches.size(); ++bi)
     {
         juce::ValueTree b(flexBranchValueTreeType);
@@ -65,6 +76,7 @@ bool treeToSlot(const juce::ValueTree& t, FlexSlotDesc& s) noexcept
     s.kind = AudioNodeKind::Gain;
     s.branches.clear();
     s.branchPhaseAlignSamples.clear();
+    s.branchMixLinear.clear();
 
     for (int i = 0; i < t.getNumChildren(); ++i)
     {
@@ -82,6 +94,18 @@ bool treeToSlot(const juce::ValueTree& t, FlexSlotDesc& s) noexcept
         }
         s.branches.push_back(std::move(branchSlots));
     }
+
+    const auto mixStr = t.getProperty("branchMix").toString();
+    if (mixStr.isNotEmpty())
+    {
+        juce::StringArray tok;
+        tok.addTokens(mixStr, ",", "");
+        for (int k = 0; k < tok.size(); ++k)
+            s.branchMixLinear.push_back((float) tok[k].getDoubleValue());
+    }
+    if (s.branchMixLinear.size() != s.branches.size())
+        s.branchMixLinear.assign(s.branches.size(), 1.0f);
+
     return true;
 }
 

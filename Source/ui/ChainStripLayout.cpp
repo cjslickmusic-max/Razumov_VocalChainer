@@ -117,6 +117,15 @@ SegmentBounds layoutSegment(
     if (seg.empty())
     {
         block.endX = x;
+        /** Пустая ветка (только микс в merge): провод от fork вниз к точке на ряду ветки, дальше к Sum. */
+        if (branchFeed.has_value())
+        {
+            block.hadContent = true;
+            const auto feed = *branchFeed;
+            block.lastCenter = juce::Point<float>(feed.x, yLine + cardH * 0.5f);
+            block.firstCenter = block.lastCenter;
+            pushOrthogonalForkToFirst(out, feed, block.lastCenter);
+        }
         return block;
     }
 

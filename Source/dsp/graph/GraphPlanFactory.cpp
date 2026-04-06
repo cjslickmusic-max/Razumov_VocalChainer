@@ -319,18 +319,10 @@ FlexSlotDesc GraphPlanFactory::makeSplitDryBranchAndParallelModule(AudioNodeKind
     FlexSlotDesc sp;
     sp.descType = FlexSlotDescType::Split;
     sp.branches.resize(2);
-    /** -6 dB per branch so sum is unity; labels explain NY parallel (not generic Gain). */
-    {
-        auto g0 = gainModule(0.5f);
-        g0.uiLabel = "Dry";
-        sp.branches[0].push_back(g0);
-    }
-    {
-        auto g1 = gainModule(0.5f);
-        g1.uiLabel = "Wet bus";
-        sp.branches[1].push_back(g1);
-    }
+    /** Dry: пустая ветка (копия буфера). Wet: только выбранный модуль. Микс 0.5/0.5 в merge, без отдельных Gain. */
+    sp.branches[0].clear();
     sp.branches[1].push_back(makeModulePaletteSlot(parallelKind));
+    sp.branchMixLinear = { 0.5f, 0.5f };
     return sp;
 }
 

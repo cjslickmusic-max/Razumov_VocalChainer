@@ -24,6 +24,8 @@ struct FlexSlot
     std::unique_ptr<AudioNode> node;
     /** Split: доп. задержка на ветку перед PDC merge (phase align). */
     std::vector<int> branchPhaseAlignSamples;
+    /** Split: множитель на ветку перед суммированием (после PDC); размер = branches.size(). */
+    std::vector<float> branchMixLinear;
     std::vector<std::vector<FlexSlot>> branches;
 };
 

@@ -502,6 +502,12 @@ void GraphEngine::processSplit(FlexSlot& slot, juce::AudioBuffer<float>& buffer,
 
         mergePads_[(size_t) padIdx]->setDelaySamples(pdcPad);
         mergePads_[(size_t) padIdx]->process(work);
+
+        float mix = 1.0f;
+        if (i < (int) slot.branchMixLinear.size())
+            mix = slot.branchMixLinear[(size_t) i];
+        if (mix != 1.0f)
+            work.applyGain(mix);
     }
 
     buffer.clear();

@@ -6,6 +6,7 @@
 using razumov::graph::graphContainsAnySplit;
 
 #include <cassert>
+#include <cmath>
 
 namespace
 {
@@ -110,8 +111,11 @@ void testParallelModuleSplitShape()
     const auto sp = GraphPlanFactory::makeSplitDryBranchAndParallelModule(AudioNodeKind::OptoCompressor);
     assert(sp.descType == FlexSlotDescType::Split);
     assert(sp.branches.size() == 2u);
-    assert(sp.branches[0].size() == 1u);
-    assert(sp.branches[1].size() == 2u);
+    assert(sp.branches[0].empty());
+    assert(sp.branches[1].size() == 1u);
+    assert(sp.branchMixLinear.size() == 2u);
+    assert(std::abs(sp.branchMixLinear[0] - 0.5f) < 1e-5f);
+    assert(std::abs(sp.branchMixLinear[1] - 0.5f) < 1e-5f);
 }
 
 } // namespace

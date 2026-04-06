@@ -6,6 +6,8 @@
 #include <juce_dsp/juce_dsp.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 
+#include "dsp/graph/ISpectrumSource.h"
+
 class RazumovVocalChainAudioProcessor;
 
 /** Spectrum + per-band + sum magnitude + draggable nodes (up to 10 bands; double-click plot to add). */
@@ -33,7 +35,7 @@ public:
 
 private:
     static constexpr int kBands = 10;
-    static constexpr int kBins = 256;
+    static constexpr int kBins = razumov::graph::ISpectrumSource::kSpectrumBins;
 
     juce::Rectangle<float> getPlotArea() const noexcept;
     float hzToX(float hz, const juce::Rectangle<float>& plot) const noexcept;
@@ -62,7 +64,8 @@ private:
     /** Peak decay on post-EQ spectrum only. */
     std::array<float, (size_t) kBins> spectrumTrailOut_{};
 
-    void fillSpectrumPath(juce::Path& p, const juce::Rectangle<float>& plot, const float* spectrumData) const noexcept;
+    /** Piecewise-constant (histogram) top: no linear interp between bins -> sharper harmonics. */
+    void fillSpectrumHistogramPath(juce::Path& p, const juce::Rectangle<float>& plot, const float* spectrumData) const noexcept;
     std::array<float, (size_t) kBands> freq_{};
     std::array<float, (size_t) kBands> gainDb_{};
     std::array<float, (size_t) kBands> q_{};

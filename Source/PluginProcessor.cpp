@@ -10,6 +10,7 @@
 #include "params/ParameterLayout.h"
 #include "params/Phase3RealtimeParams.h"
 #include "presets/FactoryPresets.h"
+#include "dsp/graph/ISpectrumSource.h"
 
 #include <juce_dsp/juce_dsp.h>
 #include <map>
@@ -593,11 +594,11 @@ bool RazumovVocalChainAudioProcessor::copySpectrumInOutForSlot(uint32_t slotId, 
         return true;
     if (copySpectrumForSlot(slotId, out256))
     {
-        juce::FloatVectorOperations::copy(in256, out256, 256);
+        juce::FloatVectorOperations::copy(in256, out256, razumov::graph::ISpectrumSource::kSpectrumBins);
         return true;
     }
-    juce::FloatVectorOperations::clear(in256, 256);
-    juce::FloatVectorOperations::clear(out256, 256);
+    juce::FloatVectorOperations::clear(in256, razumov::graph::ISpectrumSource::kSpectrumBins);
+    juce::FloatVectorOperations::clear(out256, razumov::graph::ISpectrumSource::kSpectrumBins);
     return false;
 }
 

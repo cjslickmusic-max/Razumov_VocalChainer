@@ -85,7 +85,7 @@ public:
     void setMacroDisplayName(int macroIndex, const juce::String& name);
     juce::String getMacroDisplayName(int macroIndex) const;
 
-    /** UI: 256 нормализованных бинов (0...1) для слота с ISpectrumSource. */
+    /** UI: нормализованные бины (0...1, ISpectrumSource::kSpectrumBins) для слота с ISpectrumSource. */
     bool copySpectrumForSlot(uint32_t slotId, float* dst256) const;
 
     /** UI: Parametric EQ — входной и выходной спектр; иначе in=out из copySpectrumForSlot или нули. */

@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "dsp/graph/AudioNode.h"
+#include "dsp/graph/ISpectrumSource.h"
 #include "ui/ChainStripComponent.h"
 #include "ui/ReEqPanelComponent.h"
 
@@ -42,7 +43,9 @@ private:
     void reloadModuleParamsFromProcessor();
     void syncChainStripAfterGraphEdit();
     void layoutMacroHeroRow(juce::Rectangle<int> area);
-    void layoutModuleViewport(int viewportWidth);
+    /** eqPanelHeight: height of ReEq panel when visible (used for total content height). */
+    int computeModuleContentHeight(int eqPanelHeight) const noexcept;
+    void layoutModuleViewport(int viewportWidth, int viewportHeight);
     void refreshRotaryStyles();
     void labelTextChanged(juce::Label* labelThatHasChanged) override;
 
@@ -86,7 +89,7 @@ private:
         void paint(juce::Graphics& g) override;
 
     private:
-        std::array<float, 256> bins_{};
+        std::array<float, (size_t) razumov::graph::ISpectrumSource::kSpectrumBins> bins_{};
     };
 
     /** Opto/FET/VCA: горизонтальный GR 0...24 dB. */

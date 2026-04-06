@@ -9,7 +9,7 @@ namespace razumov::graph
 class ISpectrumSource
 {
 public:
-    static constexpr int kSpectrumBins = 256;
+    static constexpr int kSpectrumBins = 512;
 
     virtual ~ISpectrumSource() = default;
     virtual void copySpectrum256(float* dst) const noexcept = 0;

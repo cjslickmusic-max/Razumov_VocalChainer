@@ -37,10 +37,10 @@ public:
 
     int getReportedLatencySamples() const noexcept { return reportedLatency_; }
 
-    /** UI / message thread: копия 256 нормализованных бинов для slotId (false если нет ISpectrumSource). */
+    /** UI / message thread: копия нормализованных бинов для slotId (false если нет ISpectrumSource). */
     bool copySpectrumForSlot(uint32_t slotId, float* dst256) const;
 
-    /** UI: Parametric EQ only — входной и выходной спектр (256 бинов 0...1). */
+    /** UI: Parametric EQ only — входной и выходной спектр (0...1 на бин). */
     bool copySpectrumInOutForSlot(uint32_t slotId, float* in256, float* out256) const;
 
     /** UI: сглаженный GR (dB) для Opto/FET/VCA по slotId. */

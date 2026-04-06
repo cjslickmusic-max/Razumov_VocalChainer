@@ -273,7 +273,7 @@ void RazumovVocalChainAudioProcessorEditor::SpectrumPanel::paint(juce::Graphics&
     g.drawRoundedRectangle(r, 6.f, 1.f);
 
     juce::Path path;
-    const int n = 256;
+    const int n = razumov::graph::ISpectrumSource::kSpectrumBins;
     const float w = r.getWidth();
     const float h = r.getHeight();
     const float base = r.getBottom() - 2.f;
@@ -358,6 +358,7 @@ void RazumovVocalChainAudioProcessorEditor::SpectralCompPanel::paint(juce::Graph
     g.setColour(juce::Colour(tkn::argb::borderModulePanel));
     g.drawRoundedRectangle(r, 6.f, 1.f);
 
+    /** Must match SpectralCompressorNode::kSpectralDisplayBins (in_/red_ arrays). */
     const int n = 256;
     const float w = r.getWidth();
     const float plotH = juce::jmax(4.f, r.getHeight() - 18.f);
@@ -1081,7 +1082,7 @@ void RazumovVocalChainAudioProcessorEditor::layoutMacroHeroRow(juce::Rectangle<i
 
     const int totalW = 8 * kw + 7 * colGap;
     int x = area.getX() + (area.getWidth() - totalW) / 2;
-    const int y = area.getY() + pad;
+    const int y = area.getY() + scaled(8);
 
     auto place = [&](juce::Label& lbl, juce::Slider& s) {
         lbl.setBounds(x, y, kw, mlab);
@@ -1099,7 +1100,69 @@ void RazumovVocalChainAudioProcessorEditor::layoutMacroHeroRow(juce::Rectangle<i
     place(macroDensityLabel, macroDensitySlider);
 }
 
-void RazumovVocalChainAudioProcessorEditor::layoutModuleViewport(int viewportWidth)
+int RazumovVocalChainAudioProcessorEditor::computeModuleContentHeight(int eqPanelHeight) const noexcept
+{
+    const int pad = scaled(12);
+    const int kh = scaled(100);
+    const int gap = scaled(10);
+    int y = pad;
+
+    y += scaled(26);
+    if (moduleHintLabel.isVisible())
+        y += scaled(42);
+    if (spectralCompPanel.isVisible())
+        y += scaled(128);
+    if (reEqPanel.isVisible())
+    {
+        if (eqBypassToggle.isVisible())
+            y += scaled(36);
+        y += eqPanelHeight;
+        if (eqSelFreqSlider.isVisible())
+            y += kh + gap + scaled(18);
+    }
+    else if (spectrumPanel.isVisible())
+        y += scaled(108);
+
+    if (micBypassBtn.isVisible())
+    {
+        y += scaled(34);
+        y += kh + gap + scaled(18);
+    }
+    else if (gainSlider.isVisible())
+        y += kh + gap + scaled(18);
+
+    if (grMeterBar.isVisible())
+        y += scaled(32);
+
+    auto addRow3If = [&](const juce::Slider& a, const juce::Slider&, const juce::Slider&) {
+        if (!a.isVisible())
+            return;
+        y += kh + gap + scaled(18);
+    };
+    addRow3If(deessCrossSlider, deessThreshSlider, deessRatioSlider);
+    addRow3If(optoThreshSlider, optoRatioSlider, optoMakeupSlider);
+    addRow3If(fetThreshSlider, fetRatioSlider, fetMakeupSlider);
+    addRow3If(vcaThreshSlider, vcaRatioSlider, vcaMakeupSlider);
+
+    if (exciterDriveSlider.isVisible())
+        y += kh + gap + scaled(18);
+
+    if (spectralBypassBtn.isVisible())
+    {
+        y += scaled(36);
+        addRow3If(spectralScFreqSlider, spectralScQSlider, spectralThreshSlider);
+        addRow3If(spectralAttackSlider, spectralReleaseSlider, spectralRatioSlider);
+        if (spectralMixSlider.isVisible())
+            y += kh + gap + scaled(18);
+    }
+
+    if (lowpassSlider.isVisible())
+        y += kh + gap + scaled(18);
+
+    return y + pad;
+}
+
+void RazumovVocalChainAudioProcessorEditor::layoutModuleViewport(int viewportWidth, int viewportHeight)
 {
     const int W = juce::jmax(scaled(760), viewportWidth);
     const int pad = scaled(12);
@@ -1108,6 +1171,15 @@ void RazumovVocalChainAudioProcessorEditor::layoutModuleViewport(int viewportWid
     const int gap = scaled(10);
     int x = pad;
     int y = pad;
+
+    const int kEqBase = scaled(280);
+    int eqPanelH = kEqBase;
+    if (reEqPanel.isVisible() && viewportHeight > scaled(100))
+    {
+        const int totalMin = computeModuleContentHeight(kEqBase);
+        if (totalMin < viewportHeight)
+            eqPanelH = juce::jmin(scaled(560), kEqBase + (viewportHeight - totalMin));
+    }
 
     moduleTitleLabel.setBounds(x, y, W - 2 * pad, scaled(22));
     y += scaled(26);
@@ -1131,8 +1203,8 @@ void RazumovVocalChainAudioProcessorEditor::layoutModuleViewport(int viewportWid
             eqBypassToggle.setBounds(x, y, scaled(140), scaled(28));
             y += scaled(36);
         }
-        reEqPanel.setBounds(x, y, W - 2 * pad, scaled(320));
-        y += scaled(328);
+        reEqPanel.setBounds(x, y, W - 2 * pad, eqPanelH);
+        y += eqPanelH + scaled(8);
         if (eqSelFreqSlider.isVisible())
         {
             eqSelFreqSlider.setBounds(x, y, kw, kh);
@@ -1707,16 +1779,16 @@ void RazumovVocalChainAudioProcessorEditor::resized()
         presetCombo.setBounds(h.removeFromTop(scaled(36)).reduced(0, 2));
     }
 
-    const int macroBlockH = scaled(178);
+    const int macroBlockH = scaled(158);
     sectionMacro_ = juce::Rectangle<int>(bounds.getX(), bounds.getY(), bounds.getWidth(), macroBlockH);
     layoutMacroHeroRow(bounds.removeFromTop(macroBlockH));
 
     const bool parallelGraph = razumov::graph::graphContainsAnySplit(processor.getGraphDesc());
-    const int chainH = scaled(parallelGraph ? 248 : 328);
+    const int chainH = scaled(parallelGraph ? 218 : 278);
     chainStrip.setBounds(bounds.removeFromTop(chainH));
 
     viewport.setBounds(bounds);
-    layoutModuleViewport(viewport.getWidth());
+    layoutModuleViewport(viewport.getWidth(), viewport.getHeight());
     refreshRotaryStyles();
 }
 

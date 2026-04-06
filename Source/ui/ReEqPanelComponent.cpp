@@ -120,27 +120,15 @@ static juce::String formatFreqTickLabel(float hz) noexcept
     return juce::String(k, 1) + "k";
 }
 
-/**
- * Fractional display-bin index: same log-spaced Hz bands as SpectrumTap (20 Hz .. min(20 kHz, Nyquist)).
- */
-static float hzToSpectrumBinFloat(float hz, double sampleRate) noexcept
+/** Same log Hz edges as SpectrumTap::pushStereoBlock (bin index 0..nBins). */
+static float hzEdgeBin(int binIndex, int nBins, double sampleRate) noexcept
 {
     using ST = razumov::graph::SpectrumTap;
     const float hzMin = ST::kAnalyzerHzMin;
     const float hzTop = juce::jmin(ST::kAnalyzerHzMax, (float) sampleRate * 0.499f);
-    const float h = juce::jlimit(hzMin, hzTop, hz);
-    const float t = std::log(h / hzMin) / std::log(hzTop / hzMin);
-    const float binF = t * (float) (ST::kDisplayBins - 1);
-    return juce::jlimit(0.f, (float) ST::kDisplayBins - 1e-5f, binF);
-}
-
-static float sampleSpectrumLinear(float binFloat, const float* bins, int nBins) noexcept
-{
-    const float bi = juce::jlimit(0.f, (float) (nBins - 1) - 1e-6f, binFloat);
-    const int i0 = (int) bi;
-    const int i1 = juce::jmin(i0 + 1, nBins - 1);
-    const float f = bi - (float) i0;
-    return bins[(size_t) i0] * (1.f - f) + bins[(size_t) i1] * f;
+    const float ratio = hzTop / hzMin;
+    const float t = (float) binIndex / (float) nBins;
+    return hzMin * std::pow(ratio, t);
 }
 
 /** Matches SpectrumTap norm: 0...1 -> 0...-120 dB (Kirchhoff-style inner scale). */
@@ -173,10 +161,11 @@ void ReEqPanelComponent::updateFrom(RazumovVocalChainAudioProcessor& proc, uint3
         binsOut_.fill(0.f);
     }
 
-    constexpr float kSpecAttackOut = 0.62f;
-    constexpr float kSpecReleaseOut = 0.24f;
-    constexpr float kSpecAttackIn = 0.42f;
-    constexpr float kSpecReleaseIn = 0.22f;
+    /** Fast attack keeps harmonic peaks sharp; release avoids flicker (Kirchhoff-style teeth). */
+    constexpr float kSpecAttackOut = 0.92f;
+    constexpr float kSpecReleaseOut = 0.52f;
+    constexpr float kSpecAttackIn = 0.48f;
+    constexpr float kSpecReleaseIn = 0.32f;
     for (int i = 0; i < kBins; ++i)
     {
         const float x = binsOut_[(size_t) i];
@@ -359,24 +348,38 @@ void ReEqPanelComponent::rebuildResponsePaths(const juce::Rectangle<float>& plot
     }
 }
 
-void ReEqPanelComponent::fillSpectrumPath(juce::Path& p, const juce::Rectangle<float>& plot,
-                                          const float* spectrumData) const noexcept
+void ReEqPanelComponent::fillSpectrumHistogramPath(juce::Path& p, const juce::Rectangle<float>& plot,
+                                                   const float* spectrumData) const noexcept
 {
-    constexpr int kSpecPoints = 640;
     p.clear();
     const float yBottom = analyzerDbToY(kAnalyserFloorDb, plot);
-    p.startNewSubPath(plot.getX(), yBottom);
-    for (int s = 0; s <= kSpecPoints; ++s)
+    const int n = kBins;
+    const double sr = sampleRate_;
+
+    auto yAtNorm = [&](float v) {
+        const float db = kAnalyserFloorDb + juce::jlimit(0.f, 1.f, v) * (kAnalyserCeilDb - kAnalyserFloorDb);
+        return analyzerDbToY(db, plot);
+    };
+
+    const float xL0 = hzToX(hzEdgeBin(0, n, sr), plot);
+    p.startNewSubPath(xL0, yBottom);
+    for (int b = 0; b < n; ++b)
     {
-        const float x = plot.getX() + (float) s / (float) kSpecPoints * plot.getWidth();
-        const float hz = xToHz(x, plot);
-        const float binF = hzToSpectrumBinFloat(hz, sampleRate_);
-        const float v = juce::jlimit(0.f, 1.f, sampleSpectrumLinear(binF, spectrumData, kBins));
-        const float db = kAnalyserFloorDb + v * (kAnalyserCeilDb - kAnalyserFloorDb);
-        const float y = analyzerDbToY(db, plot);
-        p.lineTo(x, y);
+        const float xL = hzToX(hzEdgeBin(b, n, sr), plot);
+        const float xR = hzToX(hzEdgeBin(b + 1, n, sr), plot);
+        const float v = juce::jlimit(0.f, 1.f, spectrumData[(size_t) b]);
+        const float yb = yAtNorm(v);
+        if (b == 0)
+            p.lineTo(xL, yb);
+        p.lineTo(xR, yb);
+        if (b < n - 1)
+        {
+            const float vNext = juce::jlimit(0.f, 1.f, spectrumData[(size_t) b + 1]);
+            const float yNext = yAtNorm(vNext);
+            p.lineTo(xR, yNext);
+        }
     }
-    p.lineTo(plot.getRight(), yBottom);
+    p.lineTo(hzToX(hzEdgeBin(n, n, sr), plot), yBottom);
     p.closeSubPath();
 }
 
@@ -503,7 +506,7 @@ void ReEqPanelComponent::paint(juce::Graphics& g)
     }
 
     juce::Path trailPath;
-    fillSpectrumPath(trailPath, plot, spectrumTrailOut_.data());
+    fillSpectrumHistogramPath(trailPath, plot, spectrumTrailOut_.data());
     g.setColour(juce::Colour(eq::spectrumFillSolid).withAlpha(0.11f));
     g.fillPath(trailPath);
     g.setColour(juce::Colour(eq::spectrumLine).withAlpha(0.08f));
@@ -512,14 +515,14 @@ void ReEqPanelComponent::paint(juce::Graphics& g)
     g.strokePath(trailPath, juce::PathStrokeType(2.0f));
 
     juce::Path inPath;
-    fillSpectrumPath(inPath, plot, spectrumDisplayIn_.data());
+    fillSpectrumHistogramPath(inPath, plot, spectrumDisplayIn_.data());
     g.setColour(juce::Colour(eq::spectrumFillSolid).withAlpha(0.17f));
     g.fillPath(inPath);
     g.setColour(juce::Colour(eq::spectrumLine).withAlpha(0.30f));
     g.strokePath(inPath, juce::PathStrokeType(1.0f));
 
     juce::Path specPath;
-    fillSpectrumPath(specPath, plot, spectrumDisplayOut_.data());
+    fillSpectrumHistogramPath(specPath, plot, spectrumDisplayOut_.data());
     g.setColour(juce::Colour(eq::spectrumFillSolid).withAlpha(0.40f));
     g.fillPath(specPath);
     g.setColour(juce::Colour(eq::spectrumLine).withAlpha(0.82f));

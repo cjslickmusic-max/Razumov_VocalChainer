@@ -8,6 +8,8 @@
 
 #include <juce_dsp/juce_dsp.h>
 
+#include "ISpectrumSource.h"
+
 namespace razumov::graph
 {
 
@@ -18,9 +20,9 @@ namespace razumov::graph
 class SpectrumTap
 {
 public:
-    static constexpr int kDisplayBins = 256;
-    /** FFT size = 2^kFftOrder (4096): finer resolution inside each log band. */
-    static constexpr int kFftOrder = 12;
+    static constexpr int kDisplayBins = ISpectrumSource::kSpectrumBins;
+    /** FFT size = 2^kFftOrder (8192): finer freq bins for harmonic detail vs 4096. */
+    static constexpr int kFftOrder = 13;
     static constexpr int kFftSize = 1 << kFftOrder;
 
     /** Log-spaced analyzer range (Hz); must match ReEq frequency axis (Kirchhoff-style 10...30k). */
@@ -30,7 +32,7 @@ public:
     void prepare(double sampleRate, int maxBlockHint);
     void reset() noexcept;
 
-    /** Моно (L+R)/2, Hann, FFT, log-frequency bins, dBFS-ish scale -> 256 x 0...1. */
+    /** Моно (L+R)/2, Hann, FFT, log-frequency bins, dBFS-ish scale -> kDisplayBins x 0...1. */
     void pushStereoBlock(const float* L, const float* R, int numSamples) noexcept;
 
     void copyDisplayBins(float* dst, int n) const noexcept;

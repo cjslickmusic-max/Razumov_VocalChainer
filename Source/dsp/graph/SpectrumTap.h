@@ -19,14 +19,18 @@ class SpectrumTap
 {
 public:
     static constexpr int kDisplayBins = 256;
-    /** FFT size = 2^kFftOrder (2048): finer frequency resolution than 1024 for smoother display). */
-    static constexpr int kFftOrder = 11;
+    /** FFT size = 2^kFftOrder (4096): finer resolution inside each log band. */
+    static constexpr int kFftOrder = 12;
     static constexpr int kFftSize = 1 << kFftOrder;
+
+    /** Log-spaced analyzer range (Hz); must match UI mapping in ReEqPanelComponent. */
+    static constexpr float kAnalyzerHzMin = 20.f;
+    static constexpr float kAnalyzerHzMax = 20000.f;
 
     void prepare(double sampleRate, int maxBlockHint);
     void reset() noexcept;
 
-    /** Моно (L+R)/2, окно Ханна, FFT, магнитуда -> 256 бинов в dB, нормализация в 0...1. */
+    /** Моно (L+R)/2, Hann, FFT, log-frequency bins, dBFS-ish scale -> 256 x 0...1. */
     void pushStereoBlock(const float* L, const float* R, int numSamples) noexcept;
 
     void copyDisplayBins(float* dst, int n) const noexcept;

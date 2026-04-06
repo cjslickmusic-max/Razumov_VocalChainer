@@ -44,22 +44,38 @@ void SpectrumTap::pushStereoBlock(const float* L, const float* R, int numSamples
     fft_.perform(time_.data(), freq_.data(), false);
 
     const int half = fftSize_ / 2;
+    const float sr = (float) sampleRate_;
+    const float hzTop = juce::jmin(kAnalyzerHzMax, sr * 0.499f);
+    const float hzMin = kAnalyzerHzMin;
+    const float ratio = hzTop / hzMin;
+
     for (int b = 0; b < kDisplayBins; ++b)
     {
-        const int k0 = b * (half + 1) / kDisplayBins;
-        const int k1 = (b + 1) * (half + 1) / kDisplayBins;
+        const float t0 = (float) b / (float) kDisplayBins;
+        const float t1 = (float) (b + 1) / (float) kDisplayBins;
+        const float hz0 = hzMin * std::pow(ratio, t0);
+        const float hz1 = hzMin * std::pow(ratio, t1);
+        int k0 = (int) std::floor(hz0 * (float) fftSize_ / sr);
+        int k1 = (int) std::ceil(hz1 * (float) fftSize_ / sr);
+        k0 = juce::jmax(1, k0);
+        k1 = juce::jmin(half, k1);
+        if (k1 < k0)
+            k1 = k0;
+
         float mx = 0.f;
-        for (int k = k0; k < k1 && k <= half; ++k)
+        for (int k = k0; k <= k1; ++k)
         {
             const auto& c = freq_[(size_t) k];
             const float mag = std::sqrt(c.real() * c.real() + c.imag() * c.imag());
             mx = juce::jmax(mx, mag);
         }
-        const float db = 20.0f * std::log10(mx + 1.0e-15f);
-        // Map ~90 dB span; headroom so typical material does not pin to the top of the plot.
+
+        /** Unnormalized FFT grows with N; map to ~amplitude then dB so music sits in -90..0 dB band. */
+        const float magLin = mx / (float) fftSize_;
+        const float db = 20.0f * std::log10(magLin + 1.0e-15f);
         constexpr float floorDb = -90.f;
-        constexpr float spanDb = 108.f;
-        const float norm = juce::jlimit(0.f, 1.f, (db - floorDb) / spanDb);
+        constexpr float ceilDb = 0.f;
+        const float norm = juce::jlimit(0.f, 1.f, (db - floorDb) / (ceilDb - floorDb));
         bins_[(size_t) b].store(norm, std::memory_order_relaxed);
     }
 }

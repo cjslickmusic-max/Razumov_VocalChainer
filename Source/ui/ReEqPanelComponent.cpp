@@ -150,19 +150,17 @@ static juce::String formatFreqTickLabel(float hz) noexcept
 }
 
 /**
- * Fractional display-bin index for Hz (same linear mapping as SpectrumTap::pushStereoBlock).
- * Using float + linear interpolation removes the "staircase" on a log-frequency X axis
- * (many pixels mapped to one integer bin before).
+ * Fractional display-bin index: same log-spaced Hz bands as SpectrumTap (20 Hz .. min(20 kHz, Nyquist)).
  */
 static float hzToSpectrumBinFloat(float hz, double sampleRate) noexcept
 {
-    constexpr int fftSize = razumov::graph::SpectrumTap::kFftSize;
-    constexpr int half = fftSize / 2;
-    constexpr int kDisplayBins = 256;
-    const float kf = (float) hz * (float) fftSize / (float) sampleRate;
-    const float k = juce::jlimit(0.f, (float) half, kf);
-    const float b = k * (float) kDisplayBins / (float) (half + 1);
-    return juce::jlimit(0.f, (float) (kDisplayBins - 1) - 1e-5f, b);
+    using ST = razumov::graph::SpectrumTap;
+    const float hzMin = ST::kAnalyzerHzMin;
+    const float hzTop = juce::jmin(ST::kAnalyzerHzMax, (float) sampleRate * 0.499f);
+    const float h = juce::jlimit(hzMin, hzTop, hz);
+    const float t = std::log(h / hzMin) / std::log(hzTop / hzMin);
+    const float binF = t * (float) (ST::kDisplayBins - 1);
+    return juce::jlimit(0.f, (float) ST::kDisplayBins - 1e-5f, binF);
 }
 
 static float sampleSpectrumLinear(float binFloat, const float* bins, int nBins) noexcept

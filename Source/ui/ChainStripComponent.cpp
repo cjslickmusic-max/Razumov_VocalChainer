@@ -219,6 +219,18 @@ void ChainStripComponent::paint(juce::Graphics& g)
     for (const auto& w : layout_.wires)
         drawWire(g, w.a, w.b, wireCol);
 
+    for (const auto& m : layout_.mergePoints)
+    {
+        const float r = 6.5f;
+        g.setColour(juce::Colour(backgroundNode).brighter(0.06f));
+        g.fillEllipse(m.x - r, m.y - r, r * 2.f, r * 2.f);
+        g.setColour(accent.withAlpha(0.92f));
+        g.drawEllipse(m.x - r, m.y - r, r * 2.f, r * 2.f, 1.25f);
+        g.setColour(textSec);
+        g.setFont(juce::FontOptions(8.0f, juce::Font::bold));
+        g.drawText("Sum", juce::Rectangle<float>(m.x - 22.f, m.y + r + 2.f, 44.f, 11.f), juce::Justification::centred);
+    }
+
     const float corner = 10.0f;
 
     for (const auto& c : layout_.cards)

@@ -37,6 +37,8 @@ struct ChainStripLayout
 {
     std::vector<ChainStripLayoutCard> cards;
     std::vector<ChainStripLayoutWire> wires;
+    /** Parallel merge junctions on the main row (for Sum marker). */
+    std::vector<juce::Point<float>> mergePoints;
     float totalWidth { 0 };
     float totalHeight { 0 };
 };

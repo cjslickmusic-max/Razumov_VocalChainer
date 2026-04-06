@@ -247,6 +247,8 @@ SegmentBounds layoutSegment(
                 pushOrthogonalBranchToMerge(out, bb.lastCenter, mergeJunction);
         }
 
+        out.mergePoints.push_back(mergeJunction);
+
         block.lastCenter = mergeJunction;
         lastCenter = mergeJunction;
         haveLast = true;
@@ -292,6 +294,11 @@ void scaleLayout(ChainStripLayout& layout, float originX, float originY, float s
         w.b.x = w.b.x * scale + originX;
         w.b.y = w.b.y * scale + originY;
     }
+    for (auto& m : layout.mergePoints)
+    {
+        m.x = m.x * scale + originX;
+        m.y = m.y * scale + originY;
+    }
 }
 
 float computeMaxBottom(const ChainStripLayout& layout) noexcept
@@ -303,6 +310,8 @@ float computeMaxBottom(const ChainStripLayout& layout) noexcept
         if (c.parallelPlusBounds.getWidth() > 0.5f)
             m = juce::jmax(m, c.parallelPlusBounds.getBottom());
     }
+    for (const auto& p : layout.mergePoints)
+        m = juce::jmax(m, p.y + 14.f);
     return m;
 }
 

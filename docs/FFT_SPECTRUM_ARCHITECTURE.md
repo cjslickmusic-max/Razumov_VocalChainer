@@ -17,7 +17,7 @@
 
 ## Связанные файлы
 
-- `SpectrumTap`: FFT `kFftSize` (обычно 4096); **256 display-бинов по логарифмической оси 20 Hz…min(20 kHz, Nyquist)** (не равные срезы по индексу FFT — иначе низ теряет гармоники); амплитуда **нормируется на `fftSize`** перед `20*log10`, иначе уровень «в небо» и всё упирается в верх графика; UI EQ — два слоя (`spectrumDisplay_` + peak-decay `spectrumTrail_`).
+- `SpectrumTap`: FFT `kFftSize` (обычно 4096); **256 display-бинов по логарифмической оси 10 Hz…min(30 kHz, Nyquist)**; амплитуда **нормируется на `fftSize`** перед `20*log10`; UI EQ — ось частот **чистый log 10…30 k** (как Kirchhoff), без сжатия низа; два слоя спектра (`spectrumDisplay_` + `spectrumTrail_`).
 - Узлы/тапы: `Source/dsp/graph/` (например `SpectrumTap`, `SpectrumAnalyzerNode`, EQ).
 - Правила: `.cursor/rules/dsp-audio-safety.mdc`, `cross-platform-only.mdc`.
 

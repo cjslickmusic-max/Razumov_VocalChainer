@@ -23,9 +23,9 @@ public:
     static constexpr int kFftOrder = 12;
     static constexpr int kFftSize = 1 << kFftOrder;
 
-    /** Log-spaced analyzer range (Hz); must match UI mapping in ReEqPanelComponent. */
-    static constexpr float kAnalyzerHzMin = 20.f;
-    static constexpr float kAnalyzerHzMax = 20000.f;
+    /** Log-spaced analyzer range (Hz); must match ReEq frequency axis (Kirchhoff-style 10...30k). */
+    static constexpr float kAnalyzerHzMin = 10.f;
+    static constexpr float kAnalyzerHzMax = 30000.f;
 
     void prepare(double sampleRate, int maxBlockHint);
     void reset() noexcept;

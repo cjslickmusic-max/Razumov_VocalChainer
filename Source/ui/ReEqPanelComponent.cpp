@@ -91,50 +91,21 @@ const char* const kSlopeIds[10] = {
     razumov::params::eqBand10Slope,
 };
 
-// Log scale 20 Hz..20 kHz with 100 / 1 k / 10 k as decade anchors (FabFilter-style center band).
-static constexpr float kFreqVisMin = 20.f;
-static constexpr float kFreqVisMax = 20000.f;
-static constexpr float kFreqAnchorMin = 100.f;
-static constexpr float kFreqAnchorMax = 10000.f;
-static constexpr float kLeftMarginFrac = 0.08f;
-static constexpr float kRightMarginFrac = 0.08f;
-static constexpr float kMidFrac = 1.f - kLeftMarginFrac - kRightMarginFrac;
+// Pure log 10 Hz..30 kHz (full width). Old piecewise margins compressed sub-bass vs Kirchhoff-style EQs.
+static constexpr float kFreqVisMin = 10.f;
+static constexpr float kFreqVisMax = 30000.f;
 
 static float hzToT(float hz) noexcept
 {
     const float h = juce::jlimit(kFreqVisMin, kFreqVisMax, hz);
-    if (h < kFreqAnchorMin)
-    {
-        const float tEdge = (std::log10(h) - std::log10(kFreqVisMin))
-            / (std::log10(kFreqAnchorMin) - std::log10(kFreqVisMin));
-        return tEdge * kLeftMarginFrac;
-    }
-    if (h > kFreqAnchorMax)
-    {
-        const float tEdge = (std::log10(h) - std::log10(kFreqAnchorMax))
-            / (std::log10(kFreqVisMax) - std::log10(kFreqAnchorMax));
-        return (1.f - kRightMarginFrac) + tEdge * kRightMarginFrac;
-    }
-    const float tMid = (std::log10(h) - std::log10(kFreqAnchorMin))
-        / (std::log10(kFreqAnchorMax) - std::log10(kFreqAnchorMin));
-    return kLeftMarginFrac + tMid * kMidFrac;
+    return (std::log10(h) - std::log10(kFreqVisMin))
+         / (std::log10(kFreqVisMax) - std::log10(kFreqVisMin));
 }
 
 static float tToHz(float t) noexcept
 {
     const float u = juce::jlimit(0.f, 1.f, t);
-    if (u < kLeftMarginFrac)
-    {
-        const float tEdge = u / kLeftMarginFrac;
-        return std::pow(10.f, std::log10(kFreqVisMin) + tEdge * (std::log10(kFreqAnchorMin) - std::log10(kFreqVisMin)));
-    }
-    if (u > 1.f - kRightMarginFrac)
-    {
-        const float tEdge = (u - (1.f - kRightMarginFrac)) / kRightMarginFrac;
-        return std::pow(10.f, std::log10(kFreqAnchorMax) + tEdge * (std::log10(kFreqVisMax) - std::log10(kFreqAnchorMax)));
-    }
-    const float tm = (u - kLeftMarginFrac) / kMidFrac;
-    return std::pow(10.f, std::log10(kFreqAnchorMin) + tm * (std::log10(kFreqAnchorMax) - std::log10(kFreqAnchorMin)));
+    return std::pow(10.f, std::log10(kFreqVisMin) + u * (std::log10(kFreqVisMax) - std::log10(kFreqVisMin)));
 }
 
 /** Kirchhoff-style tick labels (compact). */
@@ -479,8 +450,8 @@ void ReEqPanelComponent::paint(juce::Graphics& g)
         lastResponseCacheHash_ = h;
     }
 
-    static const float kVertGridHz[] = { 20.f,  30.f,  40.f,  50.f,  70.f,  100.f, 200.f, 300.f, 500.f, 700.f,
-                                         1000.f, 2000.f, 3000.f, 5000.f, 7000.f, 10000.f, 20000.f };
+    static const float kVertGridHz[] = { 10.f,  20.f,  30.f,  40.f,  50.f,  100.f, 200.f, 300.f, 400.f, 500.f,
+                                         1000.f, 2000.f, 3000.f, 4000.f, 5000.f, 7000.f, 10000.f, 20000.f, 30000.f };
     for (float hz : kVertGridHz)
     {
         const float x = hzToX(hz, plot);

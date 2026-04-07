@@ -1,4 +1,5 @@
 #include "FlexGraphDesc.h"
+#include "FlexGraphSerialization.h"
 
 namespace razumov::graph
 {
@@ -210,6 +211,29 @@ int findRootSlotIndexContainingId(const FlexSegmentDesc& root, uint32_t slotId) 
         if (slotTreeContainsId(root[(size_t) i], slotId))
             return i;
     return -1;
+}
+
+bool insertFlexSlotAfterModuleSlotId(FlexSegmentDesc& seg, uint32_t moduleSlotId, const FlexSlotDesc& templateSlot,
+                                     uint32_t& nextId) noexcept
+{
+    for (size_t i = 0; i < seg.size(); ++i)
+    {
+        auto& s = seg[i];
+        if (s.descType == FlexSlotDescType::Module && s.slotId == moduleSlotId)
+        {
+            FlexSlotDesc copy = templateSlot;
+            assignSlotIdsForSubtree(copy, nextId);
+            seg.insert(seg.begin() + i + 1, std::move(copy));
+            return true;
+        }
+        if (s.descType == FlexSlotDescType::Split)
+        {
+            for (auto& br : s.branches)
+                if (insertFlexSlotAfterModuleSlotId(br, moduleSlotId, templateSlot, nextId))
+                    return true;
+        }
+    }
+    return false;
 }
 
 namespace

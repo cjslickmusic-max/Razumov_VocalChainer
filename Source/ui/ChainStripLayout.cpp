@@ -177,6 +177,11 @@ SegmentBounds layoutSegment(
                                               c.bounds.getBottom() + 6.0f,
                                               p,
                                               p };
+                    const float tap = 14.0f;
+                    c.parallelFromHereBounds = { c.bounds.getRight() - tap - 4.0f,
+                                                  c.bounds.getCentreY() - tap * 0.5f,
+                                                  tap,
+                                                  tap };
                 }
             }
             const auto curCenter = centerOf(c.bounds);
@@ -295,6 +300,14 @@ void scaleLayout(ChainStripLayout& layout, float originX, float originY, float s
                 c.parallelPlusBounds.getWidth() * scale,
                 c.parallelPlusBounds.getHeight() * scale);
         }
+        if (c.parallelFromHereBounds.getWidth() > 0.5f)
+        {
+            c.parallelFromHereBounds = juce::Rectangle<float>(
+                c.parallelFromHereBounds.getX() * scale + originX,
+                c.parallelFromHereBounds.getY() * scale + originY,
+                c.parallelFromHereBounds.getWidth() * scale,
+                c.parallelFromHereBounds.getHeight() * scale);
+        }
     }
     for (auto& w : layout.wires)
     {
@@ -318,6 +331,8 @@ float computeMaxBottom(const ChainStripLayout& layout) noexcept
         m = juce::jmax(m, c.bounds.getBottom());
         if (c.parallelPlusBounds.getWidth() > 0.5f)
             m = juce::jmax(m, c.parallelPlusBounds.getBottom());
+        if (c.parallelFromHereBounds.getWidth() > 0.5f)
+            m = juce::jmax(m, c.parallelFromHereBounds.getBottom());
     }
     for (const auto& p : layout.mergePoints)
         m = juce::jmax(m, p.y + 14.f);

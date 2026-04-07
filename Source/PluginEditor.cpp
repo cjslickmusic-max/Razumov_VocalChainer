@@ -745,7 +745,7 @@ void RazumovVocalChainAudioProcessorEditor::showChainContextMenu(razumov::ui::Ch
         juce::PopupMenu m;
         m.addItem(100, "Add module...");
         if (processor.canInsertParallelSplitAfterSlot(slotId))
-            m.addItem(101, "Parallel module...");
+            m.addItem(101, "Parallel from here...");
         m.showMenuAsync(opts, [this, slotId](int r) {
             if (r == 100)
                 showAddModuleMenuForSlot(slotId);
@@ -755,6 +755,12 @@ void RazumovVocalChainAudioProcessorEditor::showChainContextMenu(razumov::ui::Ch
         return;
     }
     if (target == razumov::ui::ChainContextTarget::ParallelPlus)
+    {
+        if (processor.canInsertParallelSplitAfterSlot(slotId))
+            showParallelModuleMenuForSlot(slotId);
+        return;
+    }
+    if (target == razumov::ui::ChainContextTarget::ParallelFromHere)
     {
         if (processor.canInsertParallelSplitAfterSlot(slotId))
             showParallelModuleMenuForSlot(slotId);
@@ -783,7 +789,7 @@ void RazumovVocalChainAudioProcessorEditor::showChainContextMenu(razumov::ui::Ch
     m.addSeparator();
     m.addItem(16, "Add module after...");
     if (processor.canInsertParallelSplitAfterSlot(slotId))
-        m.addItem(17, "Parallel module...");
+        m.addItem(17, "Parallel from here...");
     m.showMenuAsync(opts, [this, slotId, bypassed, found](int r) {
         if (r <= 0)
             return;
@@ -919,7 +925,8 @@ void RazumovVocalChainAudioProcessorEditor::refreshModulePanelVisibility()
     if (isSplit)
     {
         moduleTitleLabel.setText("Parallel", juce::dontSendNotification);
-        moduleHintLabel.setText("Dry + wet paths merge at the end. Use + under a node to add a parallel module.",
+        moduleHintLabel.setText(
+            "Split: dry and wet merge at Sum. Use the fork on the right or + below a module for parallel from here.",
                                  juce::dontSendNotification);
         moduleHintLabel.setVisible(true);
     }

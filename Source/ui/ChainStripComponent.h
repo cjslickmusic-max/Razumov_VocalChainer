@@ -16,7 +16,8 @@ enum class ChainContextTarget : uint8_t
 {
     ModuleCard = 0,
     SerialPlus,
-    ParallelPlus
+    ParallelPlus,
+    ParallelFromHere
 };
 
 /** Полоса цепочки: дерево графа, параллель ветками, fork/join; клик по карточке -> slotId. */

@@ -30,6 +30,23 @@ void drawDeleteAffordance(juce::Graphics& g, juce::Rectangle<float> r, juce::Col
     g.drawLine(c.x - h, c.y + h, c.x + h, c.y - h, 1.45f);
 }
 
+/** Right-edge fork: parallel branch from this module (same action as + below). */
+void drawParallelFromHereAffordance(juce::Graphics& g, juce::Rectangle<float> r, juce::Colour ink)
+{
+    g.setColour(ink.withAlpha(0.82f));
+    const float m = r.getWidth() * 0.22f;
+    const float x0 = r.getX() + m;
+    const float y1 = r.getCentreY() + 1.0f;
+    const float x1 = r.getRight() - m;
+    const float y2 = r.getBottom() - m;
+    juce::Path p;
+    p.startNewSubPath(x0, r.getY() + m);
+    p.lineTo(x0, y1);
+    p.lineTo(x1, y1);
+    p.lineTo(x1, y2);
+    g.strokePath(p, juce::PathStrokeType(1.45f));
+}
+
 void drawPlusAffordance(juce::Graphics& g, juce::Rectangle<float> r, juce::Colour rim, juce::Colour fill)
 {
     g.setColour(fill);
@@ -304,6 +321,8 @@ void ChainStripComponent::paint(juce::Graphics& g)
     {
         if (c.showSerialPlus && c.serialPlusBounds.getWidth() > 0.5f)
             drawPlusAffordance(g, c.serialPlusBounds, plusRim, plusFill.withAlpha(0.92f));
+        if (c.showParallelPlus && c.parallelFromHereBounds.getWidth() > 0.5f)
+            drawParallelFromHereAffordance(g, c.parallelFromHereBounds, accent.withAlpha(0.88f));
         if (c.showParallelPlus && c.parallelPlusBounds.getWidth() > 0.5f)
             drawPlusAffordance(g, c.parallelPlusBounds, plusRim, plusFill.withAlpha(0.85f));
     }
@@ -353,6 +372,12 @@ void ChainStripComponent::mouseDown(const juce::MouseEvent& e)
             const auto& c = *it;
             if (c.slotId == 0)
                 continue;
+            if (c.showParallelPlus && c.parallelFromHereBounds.getWidth() > 0.5f && c.parallelFromHereBounds.contains(p))
+            {
+                if (onChainContextMenu)
+                    onChainContextMenu(ChainContextTarget::ParallelFromHere, c.slotId, screen);
+                return;
+            }
             if (c.showSerialPlus && c.serialPlusBounds.getWidth() > 0.5f && c.serialPlusBounds.contains(p))
             {
                 if (onChainContextMenu)
@@ -415,6 +440,12 @@ void ChainStripComponent::mouseDown(const juce::MouseEvent& e)
         const auto& c = *it;
         if (c.slotId == 0)
             continue;
+        if (c.showParallelPlus && c.parallelFromHereBounds.getWidth() > 0.5f && c.parallelFromHereBounds.contains(p))
+        {
+            if (onRequestParallelBranch)
+                onRequestParallelBranch(c.slotId);
+            return;
+        }
         if (c.showParallelPlus && c.parallelPlusBounds.getWidth() > 0.5f && c.parallelPlusBounds.contains(p))
         {
             if (onRequestParallelBranch)
@@ -500,6 +531,11 @@ void ChainStripComponent::mouseMove(const juce::MouseEvent& e)
             return;
         }
         if (bypassPillBounds(c.bounds).contains(p))
+        {
+            setMouseCursor(juce::MouseCursor::PointingHandCursor);
+            return;
+        }
+        if (c.showParallelPlus && c.parallelFromHereBounds.getWidth() > 0.5f && c.parallelFromHereBounds.contains(p))
         {
             setMouseCursor(juce::MouseCursor::PointingHandCursor);
             return;

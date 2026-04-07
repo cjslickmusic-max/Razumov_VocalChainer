@@ -80,6 +80,14 @@ bool queryIsParallelSplitSlot(const FlexSegmentDesc& root, uint32_t slotId) noex
 
 int findRootSlotIndexContainingId(const FlexSegmentDesc& root, uint32_t slotId) noexcept;
 
+/**
+ * Вставить `templateSlot` сразу после модуля с `moduleSlotId` (обход дерева).
+ * Присваивает slotId поддереву из nextId. moduleSlotId должен указывать на Module.
+ * Используется для параллели/инсерта «после этого модуля» внутри ветки, не только на корне.
+ */
+bool insertFlexSlotAfterModuleSlotId(FlexSegmentDesc& root, uint32_t moduleSlotId, const FlexSlotDesc& templateSlot,
+                                     uint32_t& nextId) noexcept;
+
 /** Все slotId узлов Module (без split-карточек), DFS по порядку сегмента. */
 std::vector<uint32_t> collectModuleSlotIds(const FlexSegmentDesc& root);
 

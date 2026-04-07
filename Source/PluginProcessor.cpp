@@ -423,14 +423,18 @@ void RazumovVocalChainAudioProcessor::insertPaletteModuleAfterSlot(uint32_t refe
     const uint32_t ref = resolveSerialInsertReferenceSlot(referenceSlotId);
     razumov::graph::FlexSlotDesc ns = razumov::graph::GraphPlanFactory::makeModulePaletteSlot(kind);
     uint32_t n = nextSlotCounter_;
-    razumov::graph::assignSlotIdsForSubtree(ns, n);
-    nextSlotCounter_ = n;
-
-    const int ri = razumov::graph::findRootSlotIndexContainingId(graphDesc_, ref);
-    if (ri < 0)
+    if (!razumov::graph::insertFlexSlotAfterModuleSlotId(graphDesc_, ref, ns, n))
+    {
+        if (!graphDesc_.empty())
+            return;
+        razumov::graph::assignSlotIdsForSubtree(ns, n);
         graphDesc_.push_back(std::move(ns));
+        nextSlotCounter_ = n;
+    }
     else
-        graphDesc_.insert(graphDesc_.begin() + ri + 1, std::move(ns));
+    {
+        nextSlotCounter_ = n;
+    }
 
     commitGraphMutation();
 }
@@ -442,14 +446,9 @@ void RazumovVocalChainAudioProcessor::insertParallelModuleAfterSlot(uint32_t ref
         return;
     razumov::graph::FlexSlotDesc sp = razumov::graph::GraphPlanFactory::makeSplitDryBranchAndParallelModule(kind);
     uint32_t n = nextSlotCounter_;
-    razumov::graph::assignSlotIdsForSubtree(sp, n);
+    if (!razumov::graph::insertFlexSlotAfterModuleSlotId(graphDesc_, referenceSlotId, sp, n))
+        return;
     nextSlotCounter_ = n;
-
-    const int ri = razumov::graph::findRootSlotIndexContainingId(graphDesc_, referenceSlotId);
-    if (ri < 0)
-        graphDesc_.push_back(std::move(sp));
-    else
-        graphDesc_.insert(graphDesc_.begin() + ri + 1, std::move(sp));
 
     commitGraphMutation();
 }
@@ -460,14 +459,9 @@ void RazumovVocalChainAudioProcessor::insertSplitAfterSlot(uint32_t referenceSlo
         return;
     razumov::graph::FlexSlotDesc sp = razumov::graph::GraphPlanFactory::makeSplitWithUnityBranches(numBranches);
     uint32_t n = nextSlotCounter_;
-    razumov::graph::assignSlotIdsForSubtree(sp, n);
+    if (!razumov::graph::insertFlexSlotAfterModuleSlotId(graphDesc_, referenceSlotId, sp, n))
+        return;
     nextSlotCounter_ = n;
-
-    const int ri = razumov::graph::findRootSlotIndexContainingId(graphDesc_, referenceSlotId);
-    if (ri < 0)
-        graphDesc_.push_back(std::move(sp));
-    else
-        graphDesc_.insert(graphDesc_.begin() + ri + 1, std::move(sp));
 
     commitGraphMutation();
 }

@@ -3,10 +3,10 @@
 #include <dsp/graph/FlexGraphSerialization.h>
 #include <dsp/graph/GraphPlanFactory.h>
 
-using razumov::graph::graphContainsAnySplit;
-
 #include <cassert>
 #include <cmath>
+
+using razumov::graph::graphContainsAnySplit;
 
 namespace
 {
@@ -118,6 +118,53 @@ void testParallelModuleSplitShape()
     assert(std::abs(sp.branchMixLinear[1] - 0.5f) < 1e-5f);
 }
 
+void testInsertFlexSlotAfterRootModule()
+{
+    FlexSegmentDesc d;
+    FlexSlotDesc a = GraphPlanFactory::makeModulePaletteSlot(AudioNodeKind::Gain);
+    FlexSlotDesc b = GraphPlanFactory::makeModulePaletteSlot(AudioNodeKind::Gain);
+    FlexSlotDesc c = GraphPlanFactory::makeModulePaletteSlot(AudioNodeKind::Gain);
+    uint32_t n = 1;
+    assignSlotIdsForSubtree(a, n);
+    assignSlotIdsForSubtree(b, n);
+    assignSlotIdsForSubtree(c, n);
+    const uint32_t bId = b.slotId;
+    d.push_back(std::move(a));
+    d.push_back(std::move(b));
+    d.push_back(std::move(c));
+    FlexSlotDesc sp = GraphPlanFactory::makeSplitDryBranchAndParallelModule(AudioNodeKind::FetCompressor);
+    uint32_t next = n;
+    assert(insertFlexSlotAfterModuleSlotId(d, bId, sp, next));
+    assert(d.size() == 4u);
+    assert(d[1].slotId == bId);
+    assert(d[2].descType == FlexSlotDescType::Split);
+}
+
+void testInsertFlexSlotAfterModuleInNestedBranch()
+{
+    auto d = GraphPlanFactory::makeNestedParallelMismatchedLatencyDescForTests();
+    uint32_t latId = 0;
+    for (const auto id : collectModuleSlotIds(d))
+    {
+        if (queryModuleKindForSlotId(d, id) == AudioNodeKind::Latency)
+        {
+            latId = id;
+            break;
+        }
+    }
+    assert(latId != 0u);
+    FlexSlotDesc sp = GraphPlanFactory::makeSplitDryBranchAndParallelModule(AudioNodeKind::Gain);
+    uint32_t next = 5000;
+    assert(insertFlexSlotAfterModuleSlotId(d, latId, sp, next));
+    assert(d.size() == 1u);
+    assert(d[0].descType == FlexSlotDescType::Split);
+    const auto& innerSplit = d[0].branches[0][0];
+    assert(innerSplit.descType == FlexSlotDescType::Split);
+    assert(innerSplit.branches[0].size() == 3u);
+    assert(innerSplit.branches[0][0].descType == FlexSlotDescType::Module);
+    assert(innerSplit.branches[0][1].descType == FlexSlotDescType::Split);
+}
+
 } // namespace
 
 void runFlexGraphSerializationTests()
@@ -130,4 +177,6 @@ void runFlexGraphSerializationTests()
     testSwapDirectRootModulesRejectsMicOrRoom();
     testGraphContainsAnySplit();
     testParallelModuleSplitShape();
+    testInsertFlexSlotAfterRootModule();
+    testInsertFlexSlotAfterModuleInNestedBranch();
 }

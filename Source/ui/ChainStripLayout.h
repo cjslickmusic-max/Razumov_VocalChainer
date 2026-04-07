@@ -21,6 +21,8 @@ struct ChainStripLayoutCard
     bool showParallelPlus { false };
     juce::Rectangle<float> serialPlusBounds;
     juce::Rectangle<float> parallelPlusBounds;
+    /** Right-edge tap: parallel branch from this module (same as + below). */
+    juce::Rectangle<float> parallelFromHereBounds;
 
     bool showDeleteButton { false };
     juce::Rectangle<float> deleteButtonBounds;

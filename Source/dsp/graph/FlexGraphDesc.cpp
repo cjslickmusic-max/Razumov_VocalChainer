@@ -213,6 +213,31 @@ int findRootSlotIndexContainingId(const FlexSegmentDesc& root, uint32_t slotId) 
     return -1;
 }
 
+void migrateSerialModulesAfterSplitIntoBranchZero(FlexSegmentDesc& seg) noexcept
+{
+    size_t i = 0;
+    while (i < seg.size())
+    {
+        if (seg[i].descType != FlexSlotDescType::Split)
+        {
+            ++i;
+            continue;
+        }
+        FlexSlotDesc& sp = seg[i];
+        if (sp.branches.empty())
+            sp.branches.resize(1);
+        size_t j = i + 1;
+        while (j < seg.size() && seg[j].descType == FlexSlotDescType::Module)
+        {
+            sp.branches[0].push_back(std::move(seg[j]));
+            seg.erase(seg.begin() + j);
+        }
+        for (auto& br : sp.branches)
+            migrateSerialModulesAfterSplitIntoBranchZero(br);
+        ++i;
+    }
+}
+
 bool insertFlexSlotAfterModuleSlotId(FlexSegmentDesc& seg, uint32_t moduleSlotId, const FlexSlotDesc& templateSlot,
                                      uint32_t& nextId) noexcept
 {

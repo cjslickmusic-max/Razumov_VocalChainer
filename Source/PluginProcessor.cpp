@@ -346,6 +346,7 @@ bool RazumovVocalChainAudioProcessor::canInsertParallelSplitAfterSlot(uint32_t r
 
 void RazumovVocalChainAudioProcessor::commitGraphMutation()
 {
+    razumov::graph::migrateSerialModulesAfterSplitIntoBranchZero(graphDesc_);
     syncModuleParamsWithGraph();
     persistEmbeddedStateToApvts();
     submitGraphPlanFromCurrentDesc();

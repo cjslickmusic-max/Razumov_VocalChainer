@@ -88,6 +88,13 @@ int findRootSlotIndexContainingId(const FlexSegmentDesc& root, uint32_t slotId) 
 bool insertFlexSlotAfterModuleSlotId(FlexSegmentDesc& root, uint32_t moduleSlotId, const FlexSlotDesc& templateSlot,
                                      uint32_t& nextId) noexcept;
 
+/**
+ * Поместить в branches[0] все Module-слоты, идущие в сегменте сразу после Split (до следующего Split).
+ * Так «основная» цепочка до Sum совпадает с сухой веткой, а не после merge на корне.
+ * Идемпотентно; вызывать с message thread перед сборкой плана.
+ */
+void migrateSerialModulesAfterSplitIntoBranchZero(FlexSegmentDesc& seg) noexcept;
+
 /** Все slotId узлов Module (без split-карточек), DFS по порядку сегмента. */
 std::vector<uint32_t> collectModuleSlotIds(const FlexSegmentDesc& root);
 

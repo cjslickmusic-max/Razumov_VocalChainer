@@ -165,6 +165,27 @@ void testInsertFlexSlotAfterModuleInNestedBranch()
     assert(innerSplit.branches[0][1].descType == FlexSlotDescType::Split);
 }
 
+void testMigrateSerialAfterSplitIntoBranchZero()
+{
+    FlexSegmentDesc root;
+    FlexSlotDesc g = GraphPlanFactory::makeModulePaletteSlot(AudioNodeKind::Gain);
+    FlexSlotDesc sp = GraphPlanFactory::makeSplitDryBranchAndParallelModule(AudioNodeKind::Deesser);
+    FlexSlotDesc lp = GraphPlanFactory::makeModulePaletteSlot(AudioNodeKind::Filter);
+    uint32_t n = 1;
+    assignSlotIdsForSubtree(g, n);
+    assignSlotIdsForSubtree(sp, n);
+    assignSlotIdsForSubtree(lp, n);
+    const uint32_t lpId = lp.slotId;
+    root.push_back(std::move(g));
+    root.push_back(std::move(sp));
+    root.push_back(std::move(lp));
+    migrateSerialModulesAfterSplitIntoBranchZero(root);
+    assert(root.size() == 2u);
+    assert(root[1].descType == FlexSlotDescType::Split);
+    assert(!root[1].branches[0].empty());
+    assert(queryModuleKindForSlotId(root, lpId) == AudioNodeKind::Filter);
+}
+
 } // namespace
 
 void runFlexGraphSerializationTests()
@@ -179,4 +200,5 @@ void runFlexGraphSerializationTests()
     testParallelModuleSplitShape();
     testInsertFlexSlotAfterRootModule();
     testInsertFlexSlotAfterModuleInNestedBranch();
+    testMigrateSerialAfterSplitIntoBranchZero();
 }

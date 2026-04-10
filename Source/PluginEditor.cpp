@@ -1499,7 +1499,9 @@ RazumovVocalChainAudioProcessorEditor::RazumovVocalChainAudioProcessorEditor(Raz
     addKnob(eqSelSlopeSlider, juce::Colour(tkn::knob::lowpass));
 
     micAmountSlider.setRange(0.0, 1.0, 0.01);
-    gainSlider.setRange(-24.0, 12.0, 0.1);
+    gainSlider.setRange((double) razumov::params::kGainModuleDbRangeMin,
+                        (double) razumov::params::kGainModuleDbRangeMax,
+                        0.1);
     gainSlider.setTextValueSuffix(" dB");
     lowpassSlider.setRange(400.0, 20000.0, 1.0);
     lowpassSlider.setSkewFactorFromMidPoint(2500.0);

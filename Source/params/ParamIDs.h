@@ -8,6 +8,9 @@ inline constexpr const char* micBypass = "micBypass";
 inline constexpr const char* micAmount = "micAmount";
 
 inline constexpr const char* gainDb = "gainDb";
+/** Gain module: knob / macro range (dB). Min is practical silence; was -24 dB and could not mute. */
+inline constexpr float kGainModuleDbRangeMin = -120.0f;
+inline constexpr float kGainModuleDbRangeMax = 12.0f;
 inline constexpr const char* lowpassHz = "lowpassHz";
 
 inline constexpr const char* deessCrossoverHz = "deessCrossoverHz";

@@ -156,7 +156,7 @@ float macro01ToParamValue(MacroTargetParam kind, float macro01) noexcept
         case MacroTargetParam::MicAmount:
             return lerp(0.0f, 1.0f, t);
         case MacroTargetParam::GainDb:
-            return lerp(-24.0f, 12.0f, t);
+            return lerp(kGainModuleDbRangeMin, kGainModuleDbRangeMax, t);
         case MacroTargetParam::LowpassHz:
             return lerp(400.0f, 20000.0f, t);
         case MacroTargetParam::DeessCrossoverHz:
@@ -211,7 +211,7 @@ float paramValueToMacro01(MacroTargetParam kind, float value) noexcept
         case MacroTargetParam::MicAmount:
             return inv(value, 0.0f, 1.0f);
         case MacroTargetParam::GainDb:
-            return inv(value, -24.0f, 12.0f);
+            return inv(value, kGainModuleDbRangeMin, kGainModuleDbRangeMax);
         case MacroTargetParam::LowpassHz:
             return inv(value, 400.0f, 20000.0f);
         case MacroTargetParam::DeessCrossoverHz:

@@ -51,7 +51,7 @@ bool tryBuildPhase3FromLegacyMap(const std::map<juce::String, float>& m,
     out = d;
     out.micBypass = getF(micBypass, 0.0f) > 0.5f;
     out.micAmount = getF(micAmount, d.micAmount);
-    out.gainLinear = juce::Decibels::decibelsToGain(getF(gainDb, 0.0f));
+    out.gainLinear = gainModuleDbToLinear(getF(gainDb, 0.0f));
     out.lowpassHz = getF(lowpassHz, d.lowpassHz);
     out.deessCrossoverHz = getF(deessCrossoverHz, d.deessCrossoverHz);
     out.deessThresholdDb = getF(deessThresholdDb, d.deessThresholdDb);

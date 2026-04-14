@@ -279,7 +279,7 @@ void loadToPhase3(const detail::ModuleSlotBlock& b, Phase3RealtimeParams& out)
 {
     out.micBypass = b.micBypass.load() > 0.5f;
     out.micAmount = b.micAmount.load();
-    out.gainLinear = juce::Decibels::decibelsToGain(b.gainDb.load());
+    out.gainLinear = gainModuleDbToLinear(b.gainDb.load());
     out.lowpassHz = b.lowpassHz.load();
     out.deessCrossoverHz = b.deessCrossoverHz.load();
     out.deessThresholdDb = b.deessThresholdDb.load();

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cmath>
+
 namespace razumov::params
 {
 
@@ -8,9 +10,17 @@ inline constexpr const char* micBypass = "micBypass";
 inline constexpr const char* micAmount = "micAmount";
 
 inline constexpr const char* gainDb = "gainDb";
-/** Gain module: knob / macro range (dB). Min is practical silence; was -24 dB and could not mute. */
+/** Gain module: knob / macro range (dB). Min maps to true silence (linear 0), not 10^(min/20). */
 inline constexpr float kGainModuleDbRangeMin = -120.0f;
 inline constexpr float kGainModuleDbRangeMax = 12.0f;
+
+/** Maps module gain dB to linear gain; at/near UI minimum -> 0 (mute), matching "-inf" behavior. */
+inline float gainModuleDbToLinear(float db) noexcept
+{
+    if (db <= kGainModuleDbRangeMin + 1e-3f)
+        return 0.0f;
+    return std::pow(10.0f, 0.05f * db);
+}
 inline constexpr const char* lowpassHz = "lowpassHz";
 
 inline constexpr const char* deessCrossoverHz = "deessCrossoverHz";

@@ -21,6 +21,8 @@ public:
     void setLinearGain(float g) noexcept
     {
         targetGain_ = juce::jlimit(0.0f, 4.0f, g);
+        if (targetGain_ <= 0.0f)
+            gainSmoother_.setCurrentAndTargetValue(0.0f);
     }
 
     float getLinearGain() const noexcept { return targetGain_; }

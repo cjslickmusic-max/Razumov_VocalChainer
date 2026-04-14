@@ -262,7 +262,7 @@ void applyMacroFullRangeToPhase3(Phase3RealtimeParams& p, MacroTargetParam kind,
             p.micAmount = v;
             break;
         case MacroTargetParam::GainDb:
-            p.gainLinear = juce::Decibels::decibelsToGain(v);
+            p.gainLinear = gainModuleDbToLinear(v);
             break;
         case MacroTargetParam::LowpassHz:
             p.lowpassHz = v;
